@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="ja">
 
 <head>
@@ -7,43 +8,31 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-
 <title>
 防災訓練参加登録
 </title>
 
-
 <link rel="stylesheet" href="stamp.css">
-
 
 </head>
 
-
 <body>
 
-
 <div class="stamp-container">
-
 
 <h1>
 🚒 防災訓練参加登録
 </h1>
 
-
-
 <section>
-
 
 <h2 id="event-name">
 
 </h2>
 
-
 <p id="event-date">
 
 </p>
-
-
 
 <p>
 
@@ -51,24 +40,17 @@
 
 </p>
 
-
-
 <button id="add-training">
 
 参加登録する
 
 </button>
 
-
-
 <p id="result">
 
 </p>
 
-
-
 <br>
-
 
 <a href="stamp.html">
 
@@ -76,17 +58,23 @@
 
 </a>
 
-
 </section>
-
-
 
 </div>
 
+<!-- ========================================
+     Supabase JavaScript
+======================================== -->
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- Supabase 接続設定 -->
+
+<script src="supabase.js"></script>
+
+<!-- 現在の訓練参加登録処理 -->
 
 <script src="training.js"></script>
-
 
 </body>
 
