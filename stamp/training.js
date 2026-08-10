@@ -194,7 +194,7 @@ async function addTraining(
 
 
     // =============================
-    // 重複防止
+    // localStorage側の重複確認
     // =============================
 
     const exists =
@@ -226,7 +226,7 @@ async function addTraining(
 
 
     // =============================
-    // ① localStorageへ保存
+    // localStorageへ保存
     // =============================
 
     data.stamps.push({
@@ -269,7 +269,7 @@ async function addTraining(
 
 
     // =============================
-    // ② Supabaseへ保存
+    // Supabaseへ保存
     // =============================
 
     try {
@@ -292,12 +292,6 @@ async function addTraining(
             "Supabase保存エラー:",
             error
         );
-
-        /*
-         * Supabase保存に失敗しても、
-         * 現在のスタンプカードは
-         * そのまま利用できるようにする。
-         */
 
     }
 
@@ -354,23 +348,6 @@ async function saveParticipationToSupabase(
 
 
     // =============================
-    // 利用者情報確認
-    // =============================
-
-    if (
-        !data.id
-        ||
-        !data.name
-    ) {
-
-        throw new Error(
-            "利用者IDまたは氏名がありません。"
-        );
-
-    }
-
-
-    // =============================
     // 訓練ID作成
     // =============================
 
@@ -394,11 +371,7 @@ async function saveParticipationToSupabase(
 
 
     // =============================
-    // ① 参加者をSupabaseへ登録
-    // =============================
-    //
-    // 今回は原因切り分けのため、
-    // upsertではなくinsertを使用。
+    // ① participants
     // =============================
 
     const {
@@ -421,23 +394,29 @@ async function saveParticipationToSupabase(
         });
 
 
+    // -----------------------------
+    // 参加者が既に存在する場合
+    // -----------------------------
+
     if (participantError) {
 
-        console.error(
-            "participants INSERT ERROR:",
-            participantError
-        );
-
-        /*
-         * すでに参加者が存在する場合は、
-         * 参加者登録をスキップして
-         * 次の処理へ進む。
-         */
-
         if (
-            participantError.code !==
+            participantError.code ===
             "23505"
         ) {
+
+            console.log(
+                "参加者は既にSupabaseに登録されています。"
+            );
+
+        }
+
+        else {
+
+            console.error(
+                "participants INSERT ERROR:",
+                participantError
+            );
 
             throw participantError;
 
@@ -445,9 +424,17 @@ async function saveParticipationToSupabase(
 
     }
 
+    else {
+
+        console.log(
+            "participants 登録成功"
+        );
+
+    }
+
 
     // =============================
-    // ② 訓練情報をSupabaseへ登録
+    // ② trainings
     // =============================
 
     const {
@@ -459,53 +446,72 @@ async function saveParticipationToSupabase(
 
         .from("trainings")
 
-        .upsert(
+        .insert({
 
-            {
+            training_id:
+                trainingId,
 
-                training_id:
-                    trainingId,
+            title:
+                event ||
+                "防災訓練",
 
-                title:
-                    event ||
-                    "防災訓練",
+            date:
+                date ||
+                null,
 
-                date:
-                    date ||
-                    null,
+            location:
+                null,
 
-                location:
-                    null,
+            description:
+                null
 
-                description:
-                    null
+        });
 
-            },
 
-            {
-
-                onConflict:
-                    "training_id"
-
-            }
-
-        );
-
+    // -----------------------------
+    // 訓練が既に存在する場合
+    // -----------------------------
 
     if (trainingError) {
 
-        console.error(
-            "trainings UPSERT ERROR:",
-            trainingError
-        );
+        if (
+            trainingError.code ===
+            "23505"
+        ) {
 
-        throw trainingError;
+            console.log(
+                "訓練は既にSupabaseに登録されています。"
+            );
+
+        }
+
+        else {
+
+            console.error(
+                "trainings INSERT ERROR:",
+                trainingError
+            );
+
+            throw trainingError;
+
+        }
+
+    }
+
+    else {
+
+        console.log(
+            "trainings 登録成功"
+        );
 
     }
 
 
     // =============================
-    // ③ 参加記録の重複確認
+    // ③ participations
+    // =============================
+    //
+    // まず同じ参加記録があるか確認
     // =============================
 
     const {
@@ -554,7 +560,7 @@ async function saveParticipationToSupabase(
 
 
     // =============================
-    // すでに参加記録がある場合
+    // 既に参加記録がある場合
     // =============================
 
     if (
@@ -562,7 +568,7 @@ async function saveParticipationToSupabase(
     ) {
 
         console.log(
-            "Supabaseにはすでに参加記録があります。"
+            "参加記録は既にSupabaseに登録されています。"
         );
 
         return;
@@ -571,7 +577,7 @@ async function saveParticipationToSupabase(
 
 
     // =============================
-    // ④ 参加記録を登録
+    // 参加記録を登録
     // =============================
 
     const {
@@ -607,31 +613,43 @@ async function saveParticipationToSupabase(
 
 
     // =============================
-    // 完了ログ
+    // 完了
     // =============================
 
     console.log(
 
-        "Supabaseへの参加記録保存完了:",
+        "============================="
 
-        {
+    );
 
-            participant_id:
-                data.id,
+    console.log(
 
-            participant_name:
-                data.name,
+        "Supabaseへの参加記録保存完了"
 
-            training_id:
-                trainingId,
+    );
 
-            date:
-                date,
+    console.log({
 
-            event:
-                event
+        participant_id:
+            data.id,
 
-        }
+        participant_name:
+            data.name,
+
+        training_id:
+            trainingId,
+
+        date:
+            date,
+
+        event:
+            event
+
+    });
+
+    console.log(
+
+        "============================="
 
     );
 
