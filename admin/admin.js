@@ -1,47 +1,52 @@
 /* ========================
+岩瀬自治会 防災アプリ
 管理者画面
 ======================== */
 
-/*
+/* ========================
 管理者パスワード
-
-```
-※ここだけ変更してください。
-```
-
-*/
+======================== */
 
 const ADMIN_PASSWORD = "admin";
 
-/*
-HTML読み込み完了
-*/
+/* ========================
+初期処理
+======================== */
 
-document.addEventListener(
-"DOMContentLoaded",
-() => {
+document.addEventListener("DOMContentLoaded", function () {
 
 ```
-    checkAdminLogin();
+const loginButton =
+    document.getElementById("loginButton");
 
-    document
-        .getElementById("loginButton")
-        .addEventListener(
-            "click",
-            adminLogin
-        );
+const logoutButton =
+    document.getElementById("logoutButton");
 
-    document
-        .getElementById("logoutButton")
-        .addEventListener(
-            "click",
-            adminLogout
-        );
+
+if (loginButton) {
+
+    loginButton.addEventListener(
+        "click",
+        adminLogin
+    );
 
 }
+
+
+if (logoutButton) {
+
+    logoutButton.addEventListener(
+        "click",
+        adminLogout
+    );
+
+}
+
+
+checkAdminLogin();
 ```
 
-);
+});
 
 /* ========================
 管理者ログイン確認
@@ -76,39 +81,55 @@ if (login === "true") {
 function adminLogin() {
 
 ```
+const passwordElement =
+    document.getElementById(
+        "adminPassword"
+    );
+
+
+const errorElement =
+    document.getElementById(
+        "loginError"
+    );
+
+
+if (!passwordElement) {
+
+    return;
+
+}
+
+
 const password =
-    document
-        .getElementById(
-            "adminPassword"
-        )
-        .value;
+    passwordElement.value;
 
 
-const error =
-    document
-        .getElementById(
-            "loginError"
-        );
-
-
-if (
-    password ===
-    ADMIN_PASSWORD
-) {
+if (password === ADMIN_PASSWORD) {
 
     localStorage.setItem(
         "iwaseAdminLogin",
         "true"
     );
 
-    error.textContent = "";
+
+    if (errorElement) {
+
+        errorElement.textContent = "";
+
+    }
+
 
     showAdminArea();
 
+
 } else {
 
-    error.textContent =
-        "パスワードが正しくありません。";
+    if (errorElement) {
+
+        errorElement.textContent =
+            "パスワードが正しくありません。";
+
+    }
 
 }
 ```
@@ -122,20 +143,34 @@ if (
 function showAdminArea() {
 
 ```
-document
-    .getElementById(
+const loginArea =
+    document.getElementById(
         "loginArea"
-    )
-    .classList
-    .add("hidden");
+    );
 
 
-document
-    .getElementById(
+const adminArea =
+    document.getElementById(
         "adminArea"
-    )
-    .classList
-    .remove("hidden");
+    );
+
+
+if (loginArea) {
+
+    loginArea.classList.add(
+        "hidden"
+    );
+
+}
+
+
+if (adminArea) {
+
+    adminArea.classList.remove(
+        "hidden"
+    );
+
+}
 
 
 loadDashboard();
@@ -150,20 +185,34 @@ loadDashboard();
 function showLoginArea() {
 
 ```
-document
-    .getElementById(
+const loginArea =
+    document.getElementById(
         "loginArea"
-    )
-    .classList
-    .remove("hidden");
+    );
 
 
-document
-    .getElementById(
+const adminArea =
+    document.getElementById(
         "adminArea"
-    )
-    .classList
-    .add("hidden");
+    );
+
+
+if (loginArea) {
+
+    loginArea.classList.remove(
+        "hidden"
+    );
+
+}
+
+
+if (adminArea) {
+
+    adminArea.classList.add(
+        "hidden"
+    );
+
+}
 ```
 
 }
@@ -178,6 +227,7 @@ function adminLogout() {
 localStorage.removeItem(
     "iwaseAdminLogin"
 );
+
 
 location.reload();
 ```
@@ -201,7 +251,7 @@ await loadParticipations();
 }
 
 /* ========================
-利用者
+利用者一覧
 ======================== */
 
 async function loadParticipants() {
@@ -213,30 +263,39 @@ const table =
     );
 
 
-table.innerHTML =
-    `
+if (!table) {
+
+    return;
+
+}
+
+
+table.innerHTML = `
     <tr>
         <td colspan="3">
             読み込み中...
         </td>
     </tr>
-    `;
+`;
 
 
 try {
 
-    const {
-        data,
-        error
-    } = await supabaseClient
-        .from("participants")
-        .select("*")
-        .order(
-            "registered_at",
-            {
-                ascending: false
-            }
-        );
+    const result =
+        await supabaseClient
+            .from("participants")
+            .select("*")
+            .order(
+                "registered_at",
+                {
+                    ascending: false
+                }
+            );
+
+
+    const data = result.data;
+
+    const error = result.error;
 
 
     if (error) {
@@ -246,74 +305,70 @@ try {
     }
 
 
-    document
-        .getElementById(
+    const countElement =
+        document.getElementById(
             "participantCount"
-        )
-        .textContent =
+        );
+
+
+    if (countElement) {
+
+        countElement.textContent =
             data.length;
 
+    }
 
-    if (
-        data.length === 0
-    ) {
 
-        table.innerHTML =
-            `
+    if (data.length === 0) {
+
+        table.innerHTML = `
             <tr>
                 <td colspan="3">
                     登録利用者はいません。
                 </td>
             </tr>
-            `;
+        `;
 
         return;
 
     }
 
 
-    table.innerHTML =
-        "";
+    table.innerHTML = "";
 
 
-    data.forEach(
-        participant => {
+    data.forEach(function (participant) {
 
-            const row =
-                document.createElement(
-                    "tr"
-                );
-
-
-            row.innerHTML =
-                `
-                <td>
-                    ${escapeHTML(
-                        participant.id
-                    )}
-                </td>
-
-                <td>
-                    ${escapeHTML(
-                        participant.name
-                        ?? ""
-                    )}
-                </td>
-
-                <td>
-                    ${formatDate(
-                        participant.registered_at
-                    )}
-                </td>
-                `;
-
-
-            table.appendChild(
-                row
+        const row =
+            document.createElement(
+                "tr"
             );
 
-        }
-    );
+
+        row.innerHTML = `
+            <td>
+                ${escapeHTML(
+                    participant.id
+                )}
+            </td>
+
+            <td>
+                ${escapeHTML(
+                    participant.name || ""
+                )}
+            </td>
+
+            <td>
+                ${formatDate(
+                    participant.registered_at
+                )}
+            </td>
+        `;
+
+
+        table.appendChild(row);
+
+    });
 
 
 } catch (error) {
@@ -324,14 +379,13 @@ try {
     );
 
 
-    table.innerHTML =
-        `
+    table.innerHTML = `
         <tr>
             <td colspan="3">
                 利用者データの取得に失敗しました。
             </td>
         </tr>
-        `;
+    `;
 
 }
 ```
@@ -339,7 +393,7 @@ try {
 }
 
 /* ========================
-訓練
+訓練一覧
 ======================== */
 
 async function loadTrainings() {
@@ -351,30 +405,39 @@ const table =
     );
 
 
-table.innerHTML =
-    `
+if (!table) {
+
+    return;
+
+}
+
+
+table.innerHTML = `
     <tr>
         <td colspan="3">
             読み込み中...
         </td>
     </tr>
-    `;
+`;
 
 
 try {
 
-    const {
-        data,
-        error
-    } = await supabaseClient
-        .from("trainings")
-        .select("*")
-        .order(
-            "date",
-            {
-                ascending: false
-            }
-        );
+    const result =
+        await supabaseClient
+            .from("trainings")
+            .select("*")
+            .order(
+                "date",
+                {
+                    ascending: false
+                }
+            );
+
+
+    const data = result.data;
+
+    const error = result.error;
 
 
     if (error) {
@@ -384,76 +447,70 @@ try {
     }
 
 
-    document
-        .getElementById(
+    const countElement =
+        document.getElementById(
             "trainingCount"
-        )
-        .textContent =
+        );
+
+
+    if (countElement) {
+
+        countElement.textContent =
             data.length;
 
+    }
 
-    if (
-        data.length === 0
-    ) {
 
-        table.innerHTML =
-            `
+    if (data.length === 0) {
+
+        table.innerHTML = `
             <tr>
                 <td colspan="3">
                     登録訓練はありません。
                 </td>
             </tr>
-            `;
+        `;
 
         return;
 
     }
 
 
-    table.innerHTML =
-        "";
+    table.innerHTML = "";
 
 
-    data.forEach(
-        training => {
+    data.forEach(function (training) {
 
-            const row =
-                document.createElement(
-                    "tr"
-                );
-
-
-            row.innerHTML =
-                `
-                <td>
-                    ${escapeHTML(
-                        training.date
-                        ?? ""
-                    )}
-                </td>
-
-                <td>
-                    ${escapeHTML(
-                        training.event
-                        ?? ""
-                    )}
-                </td>
-
-                <td>
-                    ${escapeHTML(
-                        training.id
-                        ?? ""
-                    )}
-                </td>
-                `;
-
-
-            table.appendChild(
-                row
+        const row =
+            document.createElement(
+                "tr"
             );
 
-        }
-    );
+
+        row.innerHTML = `
+            <td>
+                ${escapeHTML(
+                    training.date || ""
+                )}
+            </td>
+
+            <td>
+                ${escapeHTML(
+                    training.event || ""
+                )}
+            </td>
+
+            <td>
+                ${escapeHTML(
+                    training.id || ""
+                )}
+            </td>
+        `;
+
+
+        table.appendChild(row);
+
+    });
 
 
 } catch (error) {
@@ -464,14 +521,13 @@ try {
     );
 
 
-    table.innerHTML =
-        `
+    table.innerHTML = `
         <tr>
             <td colspan="3">
                 訓練データの取得に失敗しました。
             </td>
         </tr>
-        `;
+    `;
 
 }
 ```
@@ -491,24 +547,33 @@ const table =
     );
 
 
-table.innerHTML =
-    `
+if (!table) {
+
+    return;
+
+}
+
+
+table.innerHTML = `
     <tr>
         <td colspan="3">
             読み込み中...
         </td>
     </tr>
-    `;
+`;
 
 
 try {
 
-    const {
-        data,
-        error
-    } = await supabaseClient
-        .from("participations")
-        .select("*");
+    const result =
+        await supabaseClient
+            .from("participations")
+            .select("*");
+
+
+    const data = result.data;
+
+    const error = result.error;
 
 
     if (error) {
@@ -518,79 +583,87 @@ try {
     }
 
 
-    document
-        .getElementById(
+    const countElement =
+        document.getElementById(
             "participationCount"
-        )
-        .textContent =
+        );
+
+
+    if (countElement) {
+
+        countElement.textContent =
             data.length;
 
+    }
 
-    if (
-        data.length === 0
-    ) {
 
-        table.innerHTML =
-            `
+    if (data.length === 0) {
+
+        table.innerHTML = `
             <tr>
                 <td colspan="3">
                     参加記録はありません。
                 </td>
             </tr>
-            `;
+        `;
 
         return;
 
     }
 
 
-    table.innerHTML =
-        "";
+    table.innerHTML = "";
 
 
-    data.forEach(
-        participation => {
+    data.forEach(function (participation) {
 
-            const row =
-                document.createElement(
-                    "tr"
-                );
-
-
-            row.innerHTML =
-                `
-                <td>
-                    ${escapeHTML(
-                        participation.participant_id
-                        ?? ""
-                    )}
-                </td>
-
-                <td>
-                    ${escapeHTML(
-                        participation.training_id
-                        ?? ""
-                    )}
-                </td>
-
-                <td>
-                    ${escapeHTML(
-                        participation.participated_at
-                        ??
-                        participation.created_at
-                        ??
-                        ""
-                    )}
-                </td>
-                `;
-
-
-            table.appendChild(
-                row
+        const row =
+            document.createElement(
+                "tr"
             );
 
-        }
-    );
+
+        const participantId =
+            participation.participant_id ||
+            participation.participant ||
+            "";
+
+
+        const trainingId =
+            participation.training_id ||
+            "";
+
+
+        const participatedAt =
+            participation.participated_at ||
+            participation.created_at ||
+            "";
+
+
+        row.innerHTML = `
+            <td>
+                ${escapeHTML(
+                    participantId
+                )}
+            </td>
+
+            <td>
+                ${escapeHTML(
+                    trainingId
+                )}
+            </td>
+
+            <td>
+                ${escapeHTML(
+                    participatedAt
+                )}
+            </td>
+        `;
+
+
+        table.appendChild(row);
+
+    });
 
 
 } catch (error) {
@@ -601,14 +674,13 @@ try {
     );
 
 
-    table.innerHTML =
-        `
+    table.innerHTML = `
         <tr>
             <td colspan="3">
                 参加履歴の取得に失敗しました。
             </td>
         </tr>
-        `;
+    `;
 
 }
 ```
@@ -619,9 +691,7 @@ try {
 日付表示
 ======================== */
 
-function formatDate(
-value
-) {
+function formatDate(value) {
 
 ```
 if (!value) {
@@ -641,7 +711,7 @@ if (
     )
 ) {
 
-    return value;
+    return String(value);
 
 }
 
@@ -657,28 +727,31 @@ return date.toLocaleString(
 HTMLエスケープ
 ======================== */
 
-function escapeHTML(
-value
-) {
+function escapeHTML(value) {
 
 ```
 return String(value)
+
     .replace(
         /&/g,
         "&amp;"
     )
+
     .replace(
         /</g,
         "&lt;"
     )
+
     .replace(
         />/g,
         "&gt;"
     )
+
     .replace(
         /"/g,
         "&quot;"
     )
+
     .replace(
         /'/g,
         "&#039;"
