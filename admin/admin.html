@@ -8,7 +8,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>岩瀬自治会 防災アプリ 管理者画面</title>
+<title>管理者画面 | いわぽん防災</title>
 
 <link rel="stylesheet" href="admin.css">
 
@@ -16,94 +16,109 @@
 
 <body>
 
-<div id="loginArea">
+<!-- ========================= ログイン画面 ========================= -->
+
+<div id="loginScreen" class="screen">
 
 <div class="login-box">
 
-    <h1>
-        岩瀬自治会<br>
-        防災アプリ
-    </h1>
+    <h1>管理者ログイン</h1>
 
-    <h2>
-        管理者ログイン
-    </h2>
-
-    <p>
-        管理者パスワードを入力してください。
+    <p class="login-description">
+        いわぽん防災 管理者画面
     </p>
 
-    <input
-        type="password"
-        id="adminPassword"
-        placeholder="パスワード入力"
-        autocomplete="current-password"
-    >
 
-    <button id="loginButton">
-        管理者ログイン
-    </button>
+    <form id="loginForm">
 
-    <p id="loginError"></p>
+        <label for="email">
+            メールアドレス
+        </label>
+
+        <input
+            type="email"
+            id="email"
+            autocomplete="username"
+            required
+        >
+
+
+        <label for="password">
+            パスワード
+        </label>
+
+        <input
+            type="password"
+            id="password"
+            autocomplete="current-password"
+            required
+        >
+
+
+        <button type="submit" class="primary-button">
+            ログイン
+        </button>
+
+    </form>
+
+
+    <p id="loginError" class="error-message"></p>
 
 </div>
 
 </div>
 
-<div id="adminArea" class="hidden">
+
+
+
+<!-- ========================= 管理画面 ========================= -->
+
+<div id="adminScreen" class="screen hidden">
 
 <header class="admin-header">
 
     <div>
 
-        <h1>
-            岩瀬自治会 防災アプリ
-        </h1>
+        <h1>管理者画面</h1>
 
         <p>
-            管理者画面
+            いわぽん防災
         </p>
 
     </div>
 
-    <button id="logoutButton">
+
+    <button id="logoutButton" class="logout-button">
         ログアウト
     </button>
 
 </header>
 
 
-<main>
 
-    <section class="welcome">
-
-        <h2>
-            管理者ダッシュボード
-        </h2>
-
-        <p>
-            防災アプリの利用状況を確認できます。
-        </p>
-
-    </section>
+<main class="admin-container">
 
 
-    <section class="dashboard">
+    <!-- =========================
+         ダッシュボード
+    ========================== -->
 
-        <div class="stat-card">
+    <section id="dashboardSection" class="admin-section">
 
-            <div class="stat-icon">
-                👥
-            </div>
+        <h2>ダッシュボード</h2>
 
-            <div>
 
-                <p>
-                    登録利用者
-                </p>
+        <div class="stats-grid">
+
+
+            <div class="stat-card">
+
+                <span class="stat-label">
+                    登録参加者
+                </span>
 
                 <strong id="participantCount">
-                    -
+                    0
                 </strong>
 
                 <span>
@@ -112,23 +127,16 @@
 
             </div>
 
-        </div>
 
 
-        <div class="stat-card">
+            <div class="stat-card">
 
-            <div class="stat-icon">
-                🏃
-            </div>
-
-            <div>
-
-                <p>
-                    登録訓練
-                </p>
+                <span class="stat-label">
+                    訓練・講座
+                </span>
 
                 <strong id="trainingCount">
-                    -
+                    0
                 </strong>
 
                 <span>
@@ -137,23 +145,16 @@
 
             </div>
 
-        </div>
 
 
-        <div class="stat-card">
+            <div class="stat-card">
 
-            <div class="stat-icon">
-                🎫
-            </div>
-
-            <div>
-
-                <p>
+                <span class="stat-label">
                     参加記録
-                </p>
+                </span>
 
                 <strong id="participationCount">
-                    -
+                    0
                 </strong>
 
                 <span>
@@ -163,15 +164,86 @@
             </div>
 
         </div>
+
+
+
+        <div class="dashboard-card">
+
+            <h3>
+                最近の参加記録
+            </h3>
+
+            <div id="recentParticipations">
+
+                読み込み中...
+
+            </div>
+
+        </div>
+
 
     </section>
 
 
-    <section class="data-section">
 
-        <h2>
-            👥 利用者一覧
-        </h2>
+    <!-- =========================
+         ナビゲーション
+    ========================== -->
+
+    <nav class="admin-nav">
+
+        <button
+            class="nav-button active"
+            data-target="participantsSection"
+        >
+            参加者管理
+        </button>
+
+
+        <button
+            class="nav-button"
+            data-target="trainingsSection"
+        >
+            訓練管理
+        </button>
+
+
+        <button
+            class="nav-button"
+            data-target="participationsSection"
+        >
+            参加履歴
+        </button>
+
+    </nav>
+
+
+
+    <!-- =========================
+         参加者管理
+    ========================== -->
+
+    <section
+        id="participantsSection"
+        class="admin-section content-section"
+    >
+
+        <div class="section-header">
+
+            <div>
+
+                <h2>
+                    参加者管理
+                </h2>
+
+                <p>
+                    登録されている参加者を管理します。
+                </p>
+
+            </div>
+
+        </div>
+
 
         <div class="table-wrapper">
 
@@ -182,31 +254,28 @@
                     <tr>
 
                         <th>
-                            ID
+                            参加者ID
                         </th>
 
                         <th>
-                            氏名
+                            名前
                         </th>
 
                         <th>
                             登録日時
                         </th>
 
+                        <th>
+                            操作
+                        </th>
+
                     </tr>
 
                 </thead>
+
 
                 <tbody id="participantsTable">
 
-                    <tr>
-
-                        <td colspan="3">
-                            読み込み中...
-                        </td>
-
-                    </tr>
-
                 </tbody>
 
             </table>
@@ -216,60 +285,40 @@
     </section>
 
 
-    <section class="data-section">
 
-        <h2>
-            🏃 訓練一覧
-        </h2>
+    <!-- =========================
+         訓練管理
+    ========================== -->
 
-        <div class="table-wrapper">
+    <section
+        id="trainingsSection"
+        class="admin-section content-section hidden"
+    >
 
-            <table>
+        <div class="section-header">
 
-                <thead>
+            <div>
 
-                    <tr>
+                <h2>
+                    訓練・講座管理
+                </h2>
 
-                        <th>
-                            日付
-                        </th>
+                <p>
+                    訓練や講座の登録・編集・削除を行います。
+                </p>
 
-                        <th>
-                            訓練名
-                        </th>
+            </div>
 
-                        <th>
-                            ID
-                        </th>
 
-                    </tr>
-
-                </thead>
-
-                <tbody id="trainingsTable">
-
-                    <tr>
-
-                        <td colspan="3">
-                            読み込み中...
-                        </td>
-
-                    </tr>
-
-                </tbody>
-
-            </table>
+            <button
+                id="addTrainingButton"
+                class="primary-button"
+            >
+                ＋ 新規登録
+            </button>
 
         </div>
 
-    </section>
-
-
-    <section class="data-section">
-
-        <h2>
-            🎫 参加履歴
-        </h2>
 
         <div class="table-wrapper">
 
@@ -278,32 +327,29 @@
                 <thead>
 
                     <tr>
-
-                        <th>
-                            利用者ID
-                        </th>
 
                         <th>
                             訓練ID
                         </th>
 
                         <th>
-                            参加日時
+                            タイトル
+                        </th>
+
+                        <th>
+                            登録日時
+                        </th>
+
+                        <th>
+                            操作
                         </th>
 
                     </tr>
 
                 </thead>
 
-                <tbody id="participationsTable">
 
-                    <tr>
-
-                        <td colspan="3">
-                            読み込み中...
-                        </td>
-
-                    </tr>
+                <tbody id="trainingsTable">
 
                 </tbody>
 
@@ -314,21 +360,207 @@
     </section>
 
 
-    <div class="back-area">
 
-        <a href="../index.html">
-            アプリトップへ戻る
-        </a>
+    <!-- =========================
+         参加履歴
+    ========================== -->
 
-    </div>
+    <section
+        id="participationsSection"
+        class="admin-section content-section hidden"
+    >
+
+        <div class="section-header">
+
+            <div>
+
+                <h2>
+                    参加履歴
+                </h2>
+
+                <p>
+                    訓練・講座への参加記録を管理します。
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="table-wrapper">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            参加者
+                        </th>
+
+                        <th>
+                            訓練・講座
+                        </th>
+
+                        <th>
+                            参加日時
+                        </th>
+
+                        <th>
+                            操作
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody id="participationsTable">
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
 
 </main>
 
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<script src="../stamp/supabase.js"></script>
+
+
+<!-- ========================= 参加者編集モーダル ========================= -->
+
+<div id="participantModal" class="modal hidden">
+
+<div class="modal-content">
+
+    <h2>
+        参加者編集
+    </h2>
+
+
+    <input
+        type="hidden"
+        id="editParticipantDbId"
+    >
+
+
+    <label>
+        参加者ID
+    </label>
+
+    <input
+        type="text"
+        id="editParticipantId"
+        readonly
+    >
+
+
+    <label>
+        名前
+    </label>
+
+    <input
+        type="text"
+        id="editParticipantName"
+    >
+
+
+    <div class="modal-buttons">
+
+        <button
+            id="cancelParticipantButton"
+            class="secondary-button"
+        >
+            キャンセル
+        </button>
+
+
+        <button
+            id="saveParticipantButton"
+            class="primary-button"
+        >
+            保存
+        </button>
+
+    </div>
+
+</div>
+
+</div>
+
+
+
+
+<!-- ========================= 訓練編集モーダル ========================= -->
+
+<div id="trainingModal" class="modal hidden">
+
+<div class="modal-content">
+
+    <h2 id="trainingModalTitle">
+        訓練登録
+    </h2>
+
+
+    <input
+        type="hidden"
+        id="editTrainingDbId"
+    >
+
+
+    <label>
+        訓練ID
+    </label>
+
+    <input
+        type="text"
+        id="editTrainingId"
+        placeholder="例：training001"
+    >
+
+
+    <label>
+        タイトル
+    </label>
+
+    <input
+        type="text"
+        id="editTrainingTitle"
+        placeholder="例：夏季防災訓練"
+    >
+
+
+    <div class="modal-buttons">
+
+        <button
+            id="cancelTrainingButton"
+            class="secondary-button"
+        >
+            キャンセル
+        </button>
+
+
+        <button
+            id="saveTrainingButton"
+            class="primary-button"
+        >
+            保存
+        </button>
+
+    </div>
+
+</div>
+
+</div>
+
+<script src="../supabase.js"></script>
 
 <script src="admin.js"></script>
 
