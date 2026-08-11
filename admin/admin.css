@@ -1,26 +1,19 @@
-* {
-  box-sizing: border-box;
-  }
+{
+box-sizing: border-box;
+}
 
 body {
-
-```
 margin: 0;
-
 font-family:
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    "Hiragino Kaku Gothic ProN",
-    "Yu Gothic",
-    Meiryo,
-    sans-serif;
-
+-apple-system,
+BlinkMacSystemFont,
+"Segoe UI",
+"Hiragino Kaku Gothic ProN",
+"Yu Gothic",
+Meiryo,
+sans-serif;
 background: #f3f6f8;
-
 color: #333;
-```
-
 }
 
 .hidden {
@@ -28,449 +21,249 @@ display: none !important;
 }
 
 #loginArea {
-
-```
 min-height: 100vh;
-
 display: flex;
-
 justify-content: center;
-
 align-items: center;
-
 padding: 20px;
-```
-
 }
 
 .login-box {
-
-```
 width: 100%;
-
 max-width: 420px;
-
-background: white;
-
+background: #fff;
 padding: 35px 25px;
-
 border-radius: 15px;
-
-box-shadow:
-    0 5px 20px rgba(0,0,0,0.08);
-
+box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
 text-align: center;
-```
-
 }
 
 .login-box h1 {
-
-```
 margin: 0 0 20px;
-
 font-size: 25px;
-
 line-height: 1.5;
-```
-
 }
 
 .login-box h2 {
-
-```
 margin: 10px 0;
-
 font-size: 21px;
-```
-
 }
 
 .login-box p {
-
-```
 font-size: 14px;
-
 line-height: 1.7;
-```
-
 }
 
 #adminPassword {
-
-```
 width: 100%;
-
 padding: 14px;
-
 margin-top: 10px;
-
 border: 1px solid #ccc;
-
 border-radius: 8px;
-
 font-size: 16px;
-```
-
 }
 
 #loginButton {
-
-```
 width: 100%;
-
 padding: 14px;
-
 margin-top: 15px;
-
 border: none;
-
 border-radius: 8px;
-
 background: #1d6f42;
-
-color: white;
-
+color: #fff;
 font-size: 16px;
-
 font-weight: bold;
-
 cursor: pointer;
-```
+}
 
+#loginButton {
+opacity: 0.9;
 }
 
 #loginError {
-
-```
 color: #d32f2f;
-
 min-height: 20px;
-```
-
 }
 
 .admin-header {
-
-```
 background: #1d6f42;
-
-color: white;
-
+color: #fff;
 padding: 18px 25px;
-
 display: flex;
-
 justify-content: space-between;
-
 align-items: center;
-
 gap: 15px;
-```
-
 }
 
 .admin-header h1 {
-
-```
 margin: 0;
-
 font-size: 22px;
-```
-
 }
 
 .admin-header p {
-
-```
 margin: 5px 0 0;
-
 font-size: 14px;
-```
-
 }
 
 #logoutButton {
-
-```
-border: 1px solid white;
-
+border: 1px solid #fff;
 background: transparent;
-
-color: white;
-
+color: #fff;
 padding: 9px 15px;
-
 border-radius: 7px;
-
 cursor: pointer;
-```
+}
 
+#logoutButton {
+background: rgba(255, 255, 255, 0.15);
 }
 
 main {
-
-```
 width: 100%;
-
 max-width: 1100px;
-
 margin: 0 auto;
-
 padding: 25px 20px 50px;
-```
-
 }
 
 .welcome {
-
-```
-background: white;
-
+background: #fff;
 padding: 20px;
-
 border-radius: 12px;
-
 margin-bottom: 20px;
-```
-
+box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
 }
 
 .welcome h2 {
-
-```
 margin-top: 0;
-```
-
 }
 
 .dashboard {
-
-```
 display: grid;
-
-grid-template-columns:
-    repeat(3, 1fr);
-
+grid-template-columns: repeat(3, 1fr);
 gap: 15px;
-
 margin-bottom: 30px;
-```
-
 }
 
 .stat-card {
-
-```
-background: white;
-
+background: #fff;
 border-radius: 12px;
-
 padding: 20px;
-
 display: flex;
-
 align-items: center;
-
 gap: 15px;
-
-box-shadow:
-    0 3px 12px rgba(0,0,0,0.06);
-```
-
+box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
 }
 
 .stat-icon {
-
-```
 font-size: 32px;
-```
-
 }
 
 .stat-card p {
-
-```
 margin: 0;
-
 font-size: 13px;
-
 color: #777;
-```
-
 }
 
 .stat-card strong {
-
-```
 font-size: 30px;
-```
-
 }
 
 .stat-card span {
-
-```
 font-size: 14px;
-```
-
 }
 
 .data-section {
-
-```
-background: white;
-
+background: #fff;
 border-radius: 12px;
-
 padding: 20px;
-
 margin-bottom: 25px;
-
-box-shadow:
-    0 3px 12px rgba(0,0,0,0.06);
-```
-
+box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
 }
 
 .data-section h2 {
-
-```
 margin-top: 0;
-
 font-size: 20px;
-```
-
 }
 
 .table-wrapper {
-
-```
 width: 100%;
-
 overflow-x: auto;
-```
-
 }
 
 table {
-
-```
 width: 100%;
-
 border-collapse: collapse;
-
 min-width: 600px;
-```
-
 }
 
 th,
 td {
-
-```
 padding: 12px;
-
 border-bottom: 1px solid #e5e5e5;
-
 text-align: left;
-
 font-size: 14px;
-```
-
 }
 
 th {
-
-```
 background: #f5f7f8;
-```
+}
 
+tbody tr {
+background: #fafafa;
 }
 
 .back-area {
-
-```
 text-align: center;
-
 margin-top: 35px;
-```
-
 }
 
 .back-area a {
-
-```
 display: inline-block;
-
 background: #555;
-
-color: white;
-
+color: #fff;
 text-decoration: none;
-
 padding: 12px 25px;
-
 border-radius: 8px;
-```
+}
 
+.back-area a {
+opacity: 0.9;
 }
 
 @media (max-width: 700px) {
 
-```
 .admin-header {
-
     padding: 15px;
-
     align-items: flex-start;
-
 }
-
 
 .admin-header h1 {
-
     font-size: 18px;
-
 }
-
 
 .admin-header p {
-
     font-size: 12px;
-
 }
-
 
 #logoutButton {
-
     font-size: 12px;
-
     padding: 7px 10px;
-
 }
-
 
 main {
-
-    padding:
-        20px 12px 40px;
-
+    padding: 20px 12px 40px;
 }
-
 
 .dashboard {
-
     grid-template-columns: 1fr;
-
 }
-
 
 .data-section {
-
     padding: 15px;
-
 }
-```
+
+.login-box {
+    padding: 30px 20px;
+}
 
 }
