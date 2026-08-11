@@ -27,10 +27,6 @@ color: #333;
 display: none !important;
 }
 
-/* ========================
-ログイン
-======================== */
-
 #loginArea {
 
 ```
@@ -60,7 +56,8 @@ padding: 35px 25px;
 
 border-radius: 15px;
 
-box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+box-shadow:
+    0 5px 20px rgba(0,0,0,0.08);
 
 text-align: center;
 ```
@@ -143,14 +140,6 @@ cursor: pointer;
 
 }
 
-#loginButton:hover {
-
-```
-opacity: 0.9;
-```
-
-}
-
 #loginError {
 
 ```
@@ -160,10 +149,6 @@ min-height: 20px;
 ```
 
 }
-
-/* ========================
-ヘッダー
-======================== */
 
 .admin-header {
 
@@ -223,10 +208,6 @@ cursor: pointer;
 
 }
 
-/* ========================
-メイン
-======================== */
-
 main {
 
 ```
@@ -241,15 +222,21 @@ padding: 25px 20px 50px;
 
 }
 
-section {
+.welcome {
 
 ```
-margin-bottom: 30px;
+background: white;
+
+padding: 20px;
+
+border-radius: 12px;
+
+margin-bottom: 20px;
 ```
 
 }
 
-section h2 {
+.welcome h2 {
 
 ```
 margin-top: 0;
@@ -257,11 +244,7 @@ margin-top: 0;
 
 }
 
-/* ========================
-統計
-======================== */
-
-.stats {
+.dashboard {
 
 ```
 display: grid;
@@ -270,6 +253,8 @@ grid-template-columns:
     repeat(3, 1fr);
 
 gap: 15px;
+
+margin-bottom: 30px;
 ```
 
 }
@@ -331,10 +316,6 @@ font-size: 14px;
 
 }
 
-/* ========================
-データセクション
-======================== */
-
 .data-section {
 
 ```
@@ -344,57 +325,23 @@ border-radius: 12px;
 
 padding: 20px;
 
+margin-bottom: 25px;
+
 box-shadow:
     0 3px 12px rgba(0,0,0,0.06);
 ```
 
 }
 
-.section-title {
+.data-section h2 {
 
 ```
-display: flex;
-
-justify-content: space-between;
-
-align-items: center;
-
-margin-bottom: 15px;
-```
-
-}
-
-.section-title h2 {
-
-```
-margin: 0;
+margin-top: 0;
 
 font-size: 20px;
 ```
 
 }
-
-.reload-button {
-
-```
-border: none;
-
-background: #1d6f42;
-
-color: white;
-
-padding: 8px 14px;
-
-border-radius: 7px;
-
-cursor: pointer;
-```
-
-}
-
-/* ========================
-テーブル
-======================== */
 
 .table-wrapper {
 
@@ -437,23 +384,9 @@ th {
 
 ```
 background: #f5f7f8;
-
-font-weight: bold;
 ```
 
 }
-
-tbody tr:hover {
-
-```
-background: #fafafa;
-```
-
-}
-
-/* ========================
-戻る
-======================== */
 
 .back-area {
 
@@ -482,10 +415,6 @@ border-radius: 8px;
 ```
 
 }
-
-/* ========================
-スマホ
-======================== */
 
 @media (max-width: 700px) {
 
@@ -530,16 +459,9 @@ main {
 }
 
 
-.stats {
+.dashboard {
 
     grid-template-columns: 1fr;
-
-}
-
-
-.stat-card {
-
-    padding: 16px;
 
 }
 
@@ -547,13 +469,6 @@ main {
 .data-section {
 
     padding: 15px;
-
-}
-
-
-.section-title h2 {
-
-    font-size: 18px;
 
 }
 ```
