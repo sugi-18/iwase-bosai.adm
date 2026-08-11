@@ -5,29 +5,51 @@ Supabase Auth対応
 ================================================== */
 
 /* ==================================================
-初期化
+Supabase 管理者用クライアント
 ================================================== */
 
-document.addEventListener("DOMContentLoaded", async () => {
+const ADMIN_SUPABASE_URL =
+"https://zumbqukrojdpgfpfekjr.supabase.co";
 
-console.log("Admin page initialized.");
+const ADMIN_SUPABASE_PUBLISHABLE_KEY =
+"sb_publishable_8YXsMHOxLr7MOTEYShUM3w_LsZvR3Qn";
 
-setupNavigation();
-setupParticipantModal();
-setupTrainingModal();
-
-await checkAuth();
-
-});
+let adminSupabaseClient;
 
 /* ==================================================
-Supabase確認
+Supabase初期化
 ================================================== */
 
-if (typeof supabaseClient === "undefined") {
+try {
+
+if (
+    typeof window.supabase ===
+    "undefined"
+) {
+
+    throw new Error(
+        "Supabase JavaScriptライブラリが読み込まれていません。"
+    );
+
+}
+
+
+adminSupabaseClient =
+    window.supabase.createClient(
+        ADMIN_SUPABASE_URL,
+        ADMIN_SUPABASE_PUBLISHABLE_KEY
+    );
+
+
+console.log(
+    "Admin Supabase client initialized."
+);
+
+} catch (error) {
 
 console.error(
-    "supabaseClient が見つかりません。"
+    "Supabase initialization error:",
+    error
 );
 
 }
@@ -52,6 +74,61 @@ const logoutButton =
 document.getElementById("logoutButton");
 
 /* ==================================================
+初期化
+================================================== */
+
+document.addEventListener(
+"DOMContentLoaded",
+async () => {
+
+    console.log(
+        "Admin page initialized."
+    );
+
+
+    setupNavigation();
+
+    setupParticipantModal();
+
+    setupTrainingModal();
+
+
+    await checkAuth();
+
+}
+
+);
+
+/* ==================================================
+Supabaseクライアント確認
+================================================== */
+
+function checkSupabaseClient() {
+
+if (
+    !adminSupabaseClient
+) {
+
+    throw new Error(
+        "管理者用Supabaseクライアントが初期化されていません。"
+    );
+
+}
+
+
+if (
+    !adminSupabaseClient.auth
+) {
+
+    throw new Error(
+        "Supabase Authが利用できません。"
+    );
+
+}
+
+}
+
+/* ==================================================
 認証状態確認
 ================================================== */
 
@@ -59,23 +136,16 @@ async function checkAuth() {
 
 try {
 
-    if (
-        typeof supabaseClient ===
-        "undefined"
-    ) {
-
-        throw new Error(
-            "Supabaseクライアントが読み込まれていません。"
-        );
-
-    }
+    checkSupabaseClient();
 
 
     const {
         data,
         error
     } =
-        await supabaseClient.auth.getSession();
+        await adminSupabaseClient
+            .auth
+            .getSession();
 
 
     if (error) {
@@ -94,9 +164,12 @@ try {
             "管理者ログイン済み"
         );
 
+
         showAdminScreen();
 
+
         await loadAllData();
+
 
     } else {
 
@@ -104,9 +177,11 @@ try {
             "管理者ログインが必要です。"
         );
 
+
         showLoginScreen();
 
     }
+
 
 } catch (error) {
 
@@ -114,6 +189,7 @@ try {
         "Authentication error:",
         error
     );
+
 
     showLoginScreen();
 
@@ -129,9 +205,10 @@ if (loginForm) {
 
 loginForm.addEventListener(
     "submit",
-    async (event) => {
+    async event => {
 
         event.preventDefault();
+
 
         loginError.textContent = "";
 
@@ -149,7 +226,10 @@ loginForm.addEventListener(
                 .value;
 
 
-        if (!email || !password) {
+        if (
+            !email ||
+            !password
+        ) {
 
             loginError.textContent =
                 "メールアドレスとパスワードを入力してください。";
@@ -161,17 +241,27 @@ loginForm.addEventListener(
 
         try {
 
+            checkSupabaseClient();
+
+
+            console.log(
+                "管理者ログイン開始"
+            );
+
+
             const {
                 data,
                 error
             } =
-                await supabaseClient
+                await adminSupabaseClient
                     .auth
                     .signInWithPassword({
 
-                        email: email,
+                        email:
+                            email,
 
-                        password: password
+                        password:
+                            password
 
                     });
 
@@ -202,6 +292,7 @@ loginForm.addEventListener(
 
             showAdminScreen();
 
+
             await loadAllData();
 
 
@@ -214,7 +305,8 @@ loginForm.addEventListener(
 
 
             loginError.textContent =
-                "ログインできませんでした。メールアドレスまたはパスワードを確認してください。";
+                "ログインできませんでした。\n" +
+                error.message;
 
         }
 
@@ -248,10 +340,13 @@ logoutButton.addEventListener(
 
         try {
 
+            checkSupabaseClient();
+
+
             const {
                 error
             } =
-                await supabaseClient
+                await adminSupabaseClient
                     .auth
                     .signOut();
 
@@ -287,44 +382,48 @@ logoutButton.addEventListener(
 }
 
 /* ==================================================
-Supabase Auth状態監視
+Auth状態監視
 ================================================== */
 
 if (
-typeof supabaseClient !==
-"undefined"
+adminSupabaseClient &&
+adminSupabaseClient.auth
 ) {
 
-supabaseClient.auth.onAuthStateChange(
-    (event, session) => {
+adminSupabaseClient
+    .auth
+    .onAuthStateChange(
+        (event, session) => {
 
-        console.log(
-            "Auth state:",
-            event
-        );
+            console.log(
+                "Auth state:",
+                event
+            );
 
 
-        if (
-            session &&
-            event !== "SIGNED_OUT"
-        ) {
+            if (
+                session &&
+                event !==
+                "SIGNED_OUT"
+            ) {
 
-            showAdminScreen();
+                showAdminScreen();
+
+            }
+
+
+            if (
+                !session ||
+                event ===
+                "SIGNED_OUT"
+            ) {
+
+                showLoginScreen();
+
+            }
 
         }
-
-
-        if (
-            !session ||
-            event === "SIGNED_OUT"
-        ) {
-
-            showLoginScreen();
-
-        }
-
-    }
-);
+    );
 
 }
 
@@ -489,21 +588,21 @@ try {
     ] =
         await Promise.all([
 
-            supabaseClient
+            adminSupabaseClient
                 .from("participants")
                 .select("*", {
                     count: "exact"
                 }),
 
 
-            supabaseClient
+            adminSupabaseClient
                 .from("trainings")
                 .select("*", {
                     count: "exact"
                 }),
 
 
-            supabaseClient
+            adminSupabaseClient
                 .from("participations")
                 .select("*", {
                     count: "exact"
@@ -594,7 +693,7 @@ const {
     data,
     error
 } =
-    await supabaseClient
+    await adminSupabaseClient
         .from("participations")
         .select(
             "id, registered_at, participant_id, training_id"
@@ -695,7 +794,7 @@ const {
     data,
     error
 } =
-    await supabaseClient
+    await adminSupabaseClient
         .from("participants")
         .select("*")
         .order(
@@ -964,21 +1063,42 @@ if (!name) {
 }
 
 
-const {
-    error
-} =
-    await supabaseClient
-        .from("participants")
-        .update({
-            name: name
-        })
-        .eq(
-            "id",
-            id
-        );
+try {
+
+    const {
+        error
+    } =
+        await adminSupabaseClient
+            .from("participants")
+            .update({
+                name: name
+            })
+            .eq(
+                "id",
+                id
+            );
 
 
-if (error) {
+    if (error) {
+
+        throw error;
+
+    }
+
+
+    closeParticipantModal();
+
+    await loadParticipants();
+
+    await loadDashboard();
+
+
+    alert(
+        "参加者情報を更新しました。"
+    );
+
+
+} catch (error) {
 
     console.error(
         "Participant update error:",
@@ -991,21 +1111,7 @@ if (error) {
         error.message
     );
 
-    return;
-
 }
-
-
-closeParticipantModal();
-
-await loadParticipants();
-
-await loadDashboard();
-
-
-alert(
-    "参加者情報を更新しました。"
-);
 
 }
 
@@ -1035,7 +1141,7 @@ try {
         data: participant,
         error: participantError
     } =
-        await supabaseClient
+        await adminSupabaseClient
             .from("participants")
             .select(
                 "participant_id"
@@ -1062,7 +1168,7 @@ try {
         error:
             participationError
     } =
-        await supabaseClient
+        await adminSupabaseClient
             .from("participations")
             .delete()
             .eq(
@@ -1081,7 +1187,7 @@ try {
     const {
         error
     } =
-        await supabaseClient
+        await adminSupabaseClient
             .from("participants")
             .delete()
             .eq(
@@ -1153,7 +1259,7 @@ const {
     data,
     error
 } =
-    await supabaseClient
+    await adminSupabaseClient
         .from("trainings")
         .select("*")
         .order(
@@ -1476,7 +1582,7 @@ try {
     if (id) {
 
         result =
-            await supabaseClient
+            await adminSupabaseClient
                 .from("trainings")
                 .update({
 
@@ -1495,7 +1601,7 @@ try {
     } else {
 
         result =
-            await supabaseClient
+            await adminSupabaseClient
                 .from("trainings")
                 .insert({
 
@@ -1574,7 +1680,7 @@ try {
         data: training,
         error: trainingError
     } =
-        await supabaseClient
+        await adminSupabaseClient
             .from("trainings")
             .select(
                 "training_id"
@@ -1601,7 +1707,7 @@ try {
         error:
             participationError
     } =
-        await supabaseClient
+        await adminSupabaseClient
             .from("participations")
             .delete()
             .eq(
@@ -1620,7 +1726,7 @@ try {
     const {
         error
     } =
-        await supabaseClient
+        await adminSupabaseClient
             .from("trainings")
             .delete()
             .eq(
@@ -1692,7 +1798,7 @@ const {
     data,
     error
 } =
-    await supabaseClient
+    await adminSupabaseClient
         .from("participations")
         .select(
             "id, registered_at, participant_id, training_id"
@@ -1838,7 +1944,7 @@ try {
     const {
         error
     } =
-        await supabaseClient
+        await adminSupabaseClient
             .from("participations")
             .delete()
             .eq(
