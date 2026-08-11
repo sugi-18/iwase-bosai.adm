@@ -13,7 +13,7 @@ content="width=device-width, initial-scale=1.0"
 
 
 
-<title> 管理者画面 | いわぽん防災 </title>
+<title>管理者画面 | いわぽん防災</title>
 
 <link rel="stylesheet" href="admin.css" >
 
@@ -21,7 +21,7 @@ content="width=device-width, initial-scale=1.0"
 
 <body>
 
-<!-- ================================================== 管理者ログイン画面 ================================================== -->
+<!-- ================================================== ログイン画面 ================================================== -->
 
 <div id="loginScreen" class="screen" >
 
@@ -30,7 +30,6 @@ content="width=device-width, initial-scale=1.0"
     <h1>
         管理者ログイン
     </h1>
-
 
     <p class="login-description">
         いわぽん防災<br>
@@ -44,7 +43,6 @@ content="width=device-width, initial-scale=1.0"
             メールアドレス
         </label>
 
-
         <input
             type="email"
             id="email"
@@ -57,7 +55,6 @@ content="width=device-width, initial-scale=1.0"
         <label for="password">
             パスワード
         </label>
-
 
         <input
             type="password"
@@ -90,13 +87,11 @@ content="width=device-width, initial-scale=1.0"
 
 
 
-<!-- ================================================== 管理者画面 ================================================== -->
+<!-- ================================================== 管理画面 ================================================== -->
 
 <div id="adminScreen" class="screen hidden" >
 
-<!-- ==================================================
-     ヘッダー
-================================================== -->
+<!-- ヘッダー -->
 
 <header class="admin-header">
 
@@ -124,10 +119,6 @@ content="width=device-width, initial-scale=1.0"
 
 
 
-<!-- ==================================================
-     メイン
-================================================== -->
-
 <main class="admin-container">
 
 
@@ -148,20 +139,15 @@ content="width=device-width, initial-scale=1.0"
         <div class="stats-grid">
 
 
-            <!-- 登録参加者 -->
-
             <div class="stat-card">
 
                 <span class="stat-label">
                     登録参加者
                 </span>
 
-
                 <div>
 
-                    <strong
-                        id="participantCount"
-                    >
+                    <strong id="participantCount">
                         0
                     </strong>
 
@@ -175,20 +161,15 @@ content="width=device-width, initial-scale=1.0"
 
 
 
-            <!-- 訓練 -->
-
             <div class="stat-card">
 
                 <span class="stat-label">
                     訓練・講座
                 </span>
 
-
                 <div>
 
-                    <strong
-                        id="trainingCount"
-                    >
+                    <strong id="trainingCount">
                         0
                     </strong>
 
@@ -201,8 +182,6 @@ content="width=device-width, initial-scale=1.0"
             </div>
 
 
-
-            <!-- 参加記録 -->
 
             <div class="stat-card">
 
@@ -210,12 +189,9 @@ content="width=device-width, initial-scale=1.0"
                     参加記録
                 </span>
 
-
                 <div>
 
-                    <strong
-                        id="participationCount"
-                    >
+                    <strong id="participationCount">
                         0
                     </strong>
 
@@ -227,11 +203,9 @@ content="width=device-width, initial-scale=1.0"
 
             </div>
 
+
         </div>
 
-
-
-        <!-- 最近の参加記録 -->
 
         <div class="dashboard-card">
 
@@ -239,10 +213,7 @@ content="width=device-width, initial-scale=1.0"
                 最近の参加記録
             </h3>
 
-
-            <div
-                id="recentParticipations"
-            >
+            <div id="recentParticipations">
                 読み込み中...
             </div>
 
@@ -253,7 +224,7 @@ content="width=device-width, initial-scale=1.0"
 
 
     <!-- ==================================================
-         管理メニュー
+         ナビゲーション
     ================================================== -->
 
     <nav class="admin-nav">
@@ -325,11 +296,11 @@ content="width=device-width, initial-scale=1.0"
                     <tr>
 
                         <th>
-                            参加者ID
+                            名前
                         </th>
 
                         <th>
-                            名前
+                            参加回数
                         </th>
 
                         <th>
@@ -345,9 +316,7 @@ content="width=device-width, initial-scale=1.0"
                 </thead>
 
 
-                <tbody
-                    id="participantsTable"
-                >
+                <tbody id="participantsTable">
 
                     <tr>
 
@@ -419,6 +388,10 @@ content="width=device-width, initial-scale=1.0"
                         </th>
 
                         <th>
+                            参加人数
+                        </th>
+
+                        <th>
                             登録日時
                         </th>
 
@@ -431,13 +404,11 @@ content="width=device-width, initial-scale=1.0"
                 </thead>
 
 
-                <tbody
-                    id="trainingsTable"
-                >
+                <tbody id="trainingsTable">
 
                     <tr>
 
-                        <td colspan="4">
+                        <td colspan="5">
                             読み込み中...
                         </td>
 
@@ -471,7 +442,7 @@ content="width=device-width, initial-scale=1.0"
                 </h2>
 
                 <p>
-                    訓練・講座への参加記録を管理します。
+                    すべての参加記録を確認・削除できます。
                 </p>
 
             </div>
@@ -488,11 +459,11 @@ content="width=device-width, initial-scale=1.0"
                     <tr>
 
                         <th>
-                            参加者ID
+                            参加者
                         </th>
 
                         <th>
-                            訓練ID
+                            訓練・講座
                         </th>
 
                         <th>
@@ -508,9 +479,7 @@ content="width=device-width, initial-scale=1.0"
                 </thead>
 
 
-                <tbody
-                    id="participationsTable"
-                >
+                <tbody id="participationsTable">
 
                     <tr>
 
@@ -553,10 +522,9 @@ content="width=device-width, initial-scale=1.0"
     >
 
 
-    <label for="editParticipantId">
+    <label>
         参加者ID
     </label>
-
 
     <input
         type="text"
@@ -569,7 +537,6 @@ content="width=device-width, initial-scale=1.0"
         名前
     </label>
 
-
     <input
         type="text"
         id="editParticipantName"
@@ -578,7 +545,6 @@ content="width=device-width, initial-scale=1.0"
 
 
     <div class="modal-buttons">
-
 
         <button
             type="button"
@@ -597,6 +563,43 @@ content="width=device-width, initial-scale=1.0"
             保存
         </button>
 
+    </div>
+
+</div>
+
+</div>
+
+
+
+
+<!-- ================================================== 参加者履歴モーダル ================================================== -->
+
+<div id="participantHistoryModal" class="modal hidden" >
+
+<div class="modal-content large-modal">
+
+    <h2 id="participantHistoryTitle">
+        参加履歴
+    </h2>
+
+
+    <div
+        id="participantHistoryContent"
+        class="history-content"
+    >
+        読み込み中...
+    </div>
+
+
+    <div class="modal-buttons">
+
+        <button
+            type="button"
+            id="closeParticipantHistoryButton"
+            class="secondary-button"
+        >
+            閉じる
+        </button>
 
     </div>
 
@@ -628,7 +631,6 @@ content="width=device-width, initial-scale=1.0"
         訓練ID
     </label>
 
-
     <input
         type="text"
         id="editTrainingId"
@@ -640,7 +642,6 @@ content="width=device-width, initial-scale=1.0"
         タイトル
     </label>
 
-
     <input
         type="text"
         id="editTrainingTitle"
@@ -649,7 +650,6 @@ content="width=device-width, initial-scale=1.0"
 
 
     <div class="modal-buttons">
-
 
         <button
             type="button"
@@ -668,6 +668,43 @@ content="width=device-width, initial-scale=1.0"
             保存
         </button>
 
+    </div>
+
+</div>
+
+</div>
+
+
+
+
+<!-- ================================================== 訓練参加者モーダル ================================================== -->
+
+<div id="trainingParticipantsModal" class="modal hidden" >
+
+<div class="modal-content large-modal">
+
+    <h2 id="trainingParticipantsTitle">
+        参加者一覧
+    </h2>
+
+
+    <div
+        id="trainingParticipantsContent"
+        class="history-content"
+    >
+        読み込み中...
+    </div>
+
+
+    <div class="modal-buttons">
+
+        <button
+            type="button"
+            id="closeTrainingParticipantsButton"
+            class="secondary-button"
+        >
+            閉じる
+        </button>
 
     </div>
 
@@ -678,7 +715,7 @@ content="width=device-width, initial-scale=1.0"
 
 
 
-<!-- ================================================== JavaScript 読み込み順が重要です。 ① Supabase本体 ② 現在使用しているsupabase.js ③ 管理画面のadmin.js ================================================== -->
+<!-- ================================================== Supabase ================================================== -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" ></script>
 
