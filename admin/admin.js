@@ -5,7 +5,7 @@ Supabase Auth対応
 ================================================== */
 
 /* ==================================================
-Supabase 管理者用クライアント
+Supabase設定
 ================================================== */
 
 const ADMIN_SUPABASE_URL =
@@ -14,7 +14,7 @@ const ADMIN_SUPABASE_URL =
 const ADMIN_SUPABASE_PUBLISHABLE_KEY =
 "sb_publishable_8YXsMHOxLr7MOTEYShUM3w_LsZvR3Qn";
 
-let adminSupabaseClient;
+let adminSupabaseClient = null;
 
 /* ==================================================
 Supabase初期化
@@ -59,19 +59,29 @@ DOM
 ================================================== */
 
 const loginScreen =
-document.getElementById("loginScreen");
+document.getElementById(
+"loginScreen"
+);
 
 const adminScreen =
-document.getElementById("adminScreen");
+document.getElementById(
+"adminScreen"
+);
 
 const loginForm =
-document.getElementById("loginForm");
+document.getElementById(
+"loginForm"
+);
 
 const loginError =
-document.getElementById("loginError");
+document.getElementById(
+"loginError"
+);
 
 const logoutButton =
-document.getElementById("logoutButton");
+document.getElementById(
+"logoutButton"
+);
 
 /* ==================================================
 初期化
@@ -90,7 +100,11 @@ async () => {
 
     setupParticipantModal();
 
+    setupParticipantHistoryModal();
+
     setupTrainingModal();
+
+    setupTrainingParticipantsModal();
 
 
     await checkAuth();
@@ -100,7 +114,7 @@ async () => {
 );
 
 /* ==================================================
-Supabaseクライアント確認
+Supabase確認
 ================================================== */
 
 function checkSupabaseClient() {
@@ -110,7 +124,7 @@ if (
 ) {
 
     throw new Error(
-        "管理者用Supabaseクライアントが初期化されていません。"
+        "Supabaseクライアントが初期化されていません。"
     );
 
 }
@@ -129,7 +143,7 @@ if (
 }
 
 /* ==================================================
-認証状態確認
+認証確認
 ================================================== */
 
 async function checkAuth() {
@@ -173,11 +187,6 @@ try {
 
     } else {
 
-        console.log(
-            "管理者ログインが必要です。"
-        );
-
-
         showLoginScreen();
 
     }
@@ -210,19 +219,24 @@ loginForm.addEventListener(
         event.preventDefault();
 
 
-        loginError.textContent = "";
+        loginError.textContent =
+            "";
 
 
         const email =
             document
-                .getElementById("email")
+                .getElementById(
+                    "email"
+                )
                 .value
                 .trim();
 
 
         const password =
             document
-                .getElementById("password")
+                .getElementById(
+                    "password"
+                )
                 .value;
 
 
@@ -242,11 +256,6 @@ loginForm.addEventListener(
         try {
 
             checkSupabaseClient();
-
-
-            console.log(
-                "管理者ログイン開始"
-            );
 
 
             const {
@@ -285,11 +294,6 @@ loginForm.addEventListener(
             }
 
 
-            console.log(
-                "管理者ログイン成功"
-            );
-
-
             showAdminScreen();
 
 
@@ -325,13 +329,11 @@ logoutButton.addEventListener(
     "click",
     async () => {
 
-        const confirmed =
-            confirm(
+        if (
+            !confirm(
                 "ログアウトしますか？"
-            );
-
-
-        if (!confirmed) {
+            )
+        ) {
 
             return;
 
@@ -554,17 +556,13 @@ console.log(
 );
 
 
-await Promise.all([
+await loadParticipants();
 
-    loadDashboard(),
+await loadTrainings();
 
-    loadParticipants(),
+await loadParticipations();
 
-    loadTrainings(),
-
-    loadParticipations()
-
-]);
+await loadDashboard();
 
 
 console.log(
@@ -591,21 +589,24 @@ try {
             adminSupabaseClient
                 .from("participants")
                 .select("*", {
-                    count: "exact"
+                    count: "exact",
+                    head: true
                 }),
 
 
             adminSupabaseClient
                 .from("trainings")
                 .select("*", {
-                    count: "exact"
+                    count: "exact",
+                    head: true
                 }),
 
 
             adminSupabaseClient
                 .from("participations")
                 .select("*", {
-                    count: "exact"
+                    count: "exact",
+                    head: true
                 })
 
         ]);
@@ -724,18 +725,66 @@ if (
     data.length === 0
 ) {
 
-    container.textContent =
-        "まだ参加記録がありません。";
+    container.innerHTML =
+        `<div class="empty-message">
+            まだ参加記録がありません。
+        </div>`;
 
     return;
 
 }
 
 
+const [
+    participantsResult,
+    trainingsResult
+] =
+    await Promise.all([
+
+        adminSupabaseClient
+            .from("participants")
+            .select(
+                "participant_id, name"
+            ),
+
+
+        adminSupabaseClient
+            .from("trainings")
+            .select(
+                "training_id, title"
+            )
+
+    ]);
+
+
+const participants =
+    participantsResult.data || [];
+
+
+const trainings =
+    trainingsResult.data || [];
+
+
 container.innerHTML = "";
 
 
 data.forEach(item => {
+
+    const participant =
+        participants.find(
+            p =>
+                p.participant_id ===
+                item.participant_id
+        );
+
+
+    const training =
+        trainings.find(
+            t =>
+                t.training_id ===
+                item.training_id
+        );
+
 
     const div =
         document.createElement(
@@ -748,13 +797,11 @@ data.forEach(item => {
 
 
     div.textContent =
+        `${participant?.name || "不明な参加者"}　` +
+        `${training?.title || item.training_id}　` +
         `${formatDate(
             item.registered_at
-        )}　参加者ID: ${
-            item.participant_id
-        }　訓練ID: ${
-            item.training_id
-        }`;
+        )}`;
 
 
     container.appendChild(div);
@@ -764,7 +811,7 @@ data.forEach(item => {
 }
 
 /* ==================================================
-参加者一覧
+参加者管理
 ================================================== */
 
 async function loadParticipants() {
@@ -825,6 +872,31 @@ if (error) {
 }
 
 
+const {
+    data: participations,
+    error:
+        participationError
+} =
+    await adminSupabaseClient
+        .from("participations")
+        .select(
+            "participant_id"
+        );
+
+
+if (participationError) {
+
+    console.error(
+        participationError
+    );
+
+}
+
+
+const participationList =
+    participations || [];
+
+
 tbody.innerHTML = "";
 
 
@@ -847,6 +919,14 @@ if (
 
 data.forEach(participant => {
 
+    const count =
+        participationList.filter(
+            item =>
+                item.participant_id ===
+                participant.participant_id
+        ).length;
+
+
     const tr =
         document.createElement(
             "tr"
@@ -856,15 +936,18 @@ data.forEach(participant => {
     tr.innerHTML = `
 
         <td>
-            ${escapeHtml(
-                participant.participant_id
-            )}
+            <strong>
+                ${escapeHtml(
+                    participant.name ||
+                    "名前未登録"
+                )}
+            </strong>
         </td>
 
         <td>
-            ${escapeHtml(
-                participant.name
-            )}
+            <span class="participant-count">
+                ${count}回
+            </span>
         </td>
 
         <td>
@@ -874,6 +957,14 @@ data.forEach(participant => {
         </td>
 
         <td>
+
+            <button
+                class="action-button view-button"
+                data-action="participant-history"
+                data-id="${participant.id}"
+            >
+                参加履歴
+            </button>
 
             <button
                 class="action-button edit-button"
@@ -899,6 +990,38 @@ data.forEach(participant => {
     tbody.appendChild(tr);
 
 });
+
+
+tbody
+    .querySelectorAll(
+        '[data-action="participant-history"]'
+    )
+    .forEach(button => {
+
+        button.addEventListener(
+            "click",
+            () => {
+
+                const participant =
+                    data.find(
+                        item =>
+                            item.id ===
+                            button.dataset.id
+                    );
+
+
+                if (participant) {
+
+                    openParticipantHistory(
+                        participant
+                    );
+
+                }
+
+            }
+        );
+
+    });
 
 
 tbody
@@ -955,41 +1078,29 @@ tbody
 }
 
 /* ==================================================
-参加者モーダル
+参加者編集
 ================================================== */
 
 function setupParticipantModal() {
 
-const cancelButton =
-    document.getElementById(
+document
+    .getElementById(
         "cancelParticipantButton"
-    );
-
-
-const saveButton =
-    document.getElementById(
-        "saveParticipantButton"
-    );
-
-
-if (cancelButton) {
-
-    cancelButton.addEventListener(
+    )
+    ?.addEventListener(
         "click",
         closeParticipantModal
     );
 
-}
 
-
-if (saveButton) {
-
-    saveButton.addEventListener(
+document
+    .getElementById(
+        "saveParticipantButton"
+    )
+    ?.addEventListener(
         "click",
         saveParticipant
     );
-
-}
 
 }
 
@@ -1034,7 +1145,7 @@ document.getElementById(
 }
 
 /* ==================================================
-参加者保存
+参加者編集保存
 ================================================== */
 
 async function saveParticipant() {
@@ -1088,9 +1199,7 @@ try {
 
     closeParticipantModal();
 
-    await loadParticipants();
-
-    await loadDashboard();
+    await loadAllData();
 
 
     alert(
@@ -1121,14 +1230,12 @@ try {
 
 async function deleteParticipant(id) {
 
-const confirmed =
-    confirm(
+if (
+    !confirm(
         "この参加者を削除しますか？\n\n" +
         "この参加者の参加履歴も削除されます。"
-    );
-
-
-if (!confirmed) {
+    )
+) {
 
     return;
 
@@ -1139,7 +1246,8 @@ try {
 
     const {
         data: participant,
-        error: participantError
+        error:
+            participantError
     } =
         await adminSupabaseClient
             .from("participants")
@@ -1229,6 +1337,242 @@ try {
 }
 
 /* ==================================================
+参加者の参加履歴
+================================================== */
+
+function setupParticipantHistoryModal() {
+
+document
+    .getElementById(
+        "closeParticipantHistoryButton"
+    )
+    ?.addEventListener(
+        "click",
+        closeParticipantHistory
+    );
+
+}
+
+async function openParticipantHistory(
+participant
+) {
+
+const modal =
+    document.getElementById(
+        "participantHistoryModal"
+    );
+
+
+const title =
+    document.getElementById(
+        "participantHistoryTitle"
+    );
+
+
+const content =
+    document.getElementById(
+        "participantHistoryContent"
+    );
+
+
+title.textContent =
+    `${participant.name || "名前未登録"}さんの参加履歴`;
+
+
+content.innerHTML =
+    "読み込み中...";
+
+
+modal.classList.remove(
+    "hidden"
+);
+
+
+try {
+
+    const {
+        data,
+        error
+    } =
+        await adminSupabaseClient
+            .from("participations")
+            .select(
+                "id, registered_at, training_id"
+            )
+            .eq(
+                "participant_id",
+                participant.participant_id
+            )
+            .order(
+                "registered_at",
+                {
+                    ascending: false
+                }
+            );
+
+
+    if (error) {
+
+        throw error;
+
+    }
+
+
+    if (
+        !data ||
+        data.length === 0
+    ) {
+
+        content.innerHTML =
+            `<div class="empty-message">
+                参加履歴はありません。
+            </div>`;
+
+        return;
+
+    }
+
+
+    const {
+        data: trainings,
+        error:
+            trainingError
+    } =
+        await adminSupabaseClient
+            .from("trainings")
+            .select(
+                "training_id, title"
+            );
+
+
+    if (trainingError) {
+
+        throw trainingError;
+
+    }
+
+
+    content.innerHTML = `
+
+        <div class="history-summary">
+            参加回数：${data.length}回
+        </div>
+
+        <div class="history-list"></div>
+
+    `;
+
+
+    const list =
+        content.querySelector(
+            ".history-list"
+        );
+
+
+    data.forEach(item => {
+
+        const training =
+            trainings.find(
+                t =>
+                    t.training_id ===
+                    item.training_id
+            );
+
+
+        const div =
+            document.createElement(
+                "div"
+            );
+
+
+        div.className =
+            "history-item";
+
+
+        div.innerHTML = `
+
+            <div class="history-main">
+
+                <div class="history-title">
+                    ${escapeHtml(
+                        training?.title ||
+                        item.training_id
+                    )}
+                </div>
+
+                <div class="history-date">
+                    ${formatDate(
+                        item.registered_at
+                    )}
+                </div>
+
+            </div>
+
+            <button
+                type="button"
+                class="action-button delete-button"
+                data-history-id="${item.id}"
+            >
+                削除
+            </button>
+
+        `;
+
+
+        list.appendChild(div);
+
+
+        div
+            .querySelector(
+                "[data-history-id]"
+            )
+            .addEventListener(
+                "click",
+                async () => {
+
+                    await deleteParticipation(
+                        item.id
+                    );
+
+
+                    openParticipantHistory(
+                        participant
+                    );
+
+                }
+            );
+
+    });
+
+
+} catch (error) {
+
+    console.error(
+        "Participant history error:",
+        error
+    );
+
+
+    content.innerHTML =
+        `<div class="empty-message">
+            読み込みに失敗しました。
+        </div>`;
+
+}
+
+}
+
+function closeParticipantHistory() {
+
+document.getElementById(
+    "participantHistoryModal"
+).classList.add(
+    "hidden"
+);
+
+}
+
+/* ==================================================
 訓練一覧
 ================================================== */
 
@@ -1249,7 +1593,7 @@ if (!tbody) {
 
 tbody.innerHTML =
     `<tr>
-        <td colspan="4">
+        <td colspan="5">
             読み込み中...
         </td>
     </tr>`;
@@ -1280,7 +1624,7 @@ if (error) {
 
     tbody.innerHTML =
         `<tr>
-            <td colspan="4">
+            <td colspan="5">
                 読み込みに失敗しました。
             </td>
         </tr>`;
@@ -1288,6 +1632,31 @@ if (error) {
     return;
 
 }
+
+
+const {
+    data: participations,
+    error:
+        participationError
+} =
+    await adminSupabaseClient
+        .from("participations")
+        .select(
+            "training_id"
+        );
+
+
+if (participationError) {
+
+    console.error(
+        participationError
+    );
+
+}
+
+
+const participationList =
+    participations || [];
 
 
 tbody.innerHTML = "";
@@ -1300,7 +1669,7 @@ if (
 
     tbody.innerHTML =
         `<tr>
-            <td colspan="4">
+            <td colspan="5">
                 訓練・講座はありません。
             </td>
         </tr>`;
@@ -1311,6 +1680,14 @@ if (
 
 
 data.forEach(training => {
+
+    const count =
+        participationList.filter(
+            item =>
+                item.training_id ===
+                training.training_id
+        ).length;
+
 
     const tr =
         document.createElement(
@@ -1327,9 +1704,17 @@ data.forEach(training => {
         </td>
 
         <td>
-            ${escapeHtml(
-                training.title
-            )}
+            <strong>
+                ${escapeHtml(
+                    training.title
+                )}
+            </strong>
+        </td>
+
+        <td>
+            <span class="participant-count">
+                ${count}人
+            </span>
         </td>
 
         <td>
@@ -1339,6 +1724,14 @@ data.forEach(training => {
         </td>
 
         <td>
+
+            <button
+                class="action-button view-button"
+                data-action="training-participants"
+                data-id="${training.id}"
+            >
+                参加者を見る
+            </button>
 
             <button
                 class="action-button edit-button"
@@ -1364,6 +1757,38 @@ data.forEach(training => {
     tbody.appendChild(tr);
 
 });
+
+
+tbody
+    .querySelectorAll(
+        '[data-action="training-participants"]'
+    )
+    .forEach(button => {
+
+        button.addEventListener(
+            "click",
+            () => {
+
+                const training =
+                    data.find(
+                        item =>
+                            item.id ===
+                            button.dataset.id
+                    );
+
+
+                if (training) {
+
+                    openTrainingParticipants(
+                        training
+                    );
+
+                }
+
+            }
+        );
+
+    });
 
 
 tbody
@@ -1420,32 +1845,253 @@ tbody
 }
 
 /* ==================================================
+訓練参加者一覧
+================================================== */
+
+function setupTrainingParticipantsModal() {
+
+document
+    .getElementById(
+        "closeTrainingParticipantsButton"
+    )
+    ?.addEventListener(
+        "click",
+        closeTrainingParticipants
+    );
+
+}
+
+async function openTrainingParticipants(
+training
+) {
+
+const modal =
+    document.getElementById(
+        "trainingParticipantsModal"
+    );
+
+
+const title =
+    document.getElementById(
+        "trainingParticipantsTitle"
+    );
+
+
+const content =
+    document.getElementById(
+        "trainingParticipantsContent"
+    );
+
+
+title.textContent =
+    `${training.title}：参加者一覧`;
+
+
+content.innerHTML =
+    "読み込み中...";
+
+
+modal.classList.remove(
+    "hidden"
+);
+
+
+try {
+
+    const {
+        data,
+        error
+    } =
+        await adminSupabaseClient
+            .from("participations")
+            .select(
+                "id, participant_id, registered_at"
+            )
+            .eq(
+                "training_id",
+                training.training_id
+            )
+            .order(
+                "registered_at",
+                {
+                    ascending: true
+                }
+            );
+
+
+    if (error) {
+
+        throw error;
+
+    }
+
+
+    if (
+        !data ||
+        data.length === 0
+    ) {
+
+        content.innerHTML =
+            `<div class="empty-message">
+                この訓練への参加者はいません。
+            </div>`;
+
+        return;
+
+    }
+
+
+    const {
+        data: participants,
+        error:
+            participantError
+    } =
+        await adminSupabaseClient
+            .from("participants")
+            .select(
+                "participant_id, name"
+            );
+
+
+    if (participantError) {
+
+        throw participantError;
+
+    }
+
+
+    content.innerHTML = `
+
+        <div class="history-summary">
+            参加人数：${data.length}人
+        </div>
+
+        <div class="history-list"></div>
+
+    `;
+
+
+    const list =
+        content.querySelector(
+            ".history-list"
+        );
+
+
+    data.forEach(item => {
+
+        const participant =
+            participants.find(
+                p =>
+                    p.participant_id ===
+                    item.participant_id
+            );
+
+
+        const div =
+            document.createElement(
+                "div"
+            );
+
+
+        div.className =
+            "history-item";
+
+
+        div.innerHTML = `
+
+            <div class="history-main">
+
+                <div class="history-title">
+                    ${escapeHtml(
+                        participant?.name ||
+                        "名前未登録"
+                    )}
+                </div>
+
+                <div class="history-date">
+                    参加日時：
+                    ${formatDate(
+                        item.registered_at
+                    )}
+                </div>
+
+            </div>
+
+            <button
+                type="button"
+                class="action-button delete-button"
+                data-history-id="${item.id}"
+            >
+                削除
+            </button>
+
+        `;
+
+
+        list.appendChild(div);
+
+
+        div
+            .querySelector(
+                "[data-history-id]"
+            )
+            .addEventListener(
+                "click",
+                async () => {
+
+                    await deleteParticipation(
+                        item.id
+                    );
+
+
+                    openTrainingParticipants(
+                        training
+                    );
+
+                }
+            );
+
+    });
+
+
+} catch (error) {
+
+    console.error(
+        "Training participants error:",
+        error
+    );
+
+
+    content.innerHTML =
+        `<div class="empty-message">
+            読み込みに失敗しました。
+        </div>`;
+
+}
+
+}
+
+function closeTrainingParticipants() {
+
+document.getElementById(
+    "trainingParticipantsModal"
+).classList.add(
+    "hidden"
+);
+
+}
+
+/* ==================================================
 訓練モーダル
 ================================================== */
 
 function setupTrainingModal() {
 
-const addButton =
-    document.getElementById(
+document
+    .getElementById(
         "addTrainingButton"
-    );
-
-
-const cancelButton =
-    document.getElementById(
-        "cancelTrainingButton"
-    );
-
-
-const saveButton =
-    document.getElementById(
-        "saveTrainingButton"
-    );
-
-
-if (addButton) {
-
-    addButton.addEventListener(
+    )
+    ?.addEventListener(
         "click",
         () => {
 
@@ -1454,27 +2100,25 @@ if (addButton) {
         }
     );
 
-}
 
-
-if (cancelButton) {
-
-    cancelButton.addEventListener(
+document
+    .getElementById(
+        "cancelTrainingButton"
+    )
+    ?.addEventListener(
         "click",
         closeTrainingModal
     );
 
-}
 
-
-if (saveButton) {
-
-    saveButton.addEventListener(
+document
+    .getElementById(
+        "saveTrainingButton"
+    )
+    ?.addEventListener(
         "click",
         saveTraining
     );
-
-}
 
 }
 
@@ -1625,9 +2269,7 @@ try {
 
     closeTrainingModal();
 
-    await loadTrainings();
-
-    await loadDashboard();
+    await loadAllData();
 
 
     alert(
@@ -1660,14 +2302,12 @@ try {
 
 async function deleteTraining(id) {
 
-const confirmed =
-    confirm(
+if (
+    !confirm(
         "この訓練・講座を削除しますか？\n\n" +
         "この訓練に紐づく参加履歴も削除されます。"
-    );
-
-
-if (!confirmed) {
+    )
+) {
 
     return;
 
@@ -1678,7 +2318,8 @@ try {
 
     const {
         data: training,
-        error: trainingError
+        error:
+            trainingError
     } =
         await adminSupabaseClient
             .from("trainings")
@@ -1831,6 +2472,36 @@ if (error) {
 }
 
 
+const [
+    participantsResult,
+    trainingsResult
+] =
+    await Promise.all([
+
+        adminSupabaseClient
+            .from("participants")
+            .select(
+                "participant_id, name"
+            ),
+
+
+        adminSupabaseClient
+            .from("trainings")
+            .select(
+                "training_id, title"
+            )
+
+    ]);
+
+
+const participants =
+    participantsResult.data || [];
+
+
+const trainings =
+    trainingsResult.data || [];
+
+
 tbody.innerHTML = "";
 
 
@@ -1853,6 +2524,22 @@ if (
 
 data.forEach(participation => {
 
+    const participant =
+        participants.find(
+            p =>
+                p.participant_id ===
+                participation.participant_id
+        );
+
+
+    const training =
+        trainings.find(
+            t =>
+                t.training_id ===
+                participation.training_id
+        );
+
+
     const tr =
         document.createElement(
             "tr"
@@ -1863,12 +2550,14 @@ data.forEach(participation => {
 
         <td>
             ${escapeHtml(
-                participation.participant_id
+                participant?.name ||
+                "名前未登録"
             )}
         </td>
 
         <td>
             ${escapeHtml(
+                training?.title ||
                 participation.training_id
             )}
         </td>
@@ -1926,13 +2615,11 @@ tbody
 
 async function deleteParticipation(id) {
 
-const confirmed =
-    confirm(
+if (
+    !confirm(
         "この参加履歴を削除しますか？"
-    );
-
-
-if (!confirmed) {
+    )
+) {
 
     return;
 
@@ -1964,6 +2651,10 @@ try {
 
     await loadDashboard();
 
+    await loadParticipants();
+
+    await loadTrainings();
+
 
     alert(
         "参加履歴を削除しました。"
@@ -1988,7 +2679,7 @@ try {
 }
 
 /* ==================================================
-日付フォーマット
+日付
 ================================================== */
 
 function formatDate(value) {
