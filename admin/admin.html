@@ -6,26 +6,35 @@
 
 <meta charset="UTF-8">
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta
+name="viewport"
+content="width=device-width, initial-scale=1.0"
 
-<title>管理者画面 | いわぽん防災</title>
 
-<link rel="stylesheet" href="admin.css">
+
+
+<title> 管理者画面 | いわぽん防災 </title>
+
+<link rel="stylesheet" href="admin.css" >
 
 </head>
 
 <body>
 
-<!-- ========================= ログイン画面 ========================= -->
+<!-- ================================================== 管理者ログイン画面 ================================================== -->
 
-<div id="loginScreen" class="screen">
+<div id="loginScreen" class="screen" >
 
 <div class="login-box">
 
-    <h1>管理者ログイン</h1>
+    <h1>
+        管理者ログイン
+    </h1>
+
 
     <p class="login-description">
-        いわぽん防災 管理者画面
+        いわぽん防災<br>
+        管理者専用画面
     </p>
 
 
@@ -35,9 +44,11 @@
             メールアドレス
         </label>
 
+
         <input
             type="email"
             id="email"
+            placeholder="メールアドレス"
             autocomplete="username"
             required
         >
@@ -47,22 +58,30 @@
             パスワード
         </label>
 
+
         <input
             type="password"
             id="password"
+            placeholder="パスワード"
             autocomplete="current-password"
             required
         >
 
 
-        <button type="submit" class="primary-button">
+        <button
+            type="submit"
+            class="primary-button"
+        >
             ログイン
         </button>
 
     </form>
 
 
-    <p id="loginError" class="error-message"></p>
+    <p
+        id="loginError"
+        class="error-message"
+    ></p>
 
 </div>
 
@@ -71,15 +90,21 @@
 
 
 
-<!-- ========================= 管理画面 ========================= -->
+<!-- ================================================== 管理者画面 ================================================== -->
 
-<div id="adminScreen" class="screen hidden">
+<div id="adminScreen" class="screen hidden" >
+
+<!-- ==================================================
+     ヘッダー
+================================================== -->
 
 <header class="admin-header">
 
     <div>
 
-        <h1>管理者画面</h1>
+        <h1>
+            管理者画面
+        </h1>
 
         <p>
             いわぽん防災
@@ -88,7 +113,10 @@
     </div>
 
 
-    <button id="logoutButton" class="logout-button">
+    <button
+        id="logoutButton"
+        class="logout-button"
+    >
         ログアウト
     </button>
 
@@ -96,20 +124,31 @@
 
 
 
+<!-- ==================================================
+     メイン
+================================================== -->
+
 <main class="admin-container">
 
 
-    <!-- =========================
+    <!-- ==================================================
          ダッシュボード
-    ========================== -->
+    ================================================== -->
 
-    <section id="dashboardSection" class="admin-section">
+    <section
+        id="dashboardSection"
+        class="admin-section"
+    >
 
-        <h2>ダッシュボード</h2>
+        <h2>
+            ダッシュボード
+        </h2>
 
 
         <div class="stats-grid">
 
+
+            <!-- 登録参加者 -->
 
             <div class="stat-card">
 
@@ -117,17 +156,26 @@
                     登録参加者
                 </span>
 
-                <strong id="participantCount">
-                    0
-                </strong>
 
-                <span>
-                    人
-                </span>
+                <div>
+
+                    <strong
+                        id="participantCount"
+                    >
+                        0
+                    </strong>
+
+                    <span>
+                        人
+                    </span>
+
+                </div>
 
             </div>
 
 
+
+            <!-- 訓練 -->
 
             <div class="stat-card">
 
@@ -135,17 +183,26 @@
                     訓練・講座
                 </span>
 
-                <strong id="trainingCount">
-                    0
-                </strong>
 
-                <span>
-                    件
-                </span>
+                <div>
+
+                    <strong
+                        id="trainingCount"
+                    >
+                        0
+                    </strong>
+
+                    <span>
+                        件
+                    </span>
+
+                </div>
 
             </div>
 
 
+
+            <!-- 参加記録 -->
 
             <div class="stat-card">
 
@@ -153,19 +210,28 @@
                     参加記録
                 </span>
 
-                <strong id="participationCount">
-                    0
-                </strong>
 
-                <span>
-                    件
-                </span>
+                <div>
+
+                    <strong
+                        id="participationCount"
+                    >
+                        0
+                    </strong>
+
+                    <span>
+                        件
+                    </span>
+
+                </div>
 
             </div>
 
         </div>
 
 
+
+        <!-- 最近の参加記録 -->
 
         <div class="dashboard-card">
 
@@ -173,26 +239,28 @@
                 最近の参加記録
             </h3>
 
-            <div id="recentParticipations">
 
+            <div
+                id="recentParticipations"
+            >
                 読み込み中...
-
             </div>
 
         </div>
-
 
     </section>
 
 
 
-    <!-- =========================
-         ナビゲーション
-    ========================== -->
+    <!-- ==================================================
+         管理メニュー
+    ================================================== -->
 
     <nav class="admin-nav">
 
+
         <button
+            type="button"
             class="nav-button active"
             data-target="participantsSection"
         >
@@ -201,27 +269,30 @@
 
 
         <button
+            type="button"
             class="nav-button"
             data-target="trainingsSection"
         >
-            訓練管理
+            訓練・講座管理
         </button>
 
 
         <button
+            type="button"
             class="nav-button"
             data-target="participationsSection"
         >
             参加履歴
         </button>
 
+
     </nav>
 
 
 
-    <!-- =========================
+    <!-- ==================================================
          参加者管理
-    ========================== -->
+    ================================================== -->
 
     <section
         id="participantsSection"
@@ -274,7 +345,17 @@
                 </thead>
 
 
-                <tbody id="participantsTable">
+                <tbody
+                    id="participantsTable"
+                >
+
+                    <tr>
+
+                        <td colspan="4">
+                            読み込み中...
+                        </td>
+
+                    </tr>
 
                 </tbody>
 
@@ -286,9 +367,9 @@
 
 
 
-    <!-- =========================
-         訓練管理
-    ========================== -->
+    <!-- ==================================================
+         訓練・講座管理
+    ================================================== -->
 
     <section
         id="trainingsSection"
@@ -311,6 +392,7 @@
 
 
             <button
+                type="button"
                 id="addTrainingButton"
                 class="primary-button"
             >
@@ -349,7 +431,17 @@
                 </thead>
 
 
-                <tbody id="trainingsTable">
+                <tbody
+                    id="trainingsTable"
+                >
+
+                    <tr>
+
+                        <td colspan="4">
+                            読み込み中...
+                        </td>
+
+                    </tr>
 
                 </tbody>
 
@@ -361,9 +453,9 @@
 
 
 
-    <!-- =========================
+    <!-- ==================================================
          参加履歴
-    ========================== -->
+    ================================================== -->
 
     <section
         id="participationsSection"
@@ -396,11 +488,11 @@
                     <tr>
 
                         <th>
-                            参加者
+                            参加者ID
                         </th>
 
                         <th>
-                            訓練・講座
+                            訓練ID
                         </th>
 
                         <th>
@@ -416,7 +508,17 @@
                 </thead>
 
 
-                <tbody id="participationsTable">
+                <tbody
+                    id="participationsTable"
+                >
+
+                    <tr>
+
+                        <td colspan="4">
+                            読み込み中...
+                        </td>
+
+                    </tr>
 
                 </tbody>
 
@@ -434,9 +536,9 @@
 
 
 
-<!-- ========================= 参加者編集モーダル ========================= -->
+<!-- ================================================== 参加者編集モーダル ================================================== -->
 
-<div id="participantModal" class="modal hidden">
+<div id="participantModal" class="modal hidden" >
 
 <div class="modal-content">
 
@@ -451,9 +553,10 @@
     >
 
 
-    <label>
+    <label for="editParticipantId">
         参加者ID
     </label>
+
 
     <input
         type="text"
@@ -462,19 +565,23 @@
     >
 
 
-    <label>
+    <label for="editParticipantName">
         名前
     </label>
+
 
     <input
         type="text"
         id="editParticipantName"
+        placeholder="名前"
     >
 
 
     <div class="modal-buttons">
 
+
         <button
+            type="button"
             id="cancelParticipantButton"
             class="secondary-button"
         >
@@ -483,11 +590,13 @@
 
 
         <button
+            type="button"
             id="saveParticipantButton"
             class="primary-button"
         >
             保存
         </button>
+
 
     </div>
 
@@ -498,14 +607,14 @@
 
 
 
-<!-- ========================= 訓練編集モーダル ========================= -->
+<!-- ================================================== 訓練編集・登録モーダル ================================================== -->
 
-<div id="trainingModal" class="modal hidden">
+<div id="trainingModal" class="modal hidden" >
 
 <div class="modal-content">
 
     <h2 id="trainingModalTitle">
-        訓練登録
+        訓練・講座を登録
     </h2>
 
 
@@ -515,9 +624,10 @@
     >
 
 
-    <label>
+    <label for="editTrainingId">
         訓練ID
     </label>
+
 
     <input
         type="text"
@@ -526,9 +636,10 @@
     >
 
 
-    <label>
+    <label for="editTrainingTitle">
         タイトル
     </label>
+
 
     <input
         type="text"
@@ -539,7 +650,9 @@
 
     <div class="modal-buttons">
 
+
         <button
+            type="button"
             id="cancelTrainingButton"
             class="secondary-button"
         >
@@ -548,11 +661,13 @@
 
 
         <button
+            type="button"
             id="saveTrainingButton"
             class="primary-button"
         >
             保存
         </button>
+
 
     </div>
 
@@ -560,9 +675,16 @@
 
 </div>
 
-<script src="../supabase.js"></script>
 
-<script src="admin.js"></script>
+
+
+<!-- ================================================== JavaScript 読み込み順が重要です。 ① Supabase本体 ② 現在使用しているsupabase.js ③ 管理画面のadmin.js ================================================== -->
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" ></script>
+
+<script src="../stamp/supabase.js" ></script>
+
+<script src="admin.js" ></script>
 
 </body>
 
