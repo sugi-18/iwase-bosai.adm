@@ -2,16 +2,32 @@ const ADMIN_PASSWORD = "iwase-admin-2026";
 
 document.addEventListener("DOMContentLoaded", function () {
 
-const loginButton = document.getElementById("loginButton");
-const logoutButton = document.getElementById("logoutButton");
+const loginButton =
+    document.getElementById("loginButton");
+
+const logoutButton =
+    document.getElementById("logoutButton");
+
 
 if (loginButton) {
-    loginButton.addEventListener("click", adminLogin);
+
+    loginButton.addEventListener(
+        "click",
+        adminLogin
+    );
+
 }
 
+
 if (logoutButton) {
-    logoutButton.addEventListener("click", adminLogout);
+
+    logoutButton.addEventListener(
+        "click",
+        adminLogout
+    );
+
 }
+
 
 checkAdminLogin();
 
@@ -19,12 +35,20 @@ checkAdminLogin();
 
 function checkAdminLogin() {
 
-const login = localStorage.getItem("iwaseAdminLogin");
+const login =
+    localStorage.getItem(
+        "iwaseAdminLogin"
+    );
+
 
 if (login === "true") {
+
     showAdminArea();
+
 } else {
+
     showLoginArea();
+
 }
 
 }
@@ -32,16 +56,26 @@ if (login === "true") {
 function adminLogin() {
 
 const passwordElement =
-    document.getElementById("adminPassword");
+    document.getElementById(
+        "adminPassword"
+    );
 
 const errorElement =
-    document.getElementById("loginError");
+    document.getElementById(
+        "loginError"
+    );
+
 
 if (!passwordElement) {
+
     return;
+
 }
 
-const password = passwordElement.value;
+
+const password =
+    passwordElement.value;
+
 
 if (password === ADMIN_PASSWORD) {
 
@@ -50,17 +84,23 @@ if (password === ADMIN_PASSWORD) {
         "true"
     );
 
+
     if (errorElement) {
+
         errorElement.textContent = "";
+
     }
+
 
     showAdminArea();
 
 } else {
 
     if (errorElement) {
+
         errorElement.textContent =
             "パスワードが正しくありません。";
+
     }
 
 }
@@ -70,18 +110,33 @@ if (password === ADMIN_PASSWORD) {
 function showAdminArea() {
 
 const loginArea =
-    document.getElementById("loginArea");
+    document.getElementById(
+        "loginArea"
+    );
 
 const adminArea =
-    document.getElementById("adminArea");
+    document.getElementById(
+        "adminArea"
+    );
+
 
 if (loginArea) {
-    loginArea.classList.add("hidden");
+
+    loginArea.classList.add(
+        "hidden"
+    );
+
 }
 
+
 if (adminArea) {
-    adminArea.classList.remove("hidden");
+
+    adminArea.classList.remove(
+        "hidden"
+    );
+
 }
+
 
 loadDashboard();
 
@@ -90,24 +145,41 @@ loadDashboard();
 function showLoginArea() {
 
 const loginArea =
-    document.getElementById("loginArea");
+    document.getElementById(
+        "loginArea"
+    );
 
 const adminArea =
-    document.getElementById("adminArea");
+    document.getElementById(
+        "adminArea"
+    );
+
 
 if (loginArea) {
-    loginArea.classList.remove("hidden");
+
+    loginArea.classList.remove(
+        "hidden"
+    );
+
 }
 
+
 if (adminArea) {
-    adminArea.classList.add("hidden");
+
+    adminArea.classList.add(
+        "hidden"
+    );
+
 }
 
 }
 
 function adminLogout() {
 
-localStorage.removeItem("iwaseAdminLogin");
+localStorage.removeItem(
+    "iwaseAdminLogin"
+);
+
 
 location.reload();
 
@@ -123,76 +195,124 @@ await loadParticipations();
 
 }
 
+/* =========================
+利用者一覧
+========================= */
+
 async function loadParticipants() {
 
 const table =
-    document.getElementById("participantsTable");
+    document.getElementById(
+        "participantsTable"
+    );
+
 
 if (!table) {
+
     return;
+
 }
+
+
+table.innerHTML =
+    "<tr>" +
+    "<td colspan=\"3\">" +
+    "読み込み中..." +
+    "</td>" +
+    "</tr>";
+
 
 try {
 
     const result =
         await supabaseClient
             .from("participants")
-            .select("*")
-            .order(
-                "registered_at",
-                {
-                    ascending: false
-                }
-            );
+            .select("*");
+
 
     if (result.error) {
+
         throw result.error;
+
     }
 
-    const data = result.data || [];
+
+    const data =
+        result.data || [];
+
 
     const count =
-        document.getElementById("participantCount");
+        document.getElementById(
+            "participantCount"
+        );
+
 
     if (count) {
-        count.textContent = data.length;
+
+        count.textContent =
+            data.length;
+
     }
 
+
     table.innerHTML = "";
+
 
     if (data.length === 0) {
 
         table.innerHTML =
-            "<tr><td colspan=\"3\">" +
+            "<tr>" +
+            "<td colspan=\"3\">" +
             "登録利用者はいません。" +
-            "</td></tr>";
+            "</td>" +
+            "</tr>";
 
         return;
+
     }
+
 
     data.forEach(function (participant) {
 
         const row =
-            document.createElement("tr");
+            document.createElement(
+                "tr"
+            );
+
+
+        const id =
+            participant.id || "";
+
+
+        const name =
+            participant.name ||
+            participant.participant_name ||
+            "";
+
+
+        const registeredAt =
+            participant.registered_at ||
+            "";
+
 
         row.innerHTML =
             "<td>" +
-            escapeHTML(participant.id) +
+            escapeHTML(id) +
             "</td>" +
 
             "<td>" +
-            escapeHTML(participant.name || "") +
+            escapeHTML(name) +
             "</td>" +
 
             "<td>" +
-            formatDate(
-                participant.registered_at
-            ) +
+            escapeHTML(registeredAt) +
             "</td>";
+
 
         table.appendChild(row);
 
     });
+
 
 } catch (error) {
 
@@ -201,83 +321,138 @@ try {
         error
     );
 
+
     table.innerHTML =
-        "<tr><td colspan=\"3\">" +
+        "<tr>" +
+        "<td colspan=\"3\">" +
         "利用者データの取得に失敗しました。" +
-        "</td></tr>";
+        "</td>" +
+        "</tr>";
 
 }
 
 }
+
+/* =========================
+訓練一覧
+========================= */
 
 async function loadTrainings() {
 
 const table =
-    document.getElementById("trainingsTable");
+    document.getElementById(
+        "trainingsTable"
+    );
+
 
 if (!table) {
+
     return;
+
 }
+
+
+table.innerHTML =
+    "<tr>" +
+    "<td colspan=\"3\">" +
+    "読み込み中..." +
+    "</td>" +
+    "</tr>";
+
 
 try {
 
     const result =
         await supabaseClient
             .from("trainings")
-            .select("*")
-            .order(
-                "date",
-                {
-                    ascending: false
-                }
-            );
+            .select("*");
+
 
     if (result.error) {
+
         throw result.error;
+
     }
 
-    const data = result.data || [];
+
+    const data =
+        result.data || [];
+
 
     const count =
-        document.getElementById("trainingCount");
+        document.getElementById(
+            "trainingCount"
+        );
+
 
     if (count) {
-        count.textContent = data.length;
+
+        count.textContent =
+            data.length;
+
     }
 
+
     table.innerHTML = "";
+
 
     if (data.length === 0) {
 
         table.innerHTML =
-            "<tr><td colspan=\"3\">" +
+            "<tr>" +
+            "<td colspan=\"3\">" +
             "登録訓練はありません。" +
-            "</td></tr>";
+            "</td>" +
+            "</tr>";
 
         return;
+
     }
+
 
     data.forEach(function (training) {
 
         const row =
-            document.createElement("tr");
+            document.createElement(
+                "tr"
+            );
+
+
+        const date =
+            training.date ||
+            "";
+
+
+        const event =
+            training.event ||
+            training.title ||
+            training.name ||
+            "";
+
+
+        const id =
+            training.id ||
+            "";
+
 
         row.innerHTML =
             "<td>" +
-            escapeHTML(training.date || "") +
+            escapeHTML(date) +
             "</td>" +
 
             "<td>" +
-            escapeHTML(training.event || "") +
+            escapeHTML(event) +
             "</td>" +
 
             "<td>" +
-            escapeHTML(training.id || "") +
+            escapeHTML(id) +
             "</td>";
+
 
         table.appendChild(row);
 
     });
+
 
 } catch (error) {
 
@@ -286,23 +461,44 @@ try {
         error
     );
 
+
     table.innerHTML =
-        "<tr><td colspan=\"3\">" +
+        "<tr>" +
+        "<td colspan=\"3\">" +
         "訓練データの取得に失敗しました。" +
-        "</td></tr>";
+        "</td>" +
+        "</tr>";
 
 }
 
 }
+
+/* =========================
+参加履歴
+========================= */
 
 async function loadParticipations() {
 
 const table =
-    document.getElementById("participationsTable");
+    document.getElementById(
+        "participationsTable"
+    );
+
 
 if (!table) {
+
     return;
+
 }
+
+
+table.innerHTML =
+    "<tr>" +
+    "<td colspan=\"3\">" +
+    "読み込み中..." +
+    "</td>" +
+    "</tr>";
+
 
 try {
 
@@ -311,68 +507,100 @@ try {
             .from("participations")
             .select("*");
 
+
     if (result.error) {
+
         throw result.error;
+
     }
 
-    const data = result.data || [];
+
+    const data =
+        result.data || [];
+
 
     const count =
         document.getElementById(
             "participationCount"
         );
 
+
     if (count) {
-        count.textContent = data.length;
+
+        count.textContent =
+            data.length;
+
     }
 
+
     table.innerHTML = "";
+
 
     if (data.length === 0) {
 
         table.innerHTML =
-            "<tr><td colspan=\"3\">" +
+            "<tr>" +
+            "<td colspan=\"3\">" +
             "参加記録はありません。" +
-            "</td></tr>";
+            "</td>" +
+            "</tr>";
 
         return;
+
     }
+
 
     data.forEach(function (participation) {
 
         const row =
-            document.createElement("tr");
+            document.createElement(
+                "tr"
+            );
+
 
         const participantId =
             participation.participant_id ||
             participation.participant ||
+            participation.user_id ||
             "";
+
 
         const trainingId =
             participation.training_id ||
             "";
 
+
         const participatedAt =
             participation.participated_at ||
+            participation.registered_at ||
             participation.created_at ||
             "";
 
+
         row.innerHTML =
             "<td>" +
-            escapeHTML(participantId) +
+            escapeHTML(
+                participantId
+            ) +
             "</td>" +
 
             "<td>" +
-            escapeHTML(trainingId) +
+            escapeHTML(
+                trainingId
+            ) +
             "</td>" +
 
             "<td>" +
-            escapeHTML(participatedAt) +
+            escapeHTML(
+                participatedAt
+            ) +
             "</td>";
+
 
         table.appendChild(row);
 
     });
+
 
 } catch (error) {
 
@@ -381,43 +609,59 @@ try {
         error
     );
 
+
     table.innerHTML =
-        "<tr><td colspan=\"3\">" +
-        "参加履歴の取得に失敗しました。" +
-        "</td></tr>";
+        "<tr>" +
+        "<td colspan=\"3\">" +
+        "参加記録の取得に失敗しました。" +
+        "</td>" +
+        "</tr>";
 
 }
 
 }
 
-function formatDate(value) {
-
-if (!value) {
-    return "";
-}
-
-const date =
-    new Date(value);
-
-if (
-    Number.isNaN(
-        date.getTime()
-    )
-) {
-    return String(value);
-}
-
-return date.toLocaleString("ja-JP");
-
-}
+/* =========================
+HTMLエスケープ
+========================= */
 
 function escapeHTML(value) {
 
+if (
+    value === null ||
+    value === undefined
+) {
+
+    return "";
+
+}
+
+
 return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+
+    .replace(
+        /&/g,
+        "&amp;"
+    )
+
+    .replace(
+        /</g,
+        "&lt;"
+    )
+
+    .replace(
+        />/g,
+        "&gt;"
+    )
+
+    .replace(
+        /"/g,
+        "&quot;"
+    )
+
+    .replace(
+        /'/g,
+        "&#039;"
+    );
 
 }
