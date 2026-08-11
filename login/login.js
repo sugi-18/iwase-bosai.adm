@@ -7,7 +7,7 @@
 // 共通パスワード
 // 公開前に変更してください
 
-const APP_PASSWORD = "iwasebosai";
+const APP_PASSWORD = "iwase";
 
 
 // ログイン有効時間
