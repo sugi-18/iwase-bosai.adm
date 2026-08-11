@@ -1,38 +1,16 @@
 /* ==================================================
-いわぽん防災 管理者画面
+岩瀬自治会 防災アプリ
+管理者画面
 Supabase Auth対応
 ================================================== */
-
-/* ==================================================
-Supabase確認
-================================================== */
-
-if (typeof supabase === "undefined") {
-
-alert(
-    "Supabaseが読み込まれていません。\n" +
-    "supabase.jsの読み込みを確認してください。"
-);
-
-}
-
-/* ==================================================
-DOM
-================================================== */
-
-const loginScreen = document.getElementById("loginScreen");
-const adminScreen = document.getElementById("adminScreen");
-
-const loginForm = document.getElementById("loginForm");
-const loginError = document.getElementById("loginError");
-
-const logoutButton = document.getElementById("logoutButton");
 
 /* ==================================================
 初期化
 ================================================== */
 
 document.addEventListener("DOMContentLoaded", async () => {
+
+console.log("Admin page initialized.");
 
 setupNavigation();
 setupParticipantModal();
@@ -43,25 +21,78 @@ await checkAuth();
 });
 
 /* ==================================================
-認証確認
+Supabase確認
+================================================== */
+
+if (typeof supabaseClient === "undefined") {
+
+console.error(
+    "supabaseClient が見つかりません。"
+);
+
+}
+
+/* ==================================================
+DOM
+================================================== */
+
+const loginScreen =
+document.getElementById("loginScreen");
+
+const adminScreen =
+document.getElementById("adminScreen");
+
+const loginForm =
+document.getElementById("loginForm");
+
+const loginError =
+document.getElementById("loginError");
+
+const logoutButton =
+document.getElementById("logoutButton");
+
+/* ==================================================
+認証状態確認
 ================================================== */
 
 async function checkAuth() {
 
 try {
 
-    const {
-        data,
-        error
-    } = await supabase.auth.getSession();
+    if (
+        typeof supabaseClient ===
+        "undefined"
+    ) {
 
+        throw new Error(
+            "Supabaseクライアントが読み込まれていません。"
+        );
 
-    if (error) {
-        throw error;
     }
 
 
-    if (data.session) {
+    const {
+        data,
+        error
+    } =
+        await supabaseClient.auth.getSession();
+
+
+    if (error) {
+
+        throw error;
+
+    }
+
+
+    if (
+        data &&
+        data.session
+    ) {
+
+        console.log(
+            "管理者ログイン済み"
+        );
 
         showAdminScreen();
 
@@ -69,13 +100,20 @@ try {
 
     } else {
 
+        console.log(
+            "管理者ログインが必要です。"
+        );
+
         showLoginScreen();
 
     }
 
 } catch (error) {
 
-    console.error(error);
+    console.error(
+        "Authentication error:",
+        error
+    );
 
     showLoginScreen();
 
@@ -87,114 +125,252 @@ try {
 ログイン
 ================================================== */
 
-loginForm.addEventListener("submit", async (event) => {
+if (loginForm) {
 
-event.preventDefault();
+loginForm.addEventListener(
+    "submit",
+    async (event) => {
 
-loginError.textContent = "";
+        event.preventDefault();
 
-
-const email =
-    document.getElementById("email").value.trim();
-
-const password =
-    document.getElementById("password").value;
+        loginError.textContent = "";
 
 
-try {
-
-    const {
-        data,
-        error
-    } = await supabase.auth.signInWithPassword({
-
-        email,
-        password
-
-    });
+        const email =
+            document
+                .getElementById("email")
+                .value
+                .trim();
 
 
-    if (error) {
-        throw error;
+        const password =
+            document
+                .getElementById("password")
+                .value;
+
+
+        if (!email || !password) {
+
+            loginError.textContent =
+                "メールアドレスとパスワードを入力してください。";
+
+            return;
+
+        }
+
+
+        try {
+
+            const {
+                data,
+                error
+            } =
+                await supabaseClient
+                    .auth
+                    .signInWithPassword({
+
+                        email: email,
+
+                        password: password
+
+                    });
+
+
+            if (error) {
+
+                throw error;
+
+            }
+
+
+            if (
+                !data ||
+                !data.session
+            ) {
+
+                throw new Error(
+                    "ログインセッションを取得できませんでした。"
+                );
+
+            }
+
+
+            console.log(
+                "管理者ログイン成功"
+            );
+
+
+            showAdminScreen();
+
+            await loadAllData();
+
+
+        } catch (error) {
+
+            console.error(
+                "Login error:",
+                error
+            );
+
+
+            loginError.textContent =
+                "ログインできませんでした。メールアドレスまたはパスワードを確認してください。";
+
+        }
+
     }
-
-
-    if (!data.session) {
-
-        throw new Error(
-            "ログインセッションを取得できませんでした。"
-        );
-
-    }
-
-
-    showAdminScreen();
-
-    await loadAllData();
-
-
-} catch (error) {
-
-    console.error(error);
-
-    loginError.textContent =
-        "ログインできませんでした。メールアドレスまたはパスワードを確認してください。";
+);
 
 }
-
-});
 
 /* ==================================================
 ログアウト
 ================================================== */
 
-logoutButton.addEventListener("click", async () => {
+if (logoutButton) {
 
-const confirmed =
-    confirm("ログアウトしますか？");
+logoutButton.addEventListener(
+    "click",
+    async () => {
+
+        const confirmed =
+            confirm(
+                "ログアウトしますか？"
+            );
 
 
-if (!confirmed) {
-    return;
+        if (!confirmed) {
+
+            return;
+
+        }
+
+
+        try {
+
+            const {
+                error
+            } =
+                await supabaseClient
+                    .auth
+                    .signOut();
+
+
+            if (error) {
+
+                throw error;
+
+            }
+
+
+            showLoginScreen();
+
+
+        } catch (error) {
+
+            console.error(
+                "Logout error:",
+                error
+            );
+
+
+            alert(
+                "ログアウトに失敗しました。\n" +
+                error.message
+            );
+
+        }
+
+    }
+);
+
 }
-
-
-const {
-    error
-} = await supabase.auth.signOut();
-
-
-if (error) {
-
-    alert(
-        "ログアウトに失敗しました。\n" +
-        error.message
-    );
-
-    return;
-
-}
-
-
-showLoginScreen();
-
-});
 
 /* ==================================================
-表示切替
+Supabase Auth状態監視
+================================================== */
+
+if (
+typeof supabaseClient !==
+"undefined"
+) {
+
+supabaseClient.auth.onAuthStateChange(
+    (event, session) => {
+
+        console.log(
+            "Auth state:",
+            event
+        );
+
+
+        if (
+            session &&
+            event !== "SIGNED_OUT"
+        ) {
+
+            showAdminScreen();
+
+        }
+
+
+        if (
+            !session ||
+            event === "SIGNED_OUT"
+        ) {
+
+            showLoginScreen();
+
+        }
+
+    }
+);
+
+}
+
+/* ==================================================
+画面表示
 ================================================== */
 
 function showLoginScreen() {
 
-loginScreen.classList.remove("hidden");
-adminScreen.classList.add("hidden");
+if (loginScreen) {
+
+    loginScreen.classList.remove(
+        "hidden"
+    );
+
+}
+
+
+if (adminScreen) {
+
+    adminScreen.classList.add(
+        "hidden"
+    );
+
+}
 
 }
 
 function showAdminScreen() {
 
-loginScreen.classList.add("hidden");
-adminScreen.classList.remove("hidden");
+if (loginScreen) {
+
+    loginScreen.classList.add(
+        "hidden"
+    );
+
+}
+
+
+if (adminScreen) {
+
+    adminScreen.classList.remove(
+        "hidden"
+    );
+
+}
 
 }
 
@@ -205,41 +381,64 @@ adminScreen.classList.remove("hidden");
 function setupNavigation() {
 
 const buttons =
-    document.querySelectorAll(".nav-button");
+    document.querySelectorAll(
+        ".nav-button"
+    );
 
 
 buttons.forEach(button => {
 
-    button.addEventListener("click", () => {
+    button.addEventListener(
+        "click",
+        () => {
 
-        const target =
-            button.dataset.target;
+            const target =
+                button.dataset.target;
 
 
-        document
-            .querySelectorAll(".content-section")
-            .forEach(section => {
+            document
+                .querySelectorAll(
+                    ".content-section"
+                )
+                .forEach(section => {
 
-                section.classList.add("hidden");
+                    section.classList.add(
+                        "hidden"
+                    );
+
+                });
+
+
+            const targetSection =
+                document.getElementById(
+                    target
+                );
+
+
+            if (targetSection) {
+
+                targetSection.classList.remove(
+                    "hidden"
+                );
+
+            }
+
+
+            buttons.forEach(item => {
+
+                item.classList.remove(
+                    "active"
+                );
 
             });
 
 
-        document
-            .getElementById(target)
-            .classList.remove("hidden");
+            button.classList.add(
+                "active"
+            );
 
-
-        buttons.forEach(item => {
-
-            item.classList.remove("active");
-
-        });
-
-
-        button.classList.add("active");
-
-    });
+        }
+    );
 
 });
 
@@ -250,6 +449,11 @@ buttons.forEach(button => {
 ================================================== */
 
 async function loadAllData() {
+
+console.log(
+    "管理データ読み込み開始"
+);
+
 
 await Promise.all([
 
@@ -262,6 +466,11 @@ await Promise.all([
     loadParticipations()
 
 ]);
+
+
+console.log(
+    "管理データ読み込み完了"
+);
 
 }
 
@@ -277,44 +486,56 @@ try {
         participantsResult,
         trainingsResult,
         participationsResult
-    ] = await Promise.all([
+    ] =
+        await Promise.all([
 
-        supabase
-            .from("participants")
-            .select("*", {
-                count: "exact",
-                head: false
-            }),
-
-        supabase
-            .from("trainings")
-            .select("*", {
-                count: "exact",
-                head: false
-            }),
-
-        supabase
-            .from("participations")
-            .select("*", {
-                count: "exact",
-                head: false
-            })
-
-    ]);
+            supabaseClient
+                .from("participants")
+                .select("*", {
+                    count: "exact"
+                }),
 
 
-    if (participantsResult.error) {
+            supabaseClient
+                .from("trainings")
+                .select("*", {
+                    count: "exact"
+                }),
+
+
+            supabaseClient
+                .from("participations")
+                .select("*", {
+                    count: "exact"
+                })
+
+        ]);
+
+
+    if (
+        participantsResult.error
+    ) {
+
         throw participantsResult.error;
+
     }
 
 
-    if (trainingsResult.error) {
+    if (
+        trainingsResult.error
+    ) {
+
         throw trainingsResult.error;
+
     }
 
 
-    if (participationsResult.error) {
+    if (
+        participationsResult.error
+    ) {
+
         throw participationsResult.error;
+
     }
 
 
@@ -362,21 +583,29 @@ const container =
     );
 
 
+if (!container) {
+
+    return;
+
+}
+
+
 const {
     data,
     error
-} = await supabase
-    .from("participations")
-    .select(
-        "id, registered_at, participant_id, training_id"
-    )
-    .order(
-        "registered_at",
-        {
-            ascending: false
-        }
-    )
-    .limit(10);
+} =
+    await supabaseClient
+        .from("participations")
+        .select(
+            "id, registered_at, participant_id, training_id"
+        )
+        .order(
+            "registered_at",
+            {
+                ascending: false
+            }
+        )
+        .limit(10);
 
 
 if (error) {
@@ -391,7 +620,10 @@ if (error) {
 }
 
 
-if (!data || data.length === 0) {
+if (
+    !data ||
+    data.length === 0
+) {
 
     container.textContent =
         "まだ参加記録がありません。";
@@ -407,16 +639,23 @@ container.innerHTML = "";
 data.forEach(item => {
 
     const div =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
+
 
     div.className =
         "recent-item";
 
 
     div.textContent =
-        `${formatDate(item.registered_at)}
-        　参加者ID: ${item.participant_id}
-        　訓練ID: ${item.training_id}`;
+        `${formatDate(
+            item.registered_at
+        )}　参加者ID: ${
+            item.participant_id
+        }　訓練ID: ${
+            item.training_id
+        }`;
 
 
     container.appendChild(div);
@@ -437,27 +676,43 @@ const tbody =
     );
 
 
+if (!tbody) {
+
+    return;
+
+}
+
+
 tbody.innerHTML =
-    `<tr><td colspan="4">読み込み中...</td></tr>`;
+    `<tr>
+        <td colspan="4">
+            読み込み中...
+        </td>
+    </tr>`;
 
 
 const {
     data,
     error
-} = await supabase
-    .from("participants")
-    .select("*")
-    .order(
-        "created_at",
-        {
-            ascending: false
-        }
-    );
+} =
+    await supabaseClient
+        .from("participants")
+        .select("*")
+        .order(
+            "created_at",
+            {
+                ascending: false
+            }
+        );
 
 
 if (error) {
 
-    console.error(error);
+    console.error(
+        "Participants error:",
+        error
+    );
+
 
     tbody.innerHTML =
         `<tr>
@@ -474,7 +729,10 @@ if (error) {
 tbody.innerHTML = "";
 
 
-if (!data || data.length === 0) {
+if (
+    !data ||
+    data.length === 0
+) {
 
     tbody.innerHTML =
         `<tr>
@@ -491,21 +749,29 @@ if (!data || data.length === 0) {
 data.forEach(participant => {
 
     const tr =
-        document.createElement("tr");
+        document.createElement(
+            "tr"
+        );
 
 
     tr.innerHTML = `
 
         <td>
-            ${escapeHtml(participant.participant_id)}
+            ${escapeHtml(
+                participant.participant_id
+            )}
         </td>
 
         <td>
-            ${escapeHtml(participant.name)}
+            ${escapeHtml(
+                participant.name
+            )}
         </td>
 
         <td>
-            ${formatDate(participant.created_at)}
+            ${formatDate(
+                participant.created_at
+            )}
         </td>
 
         <td>
@@ -549,7 +815,8 @@ tbody
                 const participant =
                     data.find(
                         item =>
-                            item.id === button.dataset.id
+                            item.id ===
+                            button.dataset.id
                     );
 
 
@@ -589,98 +856,108 @@ tbody
 }
 
 /* ==================================================
-参加者編集
+参加者モーダル
 ================================================== */
 
 function setupParticipantModal() {
 
-document
-    .getElementById(
+const cancelButton =
+    document.getElementById(
         "cancelParticipantButton"
-    )
-    .addEventListener(
+    );
+
+
+const saveButton =
+    document.getElementById(
+        "saveParticipantButton"
+    );
+
+
+if (cancelButton) {
+
+    cancelButton.addEventListener(
         "click",
         closeParticipantModal
     );
 
+}
 
-document
-    .getElementById(
-        "saveParticipantButton"
-    )
-    .addEventListener(
+
+if (saveButton) {
+
+    saveButton.addEventListener(
         "click",
         saveParticipant
     );
 
 }
 
-function openParticipantModal(participant) {
+}
 
-document
-    .getElementById(
-        "editParticipantDbId"
-    )
-    .value =
+function openParticipantModal(
+participant
+) {
+
+document.getElementById(
+    "editParticipantDbId"
+).value =
     participant.id;
 
 
-document
-    .getElementById(
-        "editParticipantId"
-    )
-    .value =
+document.getElementById(
+    "editParticipantId"
+).value =
     participant.participant_id;
 
 
-document
-    .getElementById(
-        "editParticipantName"
-    )
-    .value =
+document.getElementById(
+    "editParticipantName"
+).value =
     participant.name || "";
 
 
-document
-    .getElementById(
-        "participantModal"
-    )
-    .classList.remove("hidden");
+document.getElementById(
+    "participantModal"
+).classList.remove(
+    "hidden"
+);
 
 }
 
 function closeParticipantModal() {
 
-document
-    .getElementById(
-        "participantModal"
-    )
-    .classList.add("hidden");
+document.getElementById(
+    "participantModal"
+).classList.add(
+    "hidden"
+);
 
 }
+
+/* ==================================================
+参加者保存
+================================================== */
 
 async function saveParticipant() {
 
 const id =
-    document
-        .getElementById(
-            "editParticipantDbId"
-        )
-        .value;
+    document.getElementById(
+        "editParticipantDbId"
+    ).value;
 
 
 const name =
-    document
-        .getElementById(
-            "editParticipantName"
-        )
-        .value
-        .trim();
+    document.getElementById(
+        "editParticipantName"
+    ).value
+    .trim();
 
 
 if (!name) {
 
-    alert("名前を入力してください。");
+    alert(
+        "名前を入力してください。"
+    );
 
     return;
 
@@ -689,17 +966,25 @@ if (!name) {
 
 const {
     error
-} = await supabase
-    .from("participants")
-    .update({
-        name
-    })
-    .eq("id", id);
+} =
+    await supabaseClient
+        .from("participants")
+        .update({
+            name: name
+        })
+        .eq(
+            "id",
+            id
+        );
 
 
 if (error) {
 
-    console.error(error);
+    console.error(
+        "Participant update error:",
+        error
+    );
+
 
     alert(
         "保存に失敗しました。\n" +
@@ -718,7 +1003,9 @@ await loadParticipants();
 await loadDashboard();
 
 
-alert("参加者情報を更新しました。");
+alert(
+    "参加者情報を更新しました。"
+);
 
 }
 
@@ -731,93 +1018,107 @@ async function deleteParticipant(id) {
 const confirmed =
     confirm(
         "この参加者を削除しますか？\n\n" +
-        "参加履歴も削除する必要があります。"
+        "この参加者の参加履歴も削除されます。"
     );
 
 
 if (!confirmed) {
+
     return;
+
 }
 
 
-const {
-    data: participant,
-    error: participantError
-} = await supabase
-    .from("participants")
-    .select("participant_id")
-    .eq("id", id)
-    .single();
+try {
+
+    const {
+        data: participant,
+        error: participantError
+    } =
+        await supabaseClient
+            .from("participants")
+            .select(
+                "participant_id"
+            )
+            .eq(
+                "id",
+                id
+            )
+            .single();
 
 
-if (participantError) {
+    if (participantError) {
+
+        throw participantError;
+
+    }
+
+
+    const participantId =
+        participant.participant_id;
+
+
+    const {
+        error:
+            participationError
+    } =
+        await supabaseClient
+            .from("participations")
+            .delete()
+            .eq(
+                "participant_id",
+                participantId
+            );
+
+
+    if (participationError) {
+
+        throw participationError;
+
+    }
+
+
+    const {
+        error
+    } =
+        await supabaseClient
+            .from("participants")
+            .delete()
+            .eq(
+                "id",
+                id
+            );
+
+
+    if (error) {
+
+        throw error;
+
+    }
+
+
+    await loadAllData();
+
 
     alert(
-        "参加者情報を取得できませんでした。"
-    );
-
-    return;
-
-}
-
-
-const participantId =
-    participant.participant_id;
-
-
-const {
-    error: participationError
-} = await supabase
-    .from("participations")
-    .delete()
-    .eq(
-        "participant_id",
-        participantId
+        "参加者を削除しました。"
     );
 
 
-if (participationError) {
+} catch (error) {
 
     console.error(
-        participationError
+        "Participant delete error:",
+        error
     );
 
-    alert(
-        "参加履歴の削除に失敗しました。\n" +
-        participationError.message
-    );
-
-    return;
-
-}
-
-
-const {
-    error
-} = await supabase
-    .from("participants")
-    .delete()
-    .eq("id", id);
-
-
-if (error) {
-
-    console.error(error);
 
     alert(
         "参加者の削除に失敗しました。\n" +
         error.message
     );
 
-    return;
-
 }
-
-
-await loadAllData();
-
-
-alert("参加者を削除しました。");
 
 }
 
@@ -833,27 +1134,43 @@ const tbody =
     );
 
 
+if (!tbody) {
+
+    return;
+
+}
+
+
 tbody.innerHTML =
-    `<tr><td colspan="4">読み込み中...</td></tr>`;
+    `<tr>
+        <td colspan="4">
+            読み込み中...
+        </td>
+    </tr>`;
 
 
 const {
     data,
     error
-} = await supabase
-    .from("trainings")
-    .select("*")
-    .order(
-        "created_at",
-        {
-            ascending: false
-        }
-    );
+} =
+    await supabaseClient
+        .from("trainings")
+        .select("*")
+        .order(
+            "created_at",
+            {
+                ascending: false
+            }
+        );
 
 
 if (error) {
 
-    console.error(error);
+    console.error(
+        "Trainings error:",
+        error
+    );
+
 
     tbody.innerHTML =
         `<tr>
@@ -870,7 +1187,10 @@ if (error) {
 tbody.innerHTML = "";
 
 
-if (!data || data.length === 0) {
+if (
+    !data ||
+    data.length === 0
+) {
 
     tbody.innerHTML =
         `<tr>
@@ -887,21 +1207,29 @@ if (!data || data.length === 0) {
 data.forEach(training => {
 
     const tr =
-        document.createElement("tr");
+        document.createElement(
+            "tr"
+        );
 
 
     tr.innerHTML = `
 
         <td>
-            ${escapeHtml(training.training_id)}
+            ${escapeHtml(
+                training.training_id
+            )}
         </td>
 
         <td>
-            ${escapeHtml(training.title)}
+            ${escapeHtml(
+                training.title
+            )}
         </td>
 
         <td>
-            ${formatDate(training.created_at)}
+            ${formatDate(
+                training.created_at
+            )}
         </td>
 
         <td>
@@ -945,7 +1273,8 @@ tbody
                 const training =
                     data.find(
                         item =>
-                            item.id === button.dataset.id
+                            item.id ===
+                            button.dataset.id
                     );
 
 
@@ -990,11 +1319,27 @@ tbody
 
 function setupTrainingModal() {
 
-document
-    .getElementById(
+const addButton =
+    document.getElementById(
         "addTrainingButton"
-    )
-    .addEventListener(
+    );
+
+
+const cancelButton =
+    document.getElementById(
+        "cancelTrainingButton"
+    );
+
+
+const saveButton =
+    document.getElementById(
+        "saveTrainingButton"
+    );
+
+
+if (addButton) {
+
+    addButton.addEventListener(
         "click",
         () => {
 
@@ -1003,113 +1348,109 @@ document
         }
     );
 
+}
 
-document
-    .getElementById(
-        "cancelTrainingButton"
-    )
-    .addEventListener(
+
+if (cancelButton) {
+
+    cancelButton.addEventListener(
         "click",
         closeTrainingModal
     );
 
+}
 
-document
-    .getElementById(
-        "saveTrainingButton"
-    )
-    .addEventListener(
+
+if (saveButton) {
+
+    saveButton.addEventListener(
         "click",
         saveTraining
     );
 
 }
 
-function openTrainingModal(training = null) {
+}
 
-document
-    .getElementById(
-        "editTrainingDbId"
-    )
-    .value =
+function openTrainingModal(
+training = null
+) {
+
+document.getElementById(
+    "editTrainingDbId"
+).value =
     training?.id || "";
 
 
-document
-    .getElementById(
-        "editTrainingId"
-    )
-    .value =
+document.getElementById(
+    "editTrainingId"
+).value =
     training?.training_id || "";
 
 
-document
-    .getElementById(
-        "editTrainingTitle"
-    )
-    .value =
+document.getElementById(
+    "editTrainingTitle"
+).value =
     training?.title || "";
 
 
-document
-    .getElementById(
-        "trainingModalTitle"
-    )
-    .textContent =
+document.getElementById(
+    "trainingModalTitle"
+).textContent =
     training
         ? "訓練・講座を編集"
         : "訓練・講座を登録";
 
 
-document
-    .getElementById(
-        "trainingModal"
-    )
-    .classList.remove("hidden");
+document.getElementById(
+    "trainingModal"
+).classList.remove(
+    "hidden"
+);
 
 }
 
 function closeTrainingModal() {
 
-document
-    .getElementById(
-        "trainingModal"
-    )
-    .classList.add("hidden");
+document.getElementById(
+    "trainingModal"
+).classList.add(
+    "hidden"
+);
 
 }
+
+/* ==================================================
+訓練保存
+================================================== */
 
 async function saveTraining() {
 
 const id =
-    document
-        .getElementById(
-            "editTrainingDbId"
-        )
-        .value;
+    document.getElementById(
+        "editTrainingDbId"
+    ).value;
 
 
 const trainingId =
-    document
-        .getElementById(
-            "editTrainingId"
-        )
-        .value
-        .trim();
+    document.getElementById(
+        "editTrainingId"
+    ).value
+    .trim();
 
 
 const title =
-    document
-        .getElementById(
-            "editTrainingTitle"
-        )
-        .value
-        .trim();
+    document.getElementById(
+        "editTrainingTitle"
+    ).value
+    .trim();
 
 
 if (!trainingId) {
 
-    alert("訓練IDを入力してください。");
+    alert(
+        "訓練IDを入力してください。"
+    );
 
     return;
 
@@ -1118,51 +1459,8 @@ if (!trainingId) {
 
 if (!title) {
 
-    alert("タイトルを入力してください。");
-
-    return;
-
-}
-
-
-let result;
-
-
-if (id) {
-
-    result =
-        await supabase
-            .from("trainings")
-            .update({
-                training_id: trainingId,
-                title
-            })
-            .eq("id", id);
-
-} else {
-
-    result =
-        await supabase
-            .from("trainings")
-            .insert({
-
-                training_id:
-                    trainingId,
-
-                title
-
-            });
-
-}
-
-
-if (result.error) {
-
-    console.error(result.error);
-
     alert(
-        "保存に失敗しました。\n" +
-        result.error.message
+        "タイトルを入力してください。"
     );
 
     return;
@@ -1170,18 +1468,83 @@ if (result.error) {
 }
 
 
-closeTrainingModal();
+try {
 
-await loadTrainings();
-
-await loadDashboard();
+    let result;
 
 
-alert(
-    id
-        ? "訓練情報を更新しました。"
-        : "訓練を登録しました。"
-);
+    if (id) {
+
+        result =
+            await supabaseClient
+                .from("trainings")
+                .update({
+
+                    training_id:
+                        trainingId,
+
+                    title:
+                        title
+
+                })
+                .eq(
+                    "id",
+                    id
+                );
+
+    } else {
+
+        result =
+            await supabaseClient
+                .from("trainings")
+                .insert({
+
+                    training_id:
+                        trainingId,
+
+                    title:
+                        title
+
+                });
+
+    }
+
+
+    if (result.error) {
+
+        throw result.error;
+
+    }
+
+
+    closeTrainingModal();
+
+    await loadTrainings();
+
+    await loadDashboard();
+
+
+    alert(
+        id
+            ? "訓練情報を更新しました。"
+            : "訓練を登録しました。"
+    );
+
+
+} catch (error) {
+
+    console.error(
+        "Training save error:",
+        error
+    );
+
+
+    alert(
+        "保存に失敗しました。\n" +
+        error.message
+    );
+
+}
 
 }
 
@@ -1199,93 +1562,107 @@ const confirmed =
 
 
 if (!confirmed) {
+
     return;
+
 }
 
 
-const {
-    data: training,
-    error: trainingError
-} = await supabase
-    .from("trainings")
-    .select("training_id")
-    .eq("id", id)
-    .single();
+try {
+
+    const {
+        data: training,
+        error: trainingError
+    } =
+        await supabaseClient
+            .from("trainings")
+            .select(
+                "training_id"
+            )
+            .eq(
+                "id",
+                id
+            )
+            .single();
 
 
-if (trainingError) {
+    if (trainingError) {
+
+        throw trainingError;
+
+    }
+
+
+    const trainingId =
+        training.training_id;
+
+
+    const {
+        error:
+            participationError
+    } =
+        await supabaseClient
+            .from("participations")
+            .delete()
+            .eq(
+                "training_id",
+                trainingId
+            );
+
+
+    if (participationError) {
+
+        throw participationError;
+
+    }
+
+
+    const {
+        error
+    } =
+        await supabaseClient
+            .from("trainings")
+            .delete()
+            .eq(
+                "id",
+                id
+            );
+
+
+    if (error) {
+
+        throw error;
+
+    }
+
+
+    await loadAllData();
+
 
     alert(
-        "訓練情報を取得できませんでした。"
-    );
-
-    return;
-
-}
-
-
-const trainingId =
-    training.training_id;
-
-
-const {
-    error: participationError
-} = await supabase
-    .from("participations")
-    .delete()
-    .eq(
-        "training_id",
-        trainingId
+        "訓練を削除しました。"
     );
 
 
-if (participationError) {
+} catch (error) {
 
     console.error(
-        participationError
+        "Training delete error:",
+        error
     );
 
-    alert(
-        "参加履歴の削除に失敗しました。\n" +
-        participationError.message
-    );
-
-    return;
-
-}
-
-
-const {
-    error
-} = await supabase
-    .from("trainings")
-    .delete()
-    .eq("id", id);
-
-
-if (error) {
-
-    console.error(error);
 
     alert(
         "訓練の削除に失敗しました。\n" +
         error.message
     );
 
-    return;
-
 }
-
-
-await loadAllData();
-
-
-alert("訓練を削除しました。");
 
 }
 
 /* ==================================================
-参加履歴
+参加履歴一覧
 ================================================== */
 
 async function loadParticipations() {
@@ -1296,29 +1673,45 @@ const tbody =
     );
 
 
+if (!tbody) {
+
+    return;
+
+}
+
+
 tbody.innerHTML =
-    `<tr><td colspan="4">読み込み中...</td></tr>`;
+    `<tr>
+        <td colspan="4">
+            読み込み中...
+        </td>
+    </tr>`;
 
 
 const {
     data,
     error
-} = await supabase
-    .from("participations")
-    .select(
-        "id, registered_at, participant_id, training_id"
-    )
-    .order(
-        "registered_at",
-        {
-            ascending: false
-        }
-    );
+} =
+    await supabaseClient
+        .from("participations")
+        .select(
+            "id, registered_at, participant_id, training_id"
+        )
+        .order(
+            "registered_at",
+            {
+                ascending: false
+            }
+        );
 
 
 if (error) {
 
-    console.error(error);
+    console.error(
+        "Participations error:",
+        error
+    );
+
 
     tbody.innerHTML =
         `<tr>
@@ -1335,7 +1728,10 @@ if (error) {
 tbody.innerHTML = "";
 
 
-if (!data || data.length === 0) {
+if (
+    !data ||
+    data.length === 0
+) {
 
     tbody.innerHTML =
         `<tr>
@@ -1352,7 +1748,9 @@ if (!data || data.length === 0) {
 data.forEach(participation => {
 
     const tr =
-        document.createElement("tr");
+        document.createElement(
+            "tr"
+        );
 
 
     tr.innerHTML = `
@@ -1429,49 +1827,70 @@ const confirmed =
 
 
 if (!confirmed) {
+
     return;
+
 }
 
 
-const {
-    error
-} = await supabase
-    .from("participations")
-    .delete()
-    .eq("id", id);
+try {
+
+    const {
+        error
+    } =
+        await supabaseClient
+            .from("participations")
+            .delete()
+            .eq(
+                "id",
+                id
+            );
 
 
-if (error) {
+    if (error) {
 
-    console.error(error);
+        throw error;
+
+    }
+
+
+    await loadParticipations();
+
+    await loadDashboard();
+
+
+    alert(
+        "参加履歴を削除しました。"
+    );
+
+
+} catch (error) {
+
+    console.error(
+        "Participation delete error:",
+        error
+    );
+
 
     alert(
         "削除に失敗しました。\n" +
         error.message
     );
 
-    return;
-
 }
-
-
-await loadParticipations();
-
-await loadDashboard();
-
-
-alert("参加履歴を削除しました。");
 
 }
 
 /* ==================================================
-日付表示
+日付フォーマット
 ================================================== */
 
 function formatDate(value) {
 
 if (!value) {
+
     return "-";
+
 }
 
 
@@ -1479,19 +1898,31 @@ const date =
     new Date(value);
 
 
-if (Number.isNaN(date.getTime())) {
+if (
+    Number.isNaN(
+        date.getTime()
+    )
+) {
+
     return value;
+
 }
 
 
 return date.toLocaleString(
     "ja-JP",
     {
+
         year: "numeric",
+
         month: "2-digit",
+
         day: "2-digit",
+
         hour: "2-digit",
+
         minute: "2-digit"
+
     }
 );
 
@@ -1503,16 +1934,41 @@ HTMLエスケープ
 
 function escapeHtml(value) {
 
-if (value === null || value === undefined) {
+if (
+    value === null ||
+    value === undefined
+) {
+
     return "";
+
 }
 
 
 return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+
+    .replace(
+        /&/g,
+        "&amp;"
+    )
+
+    .replace(
+        /</g,
+        "&lt;"
+    )
+
+    .replace(
+        />/g,
+        "&gt;"
+    )
+
+    .replace(
+        /"/g,
+        "&quot;"
+    )
+
+    .replace(
+        /'/g,
+        "&#039;"
+    );
 
 }
