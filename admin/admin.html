@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>岩瀬自治会 防災アプリ 管理者画面</title>
+
+<link rel="stylesheet" href="admin.css">
+
+</head>
+
+<body>
+
+<!-- ========================
+     管理者ログイン
+======================== -->
+
+<div id="loginArea">
+
+```
+<div class="login-box">
+
+    <h1>
+        岩瀬自治会<br>
+        防災アプリ
+    </h1>
+
+    <h2>
+        管理者ログイン
+    </h2>
+
+    <p>
+        管理者パスワードを入力してください。
+    </p>
+
+    <input
+        type="password"
+        id="adminPassword"
+        placeholder="パスワード入力"
+        autocomplete="current-password"
+    >
+
+    <button id="loginButton">
+        管理者ログイン
+    </button>
+
+    <p id="loginError"></p>
+
+</div>
+```
+
+</div>
+
+<!-- ========================
+     管理者画面
+======================== -->
+
+<div id="adminArea" class="hidden">
+
+```
+<header class="admin-header">
+
+    <div>
+
+        <h1>
+            岩瀬自治会 防災アプリ
+        </h1>
+
+        <p>
+            管理者画面
+        </p>
+
+    </div>
+
+    <button id="logoutButton">
+        ログアウト
+    </button>
+
+</header>
+
+
+
+<main>
+
+
+    <!-- ========================
+         ダッシュボード
+    ======================== -->
+
+    <section class="dashboard">
+
+        <h2>
+            ダッシュボード
+        </h2>
+
+
+        <div class="stats">
+
+
+            <div class="stat-card">
+
+                <div class="stat-icon">
+                    👥
+                </div>
+
+                <div>
+
+                    <p>
+                        登録利用者
+                    </p>
+
+                    <strong id="participantCount">
+                        -
+                    </strong>
+
+                    <span>
+                        人
+                    </span>
+
+                </div>
+
+            </div>
+
+
+
+            <div class="stat-card">
+
+                <div class="stat-icon">
+                    🏃
+                </div>
+
+                <div>
+
+                    <p>
+                        登録訓練
+                    </p>
+
+                    <strong id="trainingCount">
+                        -
+                    </strong>
+
+                    <span>
+                        件
+                    </span>
+
+                </div>
+
+            </div>
+
+
+
+            <div class="stat-card">
+
+                <div class="stat-icon">
+                    🎫
+                </div>
+
+                <div>
+
+                    <p>
+                        参加記録
+                    </p>
+
+                    <strong id="participationCount">
+                        -
+                    </strong>
+
+                    <span>
+                        件
+                    </span>
+
+                </div>
+
+            </div>
+
+
+        </div>
+
+    </section>
+
+
+
+    <!-- ========================
+         利用者
+    ======================== -->
+
+    <section class="data-section">
+
+        <div class="section-title">
+
+            <h2>
+                👥 利用者一覧
+            </h2>
+
+            <button
+                class="reload-button"
+                onclick="loadParticipants()"
+            >
+                更新
+            </button>
+
+        </div>
+
+
+        <div class="table-wrapper">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            ID
+                        </th>
+
+                        <th>
+                            氏名
+                        </th>
+
+                        <th>
+                            登録日時
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody id="participantsTable">
+
+                    <tr>
+
+                        <td colspan="3">
+                            読み込み中...
+                        </td>
+
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- ========================
+         訓練
+    ======================== -->
+
+    <section class="data-section">
+
+        <div class="section-title">
+
+            <h2>
+                🏃 訓練一覧
+            </h2>
+
+            <button
+                class="reload-button"
+                onclick="loadTrainings()"
+            >
+                更新
+            </button>
+
+        </div>
+
+
+        <div class="table-wrapper">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            日付
+                        </th>
+
+                        <th>
+                            訓練名
+                        </th>
+
+                        <th>
+                            ID
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody id="trainingsTable">
+
+                    <tr>
+
+                        <td colspan="3">
+                            読み込み中...
+                        </td>
+
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- ========================
+         参加履歴
+    ======================== -->
+
+    <section class="data-section">
+
+        <div class="section-title">
+
+            <h2>
+                🎫 参加履歴
+            </h2>
+
+            <button
+                class="reload-button"
+                onclick="loadParticipations()"
+            >
+                更新
+            </button>
+
+        </div>
+
+
+        <div class="table-wrapper">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            利用者ID
+                        </th>
+
+                        <th>
+                            訓練ID
+                        </th>
+
+                        <th>
+                            参加日
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody id="participationsTable">
+
+                    <tr>
+
+                        <td colspan="3">
+                            読み込み中...
+                        </td>
+
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- ========================
+         戻る
+    ======================== -->
+
+    <div class="back-area">
+
+        <a href="../index.html">
+            アプリトップへ戻る
+        </a>
+
+    </div>
+
+
+</main>
+```
+
+</div>
+
+<!-- Supabase -->
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script src="../stamp/supabase.js"></script>
+
+<script src="admin.js"></script>
+
+</body>
+
+</html>
