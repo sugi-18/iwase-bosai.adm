@@ -10,9 +10,8 @@
     content="width=device-width, initial-scale=1.0"
 >
 
-<title>
-    年間計画 | 岩瀬自治会 防災
-</title>
+<title>年間計画</title>
+
 
 <link
     rel="stylesheet"
@@ -23,36 +22,16 @@
 <style>
 
 /* ==================================================
-   基本
-================================================== */
-
-* {
-    box-sizing: border-box;
-}
-
-
-body {
-
-    margin: 0;
-
-    background-color: #f7f7f7;
-
-}
-
-
-/* ==================================================
    年間計画
 ================================================== */
 
 .annual-plan {
 
-    width: 100%;
-
     max-width: 900px;
 
-    margin: 0 auto;
+    margin: 30px auto;
 
-    padding: 30px 20px 50px;
+    padding: 20px;
 
     text-align: center;
 
@@ -61,15 +40,15 @@ body {
 
 .annual-plan h1 {
 
-    margin: 0 0 30px;
-
     font-size: 32px;
+
+    margin-bottom: 25px;
 
 }
 
 
 /* ==================================================
-   ギャラリー
+   写真一覧
 ================================================== */
 
 .schedule-gallery {
@@ -80,14 +59,12 @@ body {
 
     align-items: center;
 
-    gap: 25px;
+    gap: 20px;
 
 }
 
 
 .schedule-image {
-
-    display: block;
 
     width: 100%;
 
@@ -95,62 +72,62 @@ body {
 
     height: auto;
 
-    border-radius: 15px;
+    display: block;
 
-    background: #eeeeee;
+    border-radius: 15px;
 
     box-shadow:
         0 4px 10px
-        rgba(0, 0, 0, 0.20);
+        rgba(0, 0, 0, 0.2);
 
 }
 
 
 /* ==================================================
-   読み込み
+   読み込み中
 ================================================== */
 
-.loading {
+.loading-message {
 
-    width: 100%;
+    padding: 30px;
 
-    padding: 35px 20px;
-
-    color: #777777;
+    color: #777;
 
 }
 
 
-.empty {
+/* ==================================================
+   登録なし
+================================================== */
 
-    width: 100%;
+.empty-message {
 
-    padding: 35px 20px;
+    padding: 30px 20px;
 
-    color: #777777;
+    color: #777;
 
-    background: #eeeeee;
+    background-color: #eeeeee;
 
     border-radius: 10px;
 
 }
 
 
-.error {
+/* ==================================================
+   エラー
+================================================== */
 
-    width: 100%;
+.error-message {
 
     padding: 20px;
 
     color: #b71c1c;
 
-    background: #ffebee;
+    background-color: #ffebee;
 
     border-radius: 10px;
 
     line-height: 1.7;
-
-    word-break: break-word;
 
 }
 
@@ -161,17 +138,15 @@ body {
 
 .back-button {
 
-    display: block;
+    display: inline-block;
 
-    width: fit-content;
-
-    margin: 30px auto 0;
+    margin-top: 30px;
 
     padding: 15px 35px;
 
     background-color: #1976d2;
 
-    color: #ffffff;
+    color: white;
 
     text-decoration: none;
 
@@ -179,74 +154,43 @@ body {
 
     font-size: 18px;
 
-    font-weight: bold;
-
-    transition:
-        background-color 0.2s ease,
-        transform 0.15s ease;
+    transition: 0.3s;
 
 }
 
 
 .back-button:hover {
 
-    background-color: #125ea8;
+    background-color: #0d47a1;
 
-}
-
-
-.back-button:active {
-
-    transform: scale(0.98);
+    transform: scale(1.05);
 
 }
 
 
 /* ==================================================
-   スマートフォン
+   スマホ
 ================================================== */
 
 @media (max-width: 600px) {
-
-    .annual-plan {
-
-        padding: 25px 15px 40px;
-
-    }
-
 
     .annual-plan h1 {
 
         font-size: 24px;
 
-        margin-bottom: 25px;
+    }
+
+
+    .annual-plan {
+
+        padding: 10px;
 
     }
 
 
     .schedule-gallery {
 
-        gap: 18px;
-
-    }
-
-
-    .schedule-image {
-
-        border-radius: 10px;
-
-    }
-
-
-    .back-button {
-
-        width: 80%;
-
-        max-width: 300px;
-
-        padding: 14px 20px;
-
-        font-size: 16px;
+        gap: 15px;
 
     }
 
@@ -268,12 +212,16 @@ body {
     </h1>
 
 
+    <!-- ==================================================
+         写真表示エリア
+    ================================================== -->
+
     <div
         id="scheduleGallery"
         class="schedule-gallery"
     >
 
-        <div class="loading">
+        <div class="loading-message">
             読み込み中...
         </div>
 
@@ -311,14 +259,14 @@ const SUPABASE_URL =
     "https://zumbqukrojdpgfpfekjr.supabase.co";
 
 
-const SUPABASE_KEY =
+const SUPABASE_PUBLISHABLE_KEY =
     "sb_publishable_8YXsMHOxLr7MOTEYShUM3w_LsZvR3Qn";
 
 
 const supabaseClient =
     window.supabase.createClient(
         SUPABASE_URL,
-        SUPABASE_KEY
+        SUPABASE_PUBLISHABLE_KEY
     );
 
 
@@ -335,12 +283,14 @@ async function loadSchedule() {
 
 
     if (!gallery) {
+
         return;
+
     }
 
 
     gallery.innerHTML = `
-        <div class="loading">
+        <div class="loading-message">
             読み込み中...
         </div>
     `;
@@ -349,9 +299,14 @@ async function loadSchedule() {
     try {
 
         /*
-           content_group_id は使用しない
+           site_contentsから
+           annual_scheduleのレコードを取得
            
-           annual_schedule のみ取得
+           現在のDB構造：
+           
+           image1_url
+           image2_url
+           image3_url
         */
 
         const {
@@ -359,26 +314,29 @@ async function loadSchedule() {
             error
         } =
         await supabaseClient
+
             .from("site_contents")
+
             .select(
-                "id, content_type, slot, title, image_url, storage_path"
+                "id, content_type, image1_url, image2_url, image3_url"
             )
+
             .eq(
                 "content_type",
                 "annual_schedule"
             )
-            .order(
-                "slot",
-                {
-                    ascending: true
-                }
-            );
 
+            .limit(1);
+
+
+        /* ------------------------------------------
+           Supabaseエラー
+        ------------------------------------------ */
 
         if (error) {
 
             console.error(
-                "Supabase error:",
+                "site_contents取得エラー:",
                 error
             );
 
@@ -390,32 +348,17 @@ async function loadSchedule() {
         gallery.innerHTML = "";
 
 
-        /*
-           画像が存在するものだけ
-        */
-
-        const items =
-            (data || [])
-                .filter(
-                    item =>
-                        item.image_url
-                )
-                .slice(
-                    0,
-                    3
-                );
-
-
-        /*
-           登録なし
-        */
+        /* ------------------------------------------
+           データなし
+        ------------------------------------------ */
 
         if (
-            items.length === 0
+            !data ||
+            data.length === 0
         ) {
 
             gallery.innerHTML = `
-                <div class="empty">
+                <div class="empty-message">
                     現在、年間計画は登録されていません。
                 </div>
             `;
@@ -425,12 +368,54 @@ async function loadSchedule() {
         }
 
 
-        /*
-           画像表示
-        */
+        const content =
+            data[0];
 
-        items.forEach(
-            (item) => {
+
+        /* ------------------------------------------
+           3枚の画像URL
+        ------------------------------------------ */
+
+        const imageUrls = [
+
+            content.image1_url,
+
+            content.image2_url,
+
+            content.image3_url
+
+        ].filter(
+            url =>
+                url &&
+                String(url).trim() !== ""
+        );
+
+
+        /* ------------------------------------------
+           画像なし
+        ------------------------------------------ */
+
+        if (
+            imageUrls.length === 0
+        ) {
+
+            gallery.innerHTML = `
+                <div class="empty-message">
+                    現在、年間計画の画像はありません。
+                </div>
+            `;
+
+            return;
+
+        }
+
+
+        /* ------------------------------------------
+           画像表示
+        ------------------------------------------ */
+
+        imageUrls.forEach(
+            (url, index) => {
 
                 const img =
                     document.createElement(
@@ -438,28 +423,17 @@ async function loadSchedule() {
                     );
 
 
-                /*
-                   キャッシュ対策
-                */
-
-                const separator =
-                    item.image_url.includes("?")
-                        ? "&"
-                        : "?";
-
-
                 img.src =
-                    item.image_url +
-                    separator +
-                    "v=" +
-                    encodeURIComponent(
-                        item.id
-                    );
+                    String(url).trim();
 
 
                 img.alt =
-                    item.title ||
-                    "年間計画";
+                    "年間計画 " +
+                    (index + 1);
+
+
+                img.className =
+                    "schedule-image";
 
 
                 img.loading =
@@ -472,15 +446,14 @@ async function loadSchedule() {
 
                         console.error(
                             "画像読み込み失敗:",
-                            item.image_url
+                            img.src
                         );
+
+                        img.style.display =
+                            "none";
 
                     }
                 );
-
-
-                img.className =
-                    "schedule-image";
 
 
                 gallery.appendChild(
@@ -500,9 +473,9 @@ async function loadSchedule() {
 
 
         gallery.innerHTML = `
-            <div class="error">
+            <div class="error-message">
                 年間計画を読み込めませんでした。<br>
-                時間をおいて再度お試しください。
+                しばらく時間をおいて再度お試しください。
             </div>
         `;
 
@@ -515,7 +488,14 @@ async function loadSchedule() {
    実行
 ================================================== */
 
-loadSchedule();
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+
+        loadSchedule();
+
+    }
+);
 
 </script>
 
