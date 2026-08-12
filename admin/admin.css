@@ -3,10 +3,6 @@
 管理者画面 CSS
 ================================================== */
 
-/* ==================================================
-基本設定
-================================================== */
-
 {
 box-sizing: border-box;
 }
@@ -40,10 +36,6 @@ input {
 font-family: inherit;
 
 }
-
-/* ==================================================
-共通
-================================================== */
 
 .hidden {
 
@@ -101,7 +93,7 @@ border-radius: 14px;
 
 box-shadow:
     0 5px 25px
-    rgba(0, 0, 0, 0.08);
+    rgba(0,0,0,0.08);
 
 }
 
@@ -156,10 +148,6 @@ outline: none;
 .login-box input {
 
 border-color: #1976d2;
-
-box-shadow:
-    0 0 0 3px
-    rgba(25, 118, 210, 0.12);
 
 }
 
@@ -217,14 +205,6 @@ border-radius: 8px;
 
 cursor: pointer;
 
-font-size: 14px;
-
-}
-
-.logout-button {
-
-background: rgba(255,255,255,0.25);
-
 }
 
 /* ==================================================
@@ -253,14 +233,42 @@ margin-bottom: 30px;
 
 margin-top: 0;
 
-margin-bottom: 18px;
+margin-bottom: 8px;
 
 font-size: 23px;
 
 }
 
 /* ==================================================
-ダッシュボード
+ダッシュボードタイトル
+================================================== */
+
+.dashboard-title {
+
+display: flex;
+
+justify-content: space-between;
+
+align-items: center;
+
+gap: 15px;
+
+margin-bottom: 20px;
+
+}
+
+.dashboard-title p {
+
+margin: 0;
+
+color: #777;
+
+font-size: 14px;
+
+}
+
+/* ==================================================
+統計カード
 ================================================== */
 
 .stats-grid {
@@ -268,11 +276,11 @@ font-size: 23px;
 display: grid;
 
 grid-template-columns:
-    repeat(3, 1fr);
+    repeat(4, 1fr);
 
-gap: 18px;
+gap: 16px;
 
-margin-bottom: 20px;
+margin-bottom: 16px;
 
 }
 
@@ -282,7 +290,7 @@ background: #fff;
 
 border-radius: 12px;
 
-padding: 22px;
+padding: 20px;
 
 box-shadow:
     0 2px 10px
@@ -298,17 +306,57 @@ margin-bottom: 8px;
 
 color: #777;
 
-font-size: 14px;
+font-size: 13px;
 
 }
 
 .stat-card strong {
 
-font-size: 34px;
+font-size: 31px;
 
 font-weight: 700;
 
 }
+
+.stat-card > div {
+
+display: flex;
+
+align-items: baseline;
+
+gap: 5px;
+
+}
+
+.small-stat {
+
+padding: 17px 20px;
+
+}
+
+.small-stat strong {
+
+font-size: 25px;
+
+}
+
+.popular-training-name {
+
+display: block;
+
+max-width: 100%;
+
+overflow: hidden;
+
+text-overflow: ellipsis;
+
+white-space: nowrap;
+
+}
+
+/* ==================================================
+ダッシュボードカード
+================================================== */
 
 .dashboard-card {
 
@@ -318,6 +366,8 @@ border-radius: 12px;
 
 padding: 22px;
 
+margin-bottom: 18px;
+
 box-shadow:
     0 2px 10px
     rgba(0,0,0,0.05);
@@ -326,11 +376,158 @@ box-shadow:
 
 .dashboard-card h3 {
 
-margin-top: 0;
+margin: 0 0 5px;
+
+font-size: 18px;
+
+}
+
+.card-description {
+
+margin: 0 0 15px;
+
+color: #777;
+
+font-size: 13px;
+
+}
+
+.card-title-row {
+
+display: flex;
+
+justify-content: space-between;
 
 margin-bottom: 15px;
 
 }
+
+.card-title-row p {
+
+margin: 0;
+
+color: #777;
+
+font-size: 13px;
+
+}
+
+/* ==================================================
+グラフ
+================================================== */
+
+.chart-container {
+
+position: relative;
+
+width: 100%;
+
+height: 330px;
+
+}
+
+.chart-container canvas {
+
+width: 100% !important;
+
+height: 100% !important;
+
+}
+
+/* ==================================================
+2カラム
+================================================== */
+
+.dashboard-two-column {
+
+display: grid;
+
+grid-template-columns:
+    repeat(2, 1fr);
+
+gap: 18px;
+
+}
+
+/* ==================================================
+ランキング
+================================================== */
+
+.ranking-list {
+
+margin-top: 10px;
+
+}
+
+.ranking-item {
+
+display: flex;
+
+align-items: center;
+
+gap: 12px;
+
+padding: 12px 0;
+
+border-bottom: 1px solid #eee;
+
+}
+
+.ranking-item {
+
+border-bottom: none;
+
+}
+
+.ranking-number {
+
+width: 30px;
+
+height: 30px;
+
+display: flex;
+
+align-items: center;
+
+justify-content: center;
+
+background: #f0f3f6;
+
+border-radius: 50%;
+
+font-weight: bold;
+
+font-size: 13px;
+
+}
+
+.ranking-name {
+
+flex: 1;
+
+min-width: 0;
+
+overflow: hidden;
+
+text-overflow: ellipsis;
+
+white-space: nowrap;
+
+font-weight: bold;
+
+}
+
+.ranking-value {
+
+font-weight: bold;
+
+white-space: nowrap;
+
+}
+
+/* ==================================================
+最近の参加
+================================================== */
 
 .recent-item {
 
@@ -345,6 +542,16 @@ font-size: 14px;
 .recent-item {
 
 border-bottom: none;
+
+}
+
+.empty-message {
+
+padding: 25px;
+
+text-align: center;
+
+color: #777;
 
 }
 
@@ -409,7 +616,7 @@ font-weight: bold;
 }
 
 /* ==================================================
-セクションヘッダー
+セクション
 ================================================== */
 
 .section-header {
@@ -423,12 +630,6 @@ align-items: center;
 gap: 15px;
 
 margin-bottom: 18px;
-
-}
-
-.section-header h2 {
-
-margin-bottom: 5px;
 
 }
 
@@ -480,19 +681,13 @@ background: #e9edf1;
 
 color: #444;
 
-padding: 11px 20px;
+padding: 10px 17px;
 
 border-radius: 8px;
 
 cursor: pointer;
 
 font-size: 14px;
-
-}
-
-.secondary-button {
-
-background: #dce2e7;
 
 }
 
@@ -520,12 +715,6 @@ color: #1565c0;
 
 }
 
-.edit-button {
-
-background: #bbdefb;
-
-}
-
 .delete-button {
 
 background: #ffebee;
@@ -534,23 +723,11 @@ color: #c62828;
 
 }
 
-.delete-button {
-
-background: #ffcdd2;
-
-}
-
 .view-button {
 
 background: #e8f5e9;
 
 color: #2e7d32;
-
-}
-
-.view-button {
-
-background: #c8e6c9;
 
 }
 
@@ -609,8 +786,6 @@ font-size: 13px;
 
 color: #666;
 
-white-space: nowrap;
-
 }
 
 td {
@@ -624,10 +799,6 @@ tbody tr {
 background: #fafafa;
 
 }
-
-/* ==================================================
-参加人数表示
-================================================== */
 
 .participant-count {
 
@@ -698,10 +869,6 @@ padding: 28px;
 
 border-radius: 14px;
 
-box-shadow:
-    0 10px 40px
-    rgba(0,0,0,0.2);
-
 }
 
 .large-modal {
@@ -713,8 +880,6 @@ max-width: 700px;
 .modal-content h2 {
 
 margin-top: 0;
-
-margin-bottom: 22px;
 
 }
 
@@ -744,14 +909,6 @@ font-size: 15px;
 
 }
 
-.modal-content input {
-
-outline: none;
-
-border-color: #1976d2;
-
-}
-
 .modal-buttons {
 
 display: flex;
@@ -767,12 +924,6 @@ margin-top: 25px;
 /* ==================================================
 履歴
 ================================================== */
-
-.history-content {
-
-margin-top: 5px;
-
-}
 
 .history-summary {
 
@@ -840,23 +991,30 @@ font-size: 13px;
 
 }
 
-.empty-message {
-
-padding: 25px;
-
-text-align: center;
-
-color: #777;
-
-}
-
 /* ==================================================
 スマートフォン
 ================================================== */
 
-@media (
-max-width: 700px
-) {
+@media (max-width: 800px) {
+
+.stats-grid {
+
+    grid-template-columns:
+        repeat(2, 1fr);
+
+}
+
+
+.dashboard-two-column {
+
+    grid-template-columns:
+        1fr;
+
+}
+
+}
+
+@media (max-width: 700px) {
 
 .admin-header {
 
@@ -882,26 +1040,33 @@ max-width: 700px
 }
 
 
+.dashboard-title {
+
+    align-items: stretch;
+
+    flex-direction: column;
+
+}
+
+
+.dashboard-title button {
+
+    width: 100%;
+
+}
+
+
 .stats-grid {
 
     grid-template-columns:
         1fr;
 
-    gap: 10px;
-
 }
 
 
-.stat-card {
+.chart-container {
 
-    padding: 17px;
-
-}
-
-
-.stat-card strong {
-
-    font-size: 28px;
+    height: 250px;
 
 }
 
@@ -936,22 +1101,6 @@ max-width: 700px
 }
 
 
-.table-wrapper {
-
-    border-radius: 8px;
-
-}
-
-
-th,
-td {
-
-    padding:
-        10px 9px;
-
-}
-
-
 .modal {
 
     padding: 10px;
@@ -966,15 +1115,6 @@ td {
 .modal-content {
 
     padding: 20px;
-
-    max-height: 90vh;
-
-}
-
-
-.large-modal {
-
-    width: 100%;
 
 }
 
@@ -1005,13 +1145,7 @@ td {
 
 }
 
-/* ==================================================
-極小画面
-================================================== */
-
-@media (
-max-width: 400px
-) {
+@media (max-width: 400px) {
 
 .admin-header {
 
