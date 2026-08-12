@@ -1359,3 +1359,291 @@ tbody tr {
     }
 
 }
+
+/* ==================================================
+   ボタン文字表示の最終修正
+================================================== */
+
+/*
+   管理画面内のすべてのbuttonについて
+   文字が確実に表示されるようにする
+*/
+
+button {
+    font-family: inherit;
+
+    font-weight: 500;
+
+    text-align: center;
+
+    text-indent: 0;
+
+    line-height: 1.4;
+
+    letter-spacing: normal;
+
+    white-space: nowrap;
+
+    overflow: visible;
+
+    visibility: visible;
+
+    opacity: 1;
+
+    -webkit-text-fill-color: currentColor;
+}
+
+
+/* ==================================================
+   ナビゲーションボタン
+================================================== */
+
+.admin-nav .nav-button {
+    display: inline-flex !important;
+
+    align-items: center !important;
+
+    justify-content: center !important;
+
+    color: #555 !important;
+
+    font-size: 15px !important;
+
+    font-weight: 500 !important;
+
+    line-height: 1.4 !important;
+
+    text-indent: 0 !important;
+
+    visibility: visible !important;
+
+    opacity: 1 !important;
+
+    -webkit-text-fill-color: #555 !important;
+}
+
+
+.admin-nav .nav-button.active {
+    color: #fff !important;
+
+    -webkit-text-fill-color: #fff !important;
+}
+
+
+/* ==================================================
+   メインボタン
+================================================== */
+
+.primary-button {
+    display: inline-flex !important;
+
+    align-items: center !important;
+
+    justify-content: center !important;
+
+    color: #fff !important;
+
+    font-size: 14px !important;
+
+    font-weight: bold !important;
+
+    line-height: 1.4 !important;
+
+    text-indent: 0 !important;
+
+    visibility: visible !important;
+
+    opacity: 1 !important;
+
+    -webkit-text-fill-color: #fff !important;
+}
+
+
+/* ==================================================
+   サブボタン
+================================================== */
+
+.secondary-button {
+    display: inline-flex !important;
+
+    align-items: center !important;
+
+    justify-content: center !important;
+
+    color: #444 !important;
+
+    font-size: 14px !important;
+
+    font-weight: 500 !important;
+
+    line-height: 1.4 !important;
+
+    text-indent: 0 !important;
+
+    visibility: visible !important;
+
+    opacity: 1 !important;
+
+    -webkit-text-fill-color: #444 !important;
+}
+
+
+/* ==================================================
+   操作ボタン
+================================================== */
+
+.action-button {
+    display: inline-flex !important;
+
+    align-items: center !important;
+
+    justify-content: center !important;
+
+    color: #333 !important;
+
+    font-size: 13px !important;
+
+    font-weight: 500 !important;
+
+    line-height: 1.4 !important;
+
+    text-indent: 0 !important;
+
+    visibility: visible !important;
+
+    opacity: 1 !important;
+
+    -webkit-text-fill-color: currentColor !important;
+}
+
+
+/* ==================================================
+   「参加者を見る」など
+================================================== */
+
+.view-button {
+    color: #2e7d32 !important;
+
+    -webkit-text-fill-color: #2e7d32 !important;
+}
+
+
+/* ==================================================
+   編集
+================================================== */
+
+.edit-button {
+    color: #1565c0 !important;
+
+    -webkit-text-fill-color: #1565c0 !important;
+}
+
+
+/* ==================================================
+   削除
+================================================== */
+
+.delete-button {
+    color: #c62828 !important;
+
+    -webkit-text-fill-color: #c62828 !important;
+}
+
+
+/* ==================================================
+   モーダル内ボタン
+================================================== */
+
+.modal-buttons button {
+    display: inline-flex !important;
+
+    align-items: center !important;
+
+    justify-content: center !important;
+
+    visibility: visible !important;
+
+    opacity: 1 !important;
+
+    text-indent: 0 !important;
+
+    line-height: 1.4 !important;
+
+    overflow: visible !important;
+}
+
+
+/* ==================================================
+   モーダルの閉じる・戻るボタン
+================================================== */
+
+.modal-buttons .secondary-button {
+    color: #444 !important;
+
+    -webkit-text-fill-color: #444 !important;
+}
+
+
+/* ==================================================
+   ボタン内の文字・span等
+================================================== */
+
+button span,
+button strong,
+button small {
+    color: inherit !important;
+
+    -webkit-text-fill-color: inherit !important;
+
+    visibility: visible !important;
+
+    opacity: 1 !important;
+}
+
+
+/* ==================================================
+   スマートフォン
+================================================== */
+
+@media (max-width: 700px) {
+
+    .admin-nav .nav-button {
+        display: flex !important;
+
+        width: 100% !important;
+
+        min-height: 44px !important;
+
+        color: #555 !important;
+
+        -webkit-text-fill-color: #555 !important;
+    }
+
+
+    .admin-nav .nav-button.active {
+        color: #fff !important;
+
+        -webkit-text-fill-color: #fff !important;
+    }
+
+
+    .primary-button,
+    .secondary-button,
+    .action-button {
+        display: inline-flex !important;
+
+        visibility: visible !important;
+
+        opacity: 1 !important;
+
+        text-indent: 0 !important;
+    }
+
+
+    .modal-buttons button {
+        width: 100% !important;
+
+        min-height: 44px !important;
+    }
+
+}
