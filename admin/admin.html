@@ -488,6 +488,17 @@
         参加履歴
     </button>
 
+
+    <!-- ★今回追加 -->
+
+    <button
+        type="button"
+        class="nav-button"
+        data-target="contentManagementSection"
+    >
+        掲載コンテンツ
+    </button>
+
 </nav>
 
 
@@ -934,7 +945,6 @@
 
     </div>
 
-
 </section>
 
 
@@ -1107,6 +1117,143 @@
     </div>
 
 </section>
+
+
+
+<!-- ==================================================
+     ★ 掲載コンテンツ管理
+================================================== -->
+
+<section
+    id="contentManagementSection"
+    class="admin-section content-section hidden"
+>
+
+    <div class="section-header">
+
+        <div>
+
+            <h2>
+                掲載コンテンツ管理
+            </h2>
+
+            <p>
+                次回訓練・年間計画・活動実績を管理します。
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <!-- ==================================================
+         次回訓練
+    ================================================== -->
+
+    <div class="content-management-card">
+
+        <div class="content-card-header">
+
+            <div>
+
+                <h3>
+                    📅 次回訓練
+                </h3>
+
+                <p class="content-management-description">
+                    最大3枚まで掲載できます。
+                    登録した画像はアプリの次回訓練ページに表示されます。
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div
+            id="nextTrainingImages"
+            class="content-image-grid"
+        ></div>
+
+    </div>
+
+
+
+    <!-- ==================================================
+         年間計画
+    ================================================== -->
+
+    <div class="content-management-card">
+
+        <div class="content-card-header">
+
+            <div>
+
+                <h3>
+                    🗓 年間計画
+                </h3>
+
+                <p class="content-management-description">
+                    最大3枚まで掲載できます。
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div
+            id="annualScheduleImages"
+            class="content-image-grid"
+        ></div>
+
+    </div>
+
+
+
+    <!-- ==================================================
+         活動実績
+    ================================================== -->
+
+    <div class="content-management-card">
+
+        <div class="content-card-header">
+
+            <div>
+
+                <h3>
+                    📷 活動実績
+                </h3>
+
+                <p class="content-management-description">
+                    活動ごとに最大3枚の写真を登録できます。
+                </p>
+
+            </div>
+
+
+            <button
+                type="button"
+                id="addActivityButton"
+                class="primary-button"
+            >
+                ＋ 活動実績を追加
+            </button>
+
+        </div>
+
+
+        <div
+            id="activitiesManagementList"
+            class="activities-management-list"
+        >
+            読み込み中...
+        </div>
+
+    </div>
+
+</section>
+
 
 
 </main>
@@ -1355,12 +1502,14 @@
                 参加者を追加
             </h3>
 
+
             <div
                 id="availableParticipants"
                 class="participant-select-list"
             >
                 読み込み中...
             </div>
+
 
             <button
                 type="button"
@@ -1380,6 +1529,7 @@
             <h3>
                 現在の参加者
             </h3>
+
 
             <div
                 id="trainingParticipantsContent"
@@ -1531,6 +1681,13 @@
 ================================================== -->
 
 <script src="admin.js"></script>
+
+
+<!-- ==================================================
+     掲載コンテンツ管理
+================================================== -->
+
+<script src="content-admin.js"></script>
 
 
 
