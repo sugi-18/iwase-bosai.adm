@@ -7,111 +7,126 @@
 <meta charset="UTF-8">
 
 <meta
-name="viewport"
-content="width=device-width, initial-scale=1.0"
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
 
+<title>
+    管理者画面 | いわぽん防災
+</title>
 
-
-
-<title>管理者画面 | いわぽん防災</title>
-
-<link rel="stylesheet" href="admin.css" >
+<link
+    rel="stylesheet"
+    href="admin.css"
+>
 
 </head>
 
+
 <body>
 
-<!-- ================================================== ログイン画面 ================================================== -->
 
-<div id="loginScreen" class="screen" >
+<!-- ==================================================
+     ログイン画面
+================================================== -->
 
-<div class="login-box">
+<div
+    id="loginScreen"
+    class="screen"
+>
 
-    <h1>
-        管理者ログイン
-    </h1>
+    <div class="login-box">
 
-    <p class="login-description">
-        いわぽん防災<br>
-        管理者専用画面
-    </p>
+        <h1>
+            管理者ログイン
+        </h1>
 
-
-    <form id="loginForm">
-
-        <label for="email">
-            メールアドレス
-        </label>
-
-        <input
-            type="email"
-            id="email"
-            placeholder="メールアドレス"
-            autocomplete="username"
-            required
-        >
+        <p class="login-description">
+            いわぽん防災<br>
+            管理者専用画面
+        </p>
 
 
-        <label for="password">
-            パスワード
-        </label>
+        <form id="loginForm">
 
-        <input
-            type="password"
-            id="password"
-            placeholder="パスワード"
-            autocomplete="current-password"
-            required
-        >
+            <label for="email">
+                メールアドレス
+            </label>
 
-
-        <button
-            type="submit"
-            class="primary-button"
-        >
-            ログイン
-        </button>
-
-    </form>
+            <input
+                type="email"
+                id="email"
+                placeholder="メールアドレス"
+                autocomplete="username"
+                required
+            >
 
 
-    <p
-        id="loginError"
-        class="error-message"
-    ></p>
+            <label for="password">
+                パスワード
+            </label>
+
+            <input
+                type="password"
+                id="password"
+                placeholder="パスワード"
+                autocomplete="current-password"
+                required
+            >
+
+
+            <button
+                type="submit"
+                class="primary-button"
+            >
+                ログイン
+            </button>
+
+        </form>
+
+
+        <p
+            id="loginError"
+            class="error-message"
+        ></p>
+
+    </div>
 
 </div>
 
-</div>
 
 
 
+<!-- ==================================================
+     管理画面
+================================================== -->
 
-<!-- ================================================== 管理画面 ================================================== -->
-
-<div id="adminScreen" class="screen hidden" >
+<div
+    id="adminScreen"
+    class="screen hidden"
+>
 
 <header class="admin-header">
 
-<div>
+    <div>
 
-    <h1>
-        管理者画面
-    </h1>
+        <h1>
+            管理者画面
+        </h1>
 
-    <p>
-        いわぽん防災
-    </p>
+        <p>
+            いわぽん防災
+        </p>
 
-</div>
+    </div>
 
 
-<button
-    id="logoutButton"
-    class="logout-button"
->
-    ログアウト
-</button>
+    <button
+        id="logoutButton"
+        class="logout-button"
+    >
+        ログアウト
+    </button>
 
 </header>
 
@@ -120,239 +135,395 @@ content="width=device-width, initial-scale=1.0"
 
 <main class="admin-container">
 
-<!-- ================================================== ダッシュボード ================================================== -->
 
-<section id="dashboardSection" class="admin-section" >
+<!-- ==================================================
+     ダッシュボード
+================================================== -->
 
-<div class="dashboard-title">
+<section
+    id="dashboardSection"
+    class="admin-section"
+>
 
-    <div>
+    <div class="dashboard-title">
 
-        <h2>
-            ダッシュボード
-        </h2>
+        <div>
 
-        <p>
-            地域の防災活動状況を確認できます。
-        </p>
+            <h2>
+                ダッシュボード
+            </h2>
+
+            <p>
+                地域の防災活動状況を確認できます。
+            </p>
+
+        </div>
+
+
+        <button
+            id="refreshDashboardButton"
+            class="secondary-button"
+        >
+            ↻ 更新
+        </button>
 
     </div>
+
+
+
+    <!-- 基本統計 -->
+
+    <div class="stats-grid dashboard-stats">
+
+
+        <div class="stat-card">
+
+            <span class="stat-label">
+                登録参加者
+            </span>
+
+            <div>
+
+                <strong id="participantCount">
+                    0
+                </strong>
+
+                <span>
+                    人
+                </span>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="stat-card">
+
+            <span class="stat-label">
+                実参加者
+            </span>
+
+            <div>
+
+                <strong id="activeParticipantCount">
+                    0
+                </strong>
+
+                <span>
+                    人
+                </span>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="stat-card">
+
+            <span class="stat-label">
+                訓練・講座
+            </span>
+
+            <div>
+
+                <strong id="trainingCount">
+                    0
+                </strong>
+
+                <span>
+                    件
+                </span>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="stat-card">
+
+            <span class="stat-label">
+                延べ参加回数
+            </span>
+
+            <div>
+
+                <strong id="participationCount">
+                    0
+                </strong>
+
+                <span>
+                    回
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- 詳細統計 -->
+
+    <div class="stats-grid secondary-stats">
+
+
+        <div class="stat-card small-stat">
+
+            <span class="stat-label">
+                平均参加回数
+            </span>
+
+            <div>
+
+                <strong id="averageParticipation">
+                    0
+                </strong>
+
+                <span>
+                    回 / 人
+                </span>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="stat-card small-stat">
+
+            <span class="stat-label">
+                今月の実参加者
+            </span>
+
+            <div>
+
+                <strong id="monthlyParticipantCount">
+                    0
+                </strong>
+
+                <span>
+                    人
+                </span>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="stat-card small-stat">
+
+            <span class="stat-label">
+                今月の延べ参加
+            </span>
+
+            <div>
+
+                <strong id="monthlyParticipationCount">
+                    0
+                </strong>
+
+                <span>
+                    回
+                </span>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="stat-card small-stat">
+
+            <span class="stat-label">
+                最多参加訓練
+            </span>
+
+            <div>
+
+                <strong
+                    id="mostPopularTraining"
+                    class="popular-training-name"
+                >
+                    -
+                </strong>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- グラフ -->
+
+    <div class="dashboard-card chart-card">
+
+        <div class="card-title-row">
+
+            <div>
+
+                <h3>
+                    月別参加状況
+                </h3>
+
+                <p>
+                    過去6か月の延べ参加回数
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="chart-container">
+
+            <canvas
+                id="monthlyParticipationChart"
+            ></canvas>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- 下段 -->
+
+    <div class="dashboard-two-column">
+
+
+        <!-- ランキング -->
+
+        <div class="dashboard-card">
+
+            <h3>
+                参加回数ランキング
+            </h3>
+
+            <p class="card-description">
+                参加回数の多い参加者
+            </p>
+
+
+            <div
+                id="participationRanking"
+                class="ranking-list"
+            >
+                読み込み中...
+            </div>
+
+        </div>
+
+
+
+        <!-- 人気訓練 -->
+
+        <div class="dashboard-card">
+
+            <h3>
+                参加者の多い訓練
+            </h3>
+
+            <p class="card-description">
+                参加人数の多い訓練・講座
+            </p>
+
+
+            <div
+                id="trainingRanking"
+                class="ranking-list"
+            >
+                読み込み中...
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- 最近の参加記録 -->
+
+    <div class="dashboard-card">
+
+        <h3>
+            最近の参加記録
+        </h3>
+
+
+        <div id="recentParticipations">
+            読み込み中...
+        </div>
+
+    </div>
+
+</section>
+
+
+
+
+<!-- ==================================================
+     ナビゲーション
+================================================== -->
+
+<nav class="admin-nav">
+
+    <button
+        type="button"
+        class="nav-button active"
+        data-target="participantsSection"
+    >
+        参加者管理
+    </button>
 
 
     <button
-        id="refreshDashboardButton"
-        class="secondary-button"
+        type="button"
+        class="nav-button"
+        data-target="trainingsSection"
     >
-        ↻ 更新
+        訓練・講座管理
     </button>
 
-</div>
+
+    <button
+        type="button"
+        class="nav-button"
+        data-target="participationsSection"
+    >
+        参加履歴
+    </button>
+
+</nav>
 
 
 
-<!-- 基本統計 -->
 
-<div class="stats-grid dashboard-stats">
+<!-- ==================================================
+     参加者管理
+================================================== -->
 
+<section
+    id="participantsSection"
+    class="admin-section content-section"
+>
 
-    <div class="stat-card">
-
-        <span class="stat-label">
-            登録参加者
-        </span>
-
-        <div>
-
-            <strong id="participantCount">
-                0
-            </strong>
-
-            <span>
-                人
-            </span>
-
-        </div>
-
-    </div>
-
-
-
-    <div class="stat-card">
-
-        <span class="stat-label">
-            実参加者
-        </span>
+    <div class="section-header">
 
         <div>
 
-            <strong id="activeParticipantCount">
-                0
-            </strong>
-
-            <span>
-                人
-            </span>
-
-        </div>
-
-    </div>
-
-
-
-    <div class="stat-card">
-
-        <span class="stat-label">
-            訓練・講座
-        </span>
-
-        <div>
-
-            <strong id="trainingCount">
-                0
-            </strong>
-
-            <span>
-                件
-            </span>
-
-        </div>
-
-    </div>
-
-
-
-    <div class="stat-card">
-
-        <span class="stat-label">
-            延べ参加回数
-        </span>
-
-        <div>
-
-            <strong id="participationCount">
-                0
-            </strong>
-
-            <span>
-                回
-            </span>
-
-        </div>
-
-    </div>
-
-</div>
-
-
-
-<!-- 詳細統計 -->
-
-<div class="stats-grid secondary-stats">
-
-
-    <div class="stat-card small-stat">
-
-        <span class="stat-label">
-            平均参加回数
-        </span>
-
-        <div>
-
-            <strong id="averageParticipation">
-                0
-            </strong>
-
-            <span>
-                回 / 人
-            </span>
-
-        </div>
-
-    </div>
-
-
-
-    <div class="stat-card small-stat">
-
-        <span class="stat-label">
-            今月の実参加者
-        </span>
-
-        <div>
-
-            <strong id="monthlyParticipantCount">
-                0
-            </strong>
-
-            <span>
-                人
-            </span>
-
-        </div>
-
-    </div>
-
-
-
-    <div class="stat-card small-stat">
-
-        <span class="stat-label">
-            今月の延べ参加
-        </span>
-
-        <div>
-
-            <strong id="monthlyParticipationCount">
-                0
-            </strong>
-
-            <span>
-                回
-            </span>
-
-        </div>
-
-    </div>
-
-
-
-    <div class="stat-card small-stat">
-
-        <span class="stat-label">
-            最多参加訓練
-        </span>
-
-        <div>
-
-            <strong
-                id="mostPopularTraining"
-                class="popular-training-name"
-            >
-                -
-            </strong>
-
-        </div>
-
-    </div>
-
-</div>
-
-
-
-<!-- グラフ -->
-
-<div class="dashboard-card chart-card">
-
-    <div class="card-title-row">
-
-        <div>
-
-            <h3>
-                月別参加状況
-            </h3>
+            <h2>
+                参加者管理
+            </h2>
 
             <p>
-                過去6か月の延べ参加回数
+                登録されている参加者を管理します。
             </p>
 
         </div>
@@ -360,322 +531,218 @@ content="width=device-width, initial-scale=1.0"
     </div>
 
 
-    <div class="chart-container">
+    <div class="table-wrapper">
 
-        <canvas
-            id="monthlyParticipationChart"
-        ></canvas>
+        <table>
 
-    </div>
+            <thead>
 
-</div>
+                <tr>
 
+                    <th>
+                        名前
+                    </th>
 
+                    <th>
+                        参加回数
+                    </th>
 
-<!-- 下段 -->
+                    <th>
+                        登録日時
+                    </th>
 
-<div class="dashboard-two-column">
+                    <th>
+                        操作
+                    </th>
 
+                </tr>
 
-    <!-- ランキング -->
-
-    <div class="dashboard-card">
-
-        <h3>
-            参加回数ランキング
-        </h3>
-
-        <p class="card-description">
-            参加回数の多い参加者
-        </p>
-
-
-        <div
-            id="participationRanking"
-            class="ranking-list"
-        >
-            読み込み中...
-        </div>
-
-    </div>
+            </thead>
 
 
+            <tbody id="participantsTable">
 
-    <!-- 人気訓練 -->
+                <tr>
 
-    <div class="dashboard-card">
+                    <td colspan="4">
+                        読み込み中...
+                    </td>
 
-        <h3>
-            参加者の多い訓練
-        </h3>
+                </tr>
 
-        <p class="card-description">
-            参加人数の多い訓練・講座
-        </p>
+            </tbody>
 
-
-        <div
-            id="trainingRanking"
-            class="ranking-list"
-        >
-            読み込み中...
-        </div>
+        </table>
 
     </div>
-
-</div>
-
-
-
-<!-- 最近の参加記録 -->
-
-<div class="dashboard-card">
-
-    <h3>
-        最近の参加記録
-    </h3>
-
-
-    <div id="recentParticipations">
-        読み込み中...
-    </div>
-
-</div>
 
 </section>
 
 
 
 
-<!-- ================================================== ナビゲーション ================================================== -->
+<!-- ==================================================
+     訓練・講座管理
+================================================== -->
 
-<nav class="admin-nav">
-
-<button
-type="button"
-class="nav-button active"
-data-target="participantsSection"
-
-
-
-
-参加者管理
-
-</button>
-
-<button
-type="button"
-class="nav-button"
-data-target="trainingsSection"
-
-
-
-
-訓練・講座管理
-
-</button>
-
-<button
-type="button"
-class="nav-button"
-data-target="participationsSection"
-
-
-
-
-参加履歴
-
-</button>
-
-</nav>
-
-
-
-
-<!-- ================================================== 参加者管理 ================================================== -->
-
-<section id="participantsSection" class="admin-section content-section" >
-
-<div class="section-header">
-
-<div>
-
-    <h2>
-        参加者管理
-    </h2>
-
-    <p>
-        登録されている参加者を管理します。
-    </p>
-
-</div>
-
-</div>
-
-<div class="table-wrapper">
-
-<table>
-
-<thead>
-
-<tr>
-
-<th> 名前 </th>
-
-<th> 参加回数 </th>
-
-<th> 登録日時 </th>
-
-<th> 操作 </th>
-
-</tr>
-
-</thead>
-
-<tbody id="participantsTable">
-
-<tr>
-
-<td colspan="4"> 読み込み中... </td>
-
-</tr>
-
-</tbody>
-
-</table>
-
-</div>
-
-</section>
-
-
-
-
-<!-- ================================================== 訓練・講座管理 ================================================== -->
-
-<section id="trainingsSection" class="admin-section content-section hidden" >
-
-<div class="section-header">
-
-<div>
-
-    <h2>
-        訓練・講座管理
-    </h2>
-
-    <p>
-        訓練や講座の登録・編集・削除を行います。
-    </p>
-
-</div>
-
-
-<button
-    type="button"
-    id="addTrainingButton"
-    class="primary-button"
+<section
+    id="trainingsSection"
+    class="admin-section content-section hidden"
 >
-    ＋ 新規登録
-</button>
 
-</div>
+    <div class="section-header">
 
-<div class="table-wrapper">
+        <div>
 
-<table>
+            <h2>
+                訓練・講座管理
+            </h2>
 
-<thead>
+            <p>
+                訓練や講座の登録・編集・削除を行います。
+            </p>
 
-<tr>
+        </div>
 
-<th> 訓練ID </th>
 
-<th> タイトル </th>
+        <button
+            type="button"
+            id="addTrainingButton"
+            class="primary-button"
+        >
+            ＋ 新規登録
+        </button>
 
-<th> 参加人数 </th>
+    </div>
 
-<th> 登録日時 </th>
 
-<th> 操作 </th>
+    <div class="table-wrapper">
 
-</tr>
+        <table>
 
-</thead>
+            <thead>
 
-<tbody id="trainingsTable">
+                <tr>
 
-<tr>
+                    <th>
+                        訓練ID
+                    </th>
 
-<td colspan="5"> 読み込み中... </td>
+                    <th>
+                        タイトル
+                    </th>
 
-</tr>
+                    <th>
+                        参加人数
+                    </th>
 
-</tbody>
+                    <th>
+                        登録日時
+                    </th>
 
-</table>
+                    <th>
+                        操作
+                    </th>
 
-</div>
+                </tr>
+
+            </thead>
+
+
+            <tbody id="trainingsTable">
+
+                <tr>
+
+                    <td colspan="5">
+                        読み込み中...
+                    </td>
+
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</section>
+
+
+
+
+<!-- ==================================================
+     参加履歴
+================================================== -->
+
+<section
+    id="participationsSection"
+    class="admin-section content-section hidden"
+>
+
+    <div class="section-header">
+
+        <div>
+
+            <h2>
+                参加履歴
+            </h2>
+
+            <p>
+                すべての参加記録を確認・削除できます。
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="table-wrapper">
+
+        <table>
+
+            <thead>
+
+                <tr>
+
+                    <th>
+                        参加者
+                    </th>
+
+                    <th>
+                        訓練・講座
+                    </th>
+
+                    <th>
+                        参加日時
+                    </th>
+
+                    <th>
+                        操作
+                    </th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody id="participationsTable">
+
+                <tr>
+
+                    <td colspan="4">
+                        読み込み中...
+                    </td>
+
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
 
 </section>
 
-
-
-
-<!-- ================================================== 参加履歴 ================================================== -->
-
-<section id="participationsSection" class="admin-section content-section hidden" >
-
-<div class="section-header">
-
-<div>
-
-    <h2>
-        参加履歴
-    </h2>
-
-    <p>
-        すべての参加記録を確認・削除できます。
-    </p>
-
-</div>
-
-</div>
-
-<div class="table-wrapper">
-
-<table>
-
-<thead>
-
-<tr>
-
-<th> 参加者 </th>
-
-<th> 訓練・講座 </th>
-
-<th> 参加日時 </th>
-
-<th> 操作 </th>
-
-</tr>
-
-</thead>
-
-<tbody id="participationsTable">
-
-<tr>
-
-<td colspan="4"> 読み込み中... </td>
-
-</tr>
-
-</tbody>
-
-</table>
-
-</div>
-
-</section>
 
 </main>
 
@@ -684,221 +751,257 @@ data-target="participationsSection"
 
 
 
-<!-- ================================================== 参加者編集モーダル ================================================== -->
+<!-- ==================================================
+     参加者編集モーダル
+================================================== -->
 
-<div id="participantModal" class="modal hidden" >
+<div
+    id="participantModal"
+    class="modal hidden"
+>
 
-<div class="modal-content">
+    <div class="modal-content">
 
-<h2> 参加者編集 </h2>
-
-<input
-type="hidden"
-id="editParticipantDbId"
-
-
-
-
-<label> 参加者ID </label>
-
-<input
-type="text"
-id="editParticipantId"
-readonly
+        <h2>
+            参加者編集
+        </h2>
 
 
+        <input
+            type="hidden"
+            id="editParticipantDbId"
+        >
 
 
-<label for="editParticipantName"> 名前 </label>
+        <label>
+            参加者ID
+        </label>
 
-<input
-type="text"
-id="editParticipantName"
-placeholder="名前"
-
-
-
-
-<div class="modal-buttons">
-
-<button
-type="button"
-id="cancelParticipantButton"
-class="secondary-button"
+        <input
+            type="text"
+            id="editParticipantId"
+            readonly
+        >
 
 
+        <label for="editParticipantName">
+            名前
+        </label>
+
+        <input
+            type="text"
+            id="editParticipantName"
+            placeholder="名前"
+        >
 
 
-キャンセル
+        <div class="modal-buttons">
 
-</button>
-
-<button
-type="button"
-id="saveParticipantButton"
-class="primary-button"
-
-
-
-
-保存
-
-</button>
-
-</div>
-
-</div>
-
-</div>
+            <button
+                type="button"
+                id="cancelParticipantButton"
+                class="secondary-button"
+            >
+                キャンセル
+            </button>
 
 
+            <button
+                type="button"
+                id="saveParticipantButton"
+                class="primary-button"
+            >
+                保存
+            </button>
 
+        </div>
 
-<!-- ================================================== 参加者履歴モーダル ================================================== -->
-
-<div id="participantHistoryModal" class="modal hidden" >
-
-<div class="modal-content large-modal">
-
-<h2 id="participantHistoryTitle"> 参加履歴 </h2>
-
-<div id="participantHistoryContent" class="history-content" > 読み込み中... </div>
-
-<div class="modal-buttons">
-
-<button
-type="button"
-id="closeParticipantHistoryButton"
-class="secondary-button"
-
-
-
-
-閉じる
-
-</button>
-
-</div>
-
-</div>
+    </div>
 
 </div>
 
 
 
 
-<!-- ================================================== 訓練編集・登録モーダル ================================================== -->
+<!-- ==================================================
+     参加者履歴モーダル
+================================================== -->
 
-<div id="trainingModal" class="modal hidden" >
+<div
+    id="participantHistoryModal"
+    class="modal hidden"
+>
 
-<div class="modal-content">
+    <div class="modal-content large-modal">
 
-<h2 id="trainingModalTitle"> 訓練・講座を登録 </h2>
-
-<input
-type="hidden"
-id="editTrainingDbId"
-
-
-
-
-<label for="editTrainingId"> 訓練ID </label>
-
-<input
-type="text"
-id="editTrainingId"
-placeholder="例：training001"
+        <h2 id="participantHistoryTitle">
+            参加履歴
+        </h2>
 
 
+        <div
+            id="participantHistoryContent"
+            class="history-content"
+        >
+            読み込み中...
+        </div>
 
 
-<label for="editTrainingTitle"> タイトル </label>
+        <div class="modal-buttons">
 
-<input
-type="text"
-id="editTrainingTitle"
-placeholder="例：夏季防災訓練"
+            <button
+                type="button"
+                id="closeParticipantHistoryButton"
+                class="secondary-button"
+            >
+                閉じる
+            </button>
 
+        </div>
 
-
-
-<div class="modal-buttons">
-
-<button
-type="button"
-id="cancelTrainingButton"
-class="secondary-button"
-
-
-
-
-キャンセル
-
-</button>
-
-<button
-type="button"
-id="saveTrainingButton"
-class="primary-button"
-
-
-
-
-保存
-
-</button>
-
-</div>
-
-</div>
+    </div>
 
 </div>
 
 
 
 
-<!-- ================================================== 訓練参加者モーダル ================================================== -->
+<!-- ==================================================
+     訓練編集・登録モーダル
+================================================== -->
 
-<div id="trainingParticipantsModal" class="modal hidden" >
+<div
+    id="trainingModal"
+    class="modal hidden"
+>
 
-<div class="modal-content large-modal">
+    <div class="modal-content">
 
-<h2 id="trainingParticipantsTitle"> 参加者一覧 </h2>
-
-<div id="trainingParticipantsContent" class="history-content" > 読み込み中... </div>
-
-<div class="modal-buttons">
-
-<button
-type="button"
-id="closeTrainingParticipantsButton"
-class="secondary-button"
+        <h2 id="trainingModalTitle">
+            訓練・講座を登録
+        </h2>
 
 
+        <input
+            type="hidden"
+            id="editTrainingDbId"
+        >
 
 
-閉じる
+        <label for="editTrainingId">
+            訓練ID
+        </label>
 
-</button>
+        <input
+            type="text"
+            id="editTrainingId"
+            placeholder="例：training001"
+        >
+
+
+        <label for="editTrainingTitle">
+            タイトル
+        </label>
+
+        <input
+            type="text"
+            id="editTrainingTitle"
+            placeholder="例：夏季防災訓練"
+        >
+
+
+        <div class="modal-buttons">
+
+            <button
+                type="button"
+                id="cancelTrainingButton"
+                class="secondary-button"
+            >
+                キャンセル
+            </button>
+
+
+            <button
+                type="button"
+                id="saveTrainingButton"
+                class="primary-button"
+            >
+                保存
+            </button>
+
+        </div>
+
+    </div>
 
 </div>
 
-</div>
+
+
+
+<!-- ==================================================
+     訓練参加者モーダル
+================================================== -->
+
+<div
+    id="trainingParticipantsModal"
+    class="modal hidden"
+>
+
+    <div class="modal-content large-modal">
+
+        <h2 id="trainingParticipantsTitle">
+            参加者一覧
+        </h2>
+
+
+        <div
+            id="trainingParticipantsContent"
+            class="history-content"
+        >
+            読み込み中...
+        </div>
+
+
+        <div class="modal-buttons">
+
+            <button
+                type="button"
+                id="closeTrainingParticipantsButton"
+                class="secondary-button"
+            >
+                閉じる
+            </button>
+
+        </div>
+
+    </div>
 
 </div>
 
 
 
 
-<!-- ================================================== Chart.js ================================================== -->
+<!-- ==================================================
+     Chart.js
+================================================== -->
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" ></script>
+<script
+    src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"
+></script>
 
-<!-- Supabase -->
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" ></script>
+<!-- ==================================================
+     Supabase
+================================================== -->
 
-<script src="../stamp/supabase.js" ></script>
+<script
+    src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+></script>
+
+
+<script
+    src="../stamp/supabase.js"
+></script>
 
 
 <!-- ==================================================
