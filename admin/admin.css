@@ -2257,3 +2257,616 @@ opacity: 1 !important;
     }
 
 }
+
+/* ==================================================
+   Step 2
+   参加者分析
+================================================== */
+
+.analysis-stats-grid {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, 1fr);
+
+    gap: 16px;
+
+    margin-bottom: 16px;
+
+}
+
+
+.analysis-stat-card {
+
+    background: #fff;
+
+    border-radius: 12px;
+
+    padding: 20px;
+
+    box-shadow:
+        0 2px 10px
+        rgba(0, 0, 0, 0.05);
+
+}
+
+
+.analysis-stat-card span {
+
+    display: block;
+
+    color: #777;
+
+    font-size: 13px;
+
+    margin-bottom: 7px;
+
+}
+
+
+.analysis-stat-card strong {
+
+    font-size: 30px;
+
+    font-weight: 700;
+
+}
+
+
+.analysis-stat-card small {
+
+    margin-left: 5px;
+
+    color: #777;
+
+    font-size: 13px;
+
+}
+
+
+.secondary-analysis-stats {
+
+    margin-bottom: 22px;
+
+}
+
+
+.analysis-card {
+
+    background: #fff;
+
+    border-radius: 12px;
+
+    padding: 22px;
+
+    margin-bottom: 18px;
+
+    box-shadow:
+        0 2px 10px
+        rgba(0, 0, 0, 0.05);
+
+}
+
+
+.analysis-card h3 {
+
+    margin: 0 0 5px;
+
+    font-size: 18px;
+
+}
+
+
+.analysis-card-title {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    margin-bottom: 15px;
+
+}
+
+
+.analysis-card-title p {
+
+    margin: 0;
+
+    color: #777;
+
+    font-size: 13px;
+
+}
+
+
+.analysis-chart-container {
+
+    position: relative;
+
+    width: 100%;
+
+    height: 330px;
+
+}
+
+
+.analysis-chart-container canvas {
+
+    width: 100% !important;
+
+    height: 100% !important;
+
+}
+
+
+.analysis-two-column {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, 1fr);
+
+    gap: 18px;
+
+}
+
+
+.analysis-description {
+
+    margin: 0 0 15px;
+
+    color: #777;
+
+    font-size: 13px;
+
+}
+
+
+.analysis-ranking {
+
+    margin-top: 10px;
+
+}
+
+
+.analysis-ranking-item {
+
+    display: grid;
+
+    grid-template-columns:
+        40px 1fr auto;
+
+    align-items: center;
+
+    gap: 10px;
+
+    padding: 13px 0;
+
+    border-bottom:
+        1px solid #eee;
+
+}
+
+
+.analysis-ranking-item:last-child {
+
+    border-bottom: none;
+
+}
+
+
+.analysis-rank {
+
+    width: 30px;
+
+    height: 30px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #f1f3f5;
+
+    font-weight: bold;
+
+    font-size: 13px;
+
+}
+
+
+.analysis-ranking-name {
+
+    min-width: 0;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+
+}
+
+
+.analysis-ranking-item strong {
+
+    font-size: 16px;
+
+}
+
+
+.analysis-ranking-item strong span {
+
+    margin-left: 2px;
+
+    font-size: 12px;
+
+    color: #777;
+
+}
+
+
+.analysis-inactive-list {
+
+    max-height: 400px;
+
+    overflow-y: auto;
+
+}
+
+
+.analysis-inactive-item {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    gap: 10px;
+
+    padding: 12px 0;
+
+    border-bottom:
+        1px solid #eee;
+
+}
+
+
+.analysis-inactive-item:last-child {
+
+    border-bottom: none;
+
+}
+
+
+.inactive-badge {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 4px 9px;
+
+    border-radius: 999px;
+
+    background: #f5f5f5;
+
+    color: #777;
+
+    font-size: 12px;
+
+    white-space: nowrap;
+
+}
+
+
+.analysis-table-wrapper {
+
+    width: 100%;
+
+    overflow-x: auto;
+
+}
+
+
+.analysis-table {
+
+    width: 100%;
+
+    border-collapse: collapse;
+
+    min-width: 600px;
+
+}
+
+
+.analysis-table th {
+
+    background: #f7f8fa;
+
+    padding: 12px;
+
+    text-align: left;
+
+    font-size: 13px;
+
+    white-space: nowrap;
+
+}
+
+
+.analysis-table td {
+
+    padding: 13px 12px;
+
+    border-bottom:
+        1px solid #eee;
+
+    font-size: 14px;
+
+}
+
+
+.analysis-table tbody tr:hover {
+
+    background: #fafafa;
+
+}
+
+
+.analysis-status {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 4px 10px;
+
+    border-radius: 999px;
+
+    font-size: 12px;
+
+    white-space: nowrap;
+
+}
+
+
+.analysis-status.inactive {
+
+    background: #f1f1f1;
+
+    color: #777;
+
+}
+
+
+.analysis-status.active {
+
+    background: #e8f1fb;
+
+    color: #1976d2;
+
+}
+
+
+.analysis-status.repeat {
+
+    background: #e8f5e9;
+
+    color: #388e3c;
+
+}
+
+
+.analysis-status.master {
+
+    background: #fff3cd;
+
+    color: #856404;
+
+    font-weight: bold;
+
+}
+
+
+.analysis-loading {
+
+    padding: 20px 0;
+
+    color: #777;
+
+    text-align: center;
+
+}
+
+
+.analysis-empty {
+
+    padding: 25px 10px;
+
+    color: #777;
+
+    text-align: center;
+
+}
+
+
+.analysis-empty.success {
+
+    color: #388e3c;
+
+}
+
+
+.analysis-error {
+
+    padding: 15px;
+
+    border-radius: 8px;
+
+    background: #fff0f0;
+
+    color: #c62828;
+
+    white-space: pre-line;
+
+}
+
+
+.analysis-note {
+
+    background: #f7f9fc;
+
+    border-left:
+        4px solid #1976d2;
+
+    padding: 16px 18px;
+
+    border-radius: 8px;
+
+    margin-top: 5px;
+
+}
+
+
+.analysis-note strong {
+
+    display: block;
+
+    margin-bottom: 8px;
+
+}
+
+
+.analysis-note p {
+
+    margin: 5px 0;
+
+    color: #666;
+
+    font-size: 13px;
+
+}
+
+
+/* ==================================================
+   スマートフォン
+================================================== */
+
+@media (
+    max-width: 900px
+) {
+
+    .analysis-stats-grid {
+
+        grid-template-columns:
+            repeat(2, 1fr);
+
+    }
+
+
+    .analysis-two-column {
+
+        grid-template-columns:
+            1fr;
+
+    }
+
+}
+
+
+@media (
+    max-width: 600px
+) {
+
+    .analysis-stats-grid {
+
+        grid-template-columns:
+            repeat(2, 1fr);
+
+        gap: 10px;
+
+    }
+
+
+    .analysis-stat-card {
+
+        padding: 15px;
+
+    }
+
+
+    .analysis-stat-card strong {
+
+        font-size: 24px;
+
+    }
+
+
+    .analysis-stat-card span {
+
+        font-size: 12px;
+
+    }
+
+
+    .analysis-stat-card small {
+
+        font-size: 11px;
+
+    }
+
+
+    .analysis-card {
+
+        padding: 16px;
+
+    }
+
+
+    .analysis-chart-container {
+
+        height: 260px;
+
+    }
+
+
+    .analysis-ranking-item {
+
+        grid-template-columns:
+            34px 1fr auto;
+
+        gap: 8px;
+
+    }
+
+
+    .analysis-rank {
+
+        width: 27px;
+
+        height: 27px;
+
+        font-size: 12px;
+
+    }
+
+
+    .analysis-table {
+
+        min-width: 520px;
+
+    }
+
+}
