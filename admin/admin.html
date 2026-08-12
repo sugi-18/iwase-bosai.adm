@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="ja">
 
 <head>
@@ -169,11 +168,9 @@
     </div>
 
 
-
     <!-- 基本統計 -->
 
     <div class="stats-grid dashboard-stats">
-
 
         <div class="stat-card">
 
@@ -194,7 +191,6 @@
             </div>
 
         </div>
-
 
 
         <div class="stat-card">
@@ -218,7 +214,6 @@
         </div>
 
 
-
         <div class="stat-card">
 
             <span class="stat-label">
@@ -238,7 +233,6 @@
             </div>
 
         </div>
-
 
 
         <div class="stat-card">
@@ -264,11 +258,9 @@
     </div>
 
 
-
     <!-- 詳細統計 -->
 
     <div class="stats-grid secondary-stats">
-
 
         <div class="stat-card small-stat">
 
@@ -289,7 +281,6 @@
             </div>
 
         </div>
-
 
 
         <div class="stat-card small-stat">
@@ -313,7 +304,6 @@
         </div>
 
 
-
         <div class="stat-card small-stat">
 
             <span class="stat-label">
@@ -333,7 +323,6 @@
             </div>
 
         </div>
-
 
 
         <div class="stat-card small-stat">
@@ -358,8 +347,7 @@
     </div>
 
 
-
-    <!-- グラフ -->
+    <!-- 月別参加状況 -->
 
     <div class="dashboard-card chart-card">
 
@@ -372,7 +360,7 @@
                 </h3>
 
                 <p>
-                    過去6か月の延べ参加回数
+                    訓練・講座の実施日を基準にした過去6か月の延べ参加回数
                 </p>
 
             </div>
@@ -391,13 +379,10 @@
     </div>
 
 
-
     <!-- 下段 -->
 
     <div class="dashboard-two-column">
 
-
-        <!-- ランキング -->
 
         <div class="dashboard-card">
 
@@ -420,9 +405,6 @@
         </div>
 
 
-
-        <!-- 人気訓練 -->
-
         <div class="dashboard-card">
 
             <h3>
@@ -444,7 +426,6 @@
         </div>
 
     </div>
-
 
 
     <!-- 最近の参加記録 -->
@@ -472,7 +453,6 @@
 
 <nav class="admin-nav">
 
-
     <button
         type="button"
         class="nav-button active"
@@ -482,9 +462,6 @@
     </button>
 
 
-
-    <!-- ★ Step 2 -->
-
     <button
         type="button"
         class="nav-button"
@@ -492,7 +469,6 @@
     >
         参加者分析
     </button>
-
 
 
     <button
@@ -504,7 +480,6 @@
     </button>
 
 
-
     <button
         type="button"
         class="nav-button"
@@ -512,7 +487,6 @@
     >
         参加履歴
     </button>
-
 
 </nav>
 
@@ -526,7 +500,6 @@
     id="participantsSection"
     class="admin-section content-section"
 >
-
 
     <div class="section-header">
 
@@ -543,7 +516,6 @@
         </div>
 
     </div>
-
 
 
     <div class="table-wrapper">
@@ -605,7 +577,6 @@
     class="admin-section content-section hidden"
 >
 
-
     <div class="section-header">
 
         <div>
@@ -632,13 +603,9 @@
     </div>
 
 
-
-    <!-- ==================================================
-         基本統計
-    ================================================== -->
+    <!-- 基本統計 -->
 
     <div class="stats-grid dashboard-stats">
-
 
         <div class="stat-card">
 
@@ -659,7 +626,6 @@
             </div>
 
         </div>
-
 
 
         <div class="stat-card">
@@ -683,7 +649,6 @@
         </div>
 
 
-
         <div class="stat-card">
 
             <span class="stat-label">
@@ -703,7 +668,6 @@
             </div>
 
         </div>
-
 
 
         <div class="stat-card">
@@ -729,13 +693,9 @@
     </div>
 
 
-
-    <!-- ==================================================
-         詳細統計
-    ================================================== -->
+    <!-- 詳細統計 -->
 
     <div class="stats-grid secondary-stats">
-
 
         <div class="stat-card small-stat">
 
@@ -756,7 +716,6 @@
             </div>
 
         </div>
-
 
 
         <div class="stat-card small-stat">
@@ -780,7 +739,6 @@
         </div>
 
 
-
         <div class="stat-card small-stat">
 
             <span class="stat-label">
@@ -800,7 +758,6 @@
             </div>
 
         </div>
-
 
 
         <div class="stat-card small-stat">
@@ -826,10 +783,7 @@
     </div>
 
 
-
-    <!-- ==================================================
-         参加回数分布
-    ================================================== -->
+    <!-- 参加回数分布 -->
 
     <div class="dashboard-card chart-card">
 
@@ -850,7 +804,7 @@
         </div>
 
 
-        <div class="chart-container participant-analysis-chart">
+        <div class="chart-container">
 
             <canvas
                 id="participantDistributionChart"
@@ -861,15 +815,10 @@
     </div>
 
 
-
-    <!-- ==================================================
-         ランキング・未参加者
-    ================================================== -->
+    <!-- ランキング・未参加者 -->
 
     <div class="dashboard-two-column">
 
-
-        <!-- ランキング -->
 
         <div class="dashboard-card">
 
@@ -891,9 +840,6 @@
 
         </div>
 
-
-
-        <!-- 未参加者 -->
 
         <div class="dashboard-card">
 
@@ -918,10 +864,7 @@
     </div>
 
 
-
-    <!-- ==================================================
-         全参加者一覧
-    ================================================== -->
+    <!-- 参加者別分析 -->
 
     <div class="dashboard-card">
 
@@ -992,31 +935,6 @@
     </div>
 
 
-
-    <!-- ==================================================
-         分析説明
-    ================================================== -->
-
-    <div class="analysis-note">
-
-        <strong>
-            分析について
-        </strong>
-
-        <p>
-            参加率は、登録されている参加者のうち、
-            1回以上の訓練・講座参加記録がある人の割合です。
-        </p>
-
-        <p>
-            「5回以上参加」は、
-            現在の「いわぽん防災マイスター」の
-            5回参加基準に合わせています。
-        </p>
-
-    </div>
-
-
 </section>
 
 
@@ -1029,7 +947,6 @@
     id="trainingsSection"
     class="admin-section content-section hidden"
 >
-
 
     <div class="section-header">
 
@@ -1057,7 +974,6 @@
     </div>
 
 
-
     <div class="table-wrapper">
 
         <table>
@@ -1072,6 +988,10 @@
 
                     <th>
                         タイトル
+                    </th>
+
+                    <th>
+                        実施日
                     </th>
 
                     <th>
@@ -1095,7 +1015,7 @@
 
                 <tr>
 
-                    <td colspan="5">
+                    <td colspan="6">
                         読み込み中...
                     </td>
 
@@ -1120,7 +1040,6 @@
     class="admin-section content-section hidden"
 >
 
-
     <div class="section-header">
 
         <div>
@@ -1136,7 +1055,6 @@
         </div>
 
     </div>
-
 
 
     <div class="table-wrapper">
@@ -1156,7 +1074,11 @@
                     </th>
 
                     <th>
-                        参加日時
+                        実施日
+                    </th>
+
+                    <th>
+                        登録日時
                     </th>
 
                     <th>
@@ -1172,7 +1094,7 @@
 
                 <tr>
 
-                    <td colspan="4">
+                    <td colspan="5">
                         読み込み中...
                     </td>
 
@@ -1202,9 +1124,7 @@
     class="modal hidden"
 >
 
-
     <div class="modal-content">
-
 
         <h2>
             参加者編集
@@ -1241,7 +1161,6 @@
 
         <div class="modal-buttons">
 
-
             <button
                 type="button"
                 id="cancelParticipantButton"
@@ -1249,7 +1168,6 @@
             >
                 キャンセル
             </button>
-
 
 
             <button
@@ -1260,9 +1178,7 @@
                 保存
             </button>
 
-
         </div>
-
 
     </div>
 
@@ -1279,9 +1195,7 @@
     class="modal hidden"
 >
 
-
     <div class="modal-content large-modal">
-
 
         <h2 id="participantHistoryTitle">
             参加履歴
@@ -1298,7 +1212,6 @@
 
         <div class="modal-buttons">
 
-
             <button
                 type="button"
                 id="closeParticipantHistoryButton"
@@ -1307,9 +1220,7 @@
                 閉じる
             </button>
 
-
         </div>
-
 
     </div>
 
@@ -1326,9 +1237,7 @@
     class="modal hidden"
 >
 
-
     <div class="modal-content">
-
 
         <h2 id="trainingModalTitle">
             訓練・講座を登録
@@ -1363,8 +1272,29 @@
         >
 
 
-        <div class="modal-buttons">
+        <label for="editTrainingDate">
+            実施日
+        </label>
 
+        <input
+            type="date"
+            id="editTrainingDate"
+        >
+
+
+        <p
+            id="trainingIdEditNote"
+            style="
+                margin: 6px 0 14px;
+                font-size: 12px;
+                color: #777;
+            "
+        >
+            ※既存の訓練を編集する場合、訓練IDは変更できません。
+        </p>
+
+
+        <div class="modal-buttons">
 
             <button
                 type="button"
@@ -1375,7 +1305,6 @@
             </button>
 
 
-
             <button
                 type="button"
                 id="saveTrainingButton"
@@ -1384,9 +1313,7 @@
                 保存
             </button>
 
-
         </div>
-
 
     </div>
 
@@ -1403,9 +1330,7 @@
     class="modal hidden"
 >
 
-
     <div class="modal-content large-modal">
-
 
         <h2 id="trainingParticipantsTitle">
             参加者一覧
@@ -1422,7 +1347,6 @@
 
         <div class="modal-buttons">
 
-
             <button
                 type="button"
                 id="closeTrainingParticipantsButton"
@@ -1431,9 +1355,7 @@
                 閉じる
             </button>
 
-
         </div>
-
 
     </div>
 
@@ -1460,7 +1382,6 @@
 ></script>
 
 
-
 <script
     src="../stamp/supabase.js"
 ></script>
@@ -1480,15 +1401,6 @@
 ================================================== -->
 
 <script src="participant-card.js"></script>
-
-
-
-<!-- ==================================================
-     Step 2
-     参加者分析
-================================================== -->
-
-<script src="participant-analysis.js"></script>
 
 
 </body>
