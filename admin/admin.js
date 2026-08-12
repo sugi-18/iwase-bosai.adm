@@ -2168,6 +2168,89 @@ function setupTrainingModal() {
 }
 
 
+/* ==================================================
+   訓練ID自動生成
+   タイトル + 実施日から一意のIDを作成
+================================================== */
+
+function generateTrainingId(
+    title,
+    trainingDate
+) {
+
+    /*
+     * 実施日
+     * 2026-09-06
+     * ↓
+     * 20260906
+     */
+
+    const datePart =
+        String(trainingDate || "")
+            .replace(
+                /[^0-9]/g,
+                ""
+            );
+
+
+    /*
+     * タイトル + 実施日から
+     * 安定したハッシュ値を作成
+     *
+     * 日本語タイトルでも使用可能。
+     */
+
+    const source =
+        `${title}|${trainingDate}`;
+
+
+    let hash = 0;
+
+
+    for (
+        let i = 0;
+        i < source.length;
+        i++
+    ) {
+
+        hash =
+            (
+                (
+                    hash << 5
+                ) -
+                hash +
+                source.charCodeAt(i)
+            ) |
+            0;
+
+    }
+
+
+    /*
+     * 負の値を防止
+     */
+
+    const hashValue =
+        Math.abs(hash)
+            .toString(16)
+            .padStart(
+                6,
+                "0"
+            )
+            .slice(
+                -6
+            );
+
+
+    return `${datePart}-${hashValue}`;
+
+}
+
+
+/* ==================================================
+   訓練モーダルを開く
+================================================== */
+
 function openTrainingModal(
     training = null
 ) {
@@ -2208,33 +2291,146 @@ function openTrainingModal(
     }
 
 
+    /*
+     * DB上のID
+     */
+
     idInput.value =
         training?.id || "";
 
+
+    /*
+     * 既存訓練の場合のみ
+     * 現在のtraining_idを表示
+     */
 
     trainingIdInput.value =
         training?.training_id || "";
 
 
+    /*
+     * タイトル
+     */
+
     titleInput.value =
         training?.title || "";
 
+
+    /*
+     * 実施日
+     */
 
     dateInput.value =
         training?.training_date || "";
 
 
-    trainingIdInput.readOnly =
-        Boolean(training);
+    /*
+     * 新規登録時
+     *
+     * training_idは自動生成するため
+     * 手入力不可
+     */
 
+    trainingIdInput.readOnly =
+        true;
+
+
+    /*
+     * 新規登録時は
+     * タイトル・実施日から
+     * リアルタイムでIDを作成
+     */
+
+    if (!training) {
+
+        const updateTrainingId =
+            () => {
+
+                const title =
+                    titleInput.value.trim();
+
+
+                const trainingDate =
+                    dateInput.value;
+
+
+                if (
+                    !title ||
+                    !trainingDate
+                ) {
+
+                    trainingIdInput.value =
+                        "";
+
+                    return;
+
+                }
+
+
+                trainingIdInput.value =
+                    generateTrainingId(
+                        title,
+                        trainingDate
+                    );
+
+            };
+
+
+        /*
+         * 入力時に自動更新
+         */
+
+        titleInput.oninput =
+            updateTrainingId;
+
+
+        dateInput.oninput =
+            updateTrainingId;
+
+
+        dateInput.onchange =
+            updateTrainingId;
+
+
+        /*
+         * 初期値
+         */
+
+        updateTrainingId();
+
+    } else {
+
+        /*
+         * 編集時は既存IDを維持
+         */
+
+        titleInput.oninput =
+            null;
+
+        dateInput.oninput =
+            null;
+
+        dateInput.onchange =
+            null;
+
+    }
+
+
+    /*
+     * 説明文
+     */
 
     setText(
         "trainingIdEditNote",
         training
-            ? "※既存の訓練を編集する場合、訓練IDは変更できません。"
-            : "※訓練IDは個人画面との紐付けに使用します。"
+            ? "※既存の訓練を編集する場合、訓練IDは変更されません。"
+            : "※訓練IDはタイトルと実施日から自動生成されます。"
     );
 
+
+    /*
+     * モーダルタイトル
+     */
 
     setText(
         "trainingModalTitle",
@@ -2243,6 +2439,10 @@ function openTrainingModal(
             : "訓練・講座を登録"
     );
 
+
+    /*
+     * モーダル表示
+     */
 
     document
         .getElementById(
@@ -2254,6 +2454,10 @@ function openTrainingModal(
 
 }
 
+
+/* ==================================================
+   訓練モーダルを閉じる
+================================================== */
 
 function closeTrainingModal() {
 
@@ -2275,39 +2479,98 @@ function closeTrainingModal() {
 async function saveTraining() {
 
     const id =
-        document.getElementById(
-            "editTrainingDbId"
-        ).value;
+        document
+            .getElementById(
+                "editTrainingDbId"
+            )
+            .value;
 
 
-    const trainingId =
+    const trainingIdInput =
         document.getElementById(
             "editTrainingId"
-        ).value
-        .trim();
+        );
 
 
     const title =
-        document.getElementById(
-            "editTrainingTitle"
-        ).value
-        .trim();
+        document
+            .getElementById(
+                "editTrainingTitle"
+            )
+            .value
+            .trim();
 
 
     const trainingDate =
-        document.getElementById(
-            "editTrainingDate"
-        ).value;
+        document
+            .getElementById(
+                "editTrainingDate"
+            )
+            .value;
 
+
+    /*
+     * 入力チェック
+     */
 
     if (
-        !trainingId ||
         !title ||
         !trainingDate
     ) {
 
         alert(
-            "訓練ID、タイトル、実施日を入力してください。"
+            "タイトルと実施日を入力してください。"
+        );
+
+        return;
+
+    }
+
+
+    /*
+     * 新規登録の場合は
+     * タイトル + 実施日からIDを再生成
+     */
+
+    let trainingId;
+
+
+    if (!id) {
+
+        trainingId =
+            generateTrainingId(
+                title,
+                trainingDate
+            );
+
+
+        /*
+         * 画面にも表示
+         */
+
+        if (trainingIdInput) {
+
+            trainingIdInput.value =
+                trainingId;
+
+        }
+
+    } else {
+
+        /*
+         * 編集時は既存IDをそのまま使用
+         */
+
+        trainingId =
+            trainingIdInput.value.trim();
+
+    }
+
+
+    if (!trainingId) {
+
+        alert(
+            "訓練IDの生成に失敗しました。"
         );
 
         return;
@@ -2319,6 +2582,10 @@ async function saveTraining() {
 
         let result;
 
+
+        /* ==================================================
+           編集
+        ================================================== */
 
         if (id) {
 
@@ -2338,13 +2605,24 @@ async function saveTraining() {
                         id
                     );
 
-        } else {
+        }
+
+
+        /* ==================================================
+           新規登録
+        ================================================== */
+
+        else {
+
+            /*
+             * 同じtraining_idが存在するか確認
+             */
 
             const existing =
                 await adminSupabaseClient
                     .from("trainings")
                     .select(
-                        "id"
+                        "id, training_id"
                     )
                     .eq(
                         "training_id",
@@ -2362,18 +2640,88 @@ async function saveTraining() {
             }
 
 
+            /*
+             * 万が一同じIDが存在する場合
+             *
+             * -2
+             * -3
+             * ...
+             *
+             * として重複を回避
+             */
+
             if (
                 existing.data
             ) {
 
-                alert(
-                    "その訓練IDはすでに使用されています。"
-                );
+                let number =
+                    2;
 
-                return;
+
+                let candidateId;
+
+
+                while (true) {
+
+                    candidateId =
+                        `${trainingId}-${number}`;
+
+
+                    const duplicate =
+                        await adminSupabaseClient
+                            .from("trainings")
+                            .select(
+                                "id"
+                            )
+                            .eq(
+                                "training_id",
+                                candidateId
+                            )
+                            .maybeSingle();
+
+
+                    if (
+                        duplicate.error
+                    ) {
+
+                        throw duplicate.error;
+
+                    }
+
+
+                    if (
+                        !duplicate.data
+                    ) {
+
+                        break;
+
+                    }
+
+
+                    number++;
+
+                }
+
+
+                trainingId =
+                    candidateId;
+
+
+                if (
+                    trainingIdInput
+                ) {
+
+                    trainingIdInput.value =
+                        trainingId;
+
+                }
 
             }
 
+
+            /*
+             * DBへ登録
+             */
 
             result =
                 await adminSupabaseClient
@@ -2393,22 +2741,41 @@ async function saveTraining() {
         }
 
 
-        if (result.error) {
+        /*
+         * Supabaseエラー
+         */
+
+        if (
+            result.error
+        ) {
 
             throw result.error;
 
         }
 
 
+        /*
+         * モーダルを閉じる
+         */
+
         closeTrainingModal();
+
+
+        /*
+         * データ再読み込み
+         */
 
         await loadAllData();
 
 
+        /*
+         * 完了メッセージ
+         */
+
         alert(
             id
                 ? "訓練・講座を更新しました。"
-                : "訓練・講座を登録しました。"
+                : `訓練・講座を登録しました。\n\n訓練ID：${trainingId}`
         );
 
 
