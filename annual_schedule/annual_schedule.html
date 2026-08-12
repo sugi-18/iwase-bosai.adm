@@ -5,75 +5,117 @@
 
 <meta charset="UTF-8">
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
 
-<title>年間計画</title>
+<title>
+    年間計画
+</title>
 
-<link rel="stylesheet" href="../style.css">
+<link
+    rel="stylesheet"
+    href="../style.css"
+>
 
 <style>
 
 .annual-plan {
+
     max-width: 900px;
+
     margin: 30px auto;
+
     padding: 20px;
+
     text-align: center;
+
 }
+
 
 .annual-plan h1 {
+
     font-size: 32px;
+
     margin-bottom: 25px;
+
 }
+
+
+.schedule-gallery {
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 25px;
+
+}
+
 
 .schedule-image {
+
     width: 100%;
+
     max-width: 800px;
+
     height: auto;
+
     border-radius: 15px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+
+    box-shadow:
+        0 4px 10px
+        rgba(0,0,0,0.2);
+
 }
 
 
-/* 戻るボタン */
+.loading,
+.empty {
+
+    padding: 30px;
+
+    color: #777;
+
+}
+
 
 .back-button {
 
     display: inline-block;
+
     margin-top: 30px;
+
     padding: 15px 35px;
 
     background-color: #1976d2;
-    color:white;
 
-    text-decoration:none;
+    color: white;
 
-    border-radius:30px;
+    text-decoration: none;
 
-    font-size:18px;
+    border-radius: 30px;
 
-    transition:0.3s;
-
-}
-
-
-.back-button:hover {
-
-    background-color:#0d47a1;
-
-    transform:scale(1.05);
+    font-size: 18px;
 
 }
-
 
 
 @media(max-width:600px){
 
     .annual-plan h1{
+
         font-size:24px;
+
     }
 
     .annual-plan{
+
         padding:10px;
+
     }
 
 }
@@ -90,26 +132,166 @@
 
 
 <h1>
-🗓️ 年間計画
+    🗓️ 年間計画
 </h1>
 
 
-<img
-src="schedule.JPG"
-alt="年間計画"
-class="schedule-image"
+<div
+    id="scheduleGallery"
+    class="schedule-gallery"
 >
 
+    <div class="loading">
+        読み込み中...
+    </div>
 
-<br>
+</div>
 
 
-<a href="../index.html" class="back-button">
-トップページへ戻る
+<a
+    href="../index.html"
+    class="back-button"
+>
+    トップページへ戻る
 </a>
 
 
 </section>
+
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+
+<script>
+
+"use strict";
+
+
+const SUPABASE_URL =
+    "https://zumbqukrojdpgfpfekjr.supabase.co";
+
+
+const SUPABASE_KEY =
+    "sb_publishable_8YXsMHOxLr7MOTEYShUM3w_LsZvR3Qn";
+
+
+const supabaseClient =
+    window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+    );
+
+
+async function loadSchedule() {
+
+    const gallery =
+        document.getElementById(
+            "scheduleGallery"
+        );
+
+
+    try {
+
+        const {
+            data,
+            error
+        } =
+        await supabaseClient
+            .from("site_contents")
+            .select("*")
+            .eq(
+                "content_type",
+                "annual_schedule"
+            )
+            .is(
+                "content_group_id",
+                null
+            )
+            .order(
+                "slot",
+                {
+                    ascending: true
+                }
+            );
+
+
+        if (error) {
+            throw error;
+        }
+
+
+        gallery.innerHTML = "";
+
+
+        const items =
+            (data || [])
+                .filter(
+                    item =>
+                        item.image_url
+                );
+
+
+        if (
+            items.length === 0
+        ) {
+
+            gallery.innerHTML =
+                `<div class="empty">
+                    現在、年間計画は登録されていません。
+                </div>`;
+
+            return;
+
+        }
+
+
+        items.forEach(
+            item => {
+
+                const img =
+                    document.createElement(
+                        "img"
+                    );
+
+                img.src =
+                    item.image_url;
+
+                img.alt =
+                    item.title ||
+                    "年間計画";
+
+                img.className =
+                    "schedule-image";
+
+
+                gallery.appendChild(
+                    img
+                );
+
+            }
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            error
+        );
+
+
+        gallery.innerHTML =
+            `<div class="empty">
+                年間計画を読み込めませんでした。
+            </div>`;
+
+    }
+
+}
+
+
+loadSchedule();
+
+</script>
 
 
 </body>
