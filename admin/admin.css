@@ -3178,3 +3178,533 @@ opacity: 1 !important;
     }
 
 }
+
+/* ==================================================
+   掲載コンテンツ管理
+================================================== */
+
+.content-management-card {
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
+    border: 1px solid #eeeeee;
+}
+
+.content-management-card h3 {
+    margin: 0 0 6px;
+    font-size: 20px;
+}
+
+.content-management-description {
+    margin: 0;
+    color: #777777;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.content-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+
+/* ==================================================
+   次回訓練・年間計画
+================================================== */
+
+.content-image-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.content-image-card {
+    border: 1px solid #dddddd;
+    border-radius: 12px;
+    padding: 14px;
+    background: #fafafa;
+}
+
+.content-image-card h4 {
+    margin: 0 0 12px;
+    font-size: 16px;
+}
+
+.content-image-preview {
+    width: 100%;
+    height: 220px;
+    display: block;
+    object-fit: contain;
+    background: #eeeeee;
+    border-radius: 8px;
+    margin-bottom: 12px;
+}
+
+.content-image-empty {
+    width: 100%;
+    height: 220px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #eeeeee;
+    border-radius: 8px;
+    color: #888888;
+    font-size: 14px;
+    margin-bottom: 12px;
+}
+
+
+/* ==================================================
+   ファイル選択
+================================================== */
+
+.content-file-input {
+    display: none;
+}
+
+
+/* ==================================================
+   コンテンツ用ボタン
+================================================== */
+
+.content-image-card .secondary-button,
+.content-image-card .danger-button {
+    width: 100%;
+    margin-top: 8px;
+}
+
+.content-image-card .secondary-button {
+    min-height: 42px;
+}
+
+.danger-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-height: 42px;
+
+    padding: 10px 15px;
+
+    border: none;
+    border-radius: 8px;
+
+    background: #d32f2f;
+    color: #ffffff;
+
+    cursor: pointer;
+
+    font-size: 14px;
+    font-weight: bold;
+
+    transition:
+        background 0.2s ease,
+        transform 0.15s ease;
+}
+
+.danger-button:hover {
+    background: #b71c1c;
+}
+
+.danger-button:active {
+    transform: scale(0.98);
+}
+
+
+/* ==================================================
+   活動実績
+================================================== */
+
+.activities-management-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.activity-management-card {
+    border: 1px solid #dddddd;
+    border-radius: 12px;
+    padding: 20px;
+    background: #ffffff;
+}
+
+.activity-management-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.activity-management-header h4 {
+    margin: 0;
+    font-size: 19px;
+    line-height: 1.4;
+}
+
+.activity-date {
+    margin: 6px 0 10px;
+    color: #777777;
+    font-size: 14px;
+}
+
+.activity-description {
+    margin: 0 0 15px;
+    white-space: pre-wrap;
+    line-height: 1.7;
+}
+
+
+/* ==================================================
+   公開状態
+================================================== */
+
+.content-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 5px 10px;
+
+    border-radius: 20px;
+
+    font-size: 12px;
+    font-weight: bold;
+
+    white-space: nowrap;
+}
+
+.content-status.published {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.content-status.unpublished {
+    background: #eeeeee;
+    color: #666666;
+}
+
+
+/* ==================================================
+   活動実績写真
+================================================== */
+
+.activity-management-gallery {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 15px;
+    margin-top: 18px;
+}
+
+.activity-image-box {
+    border: 1px solid #dddddd;
+    border-radius: 10px;
+    padding: 10px;
+    background: #fafafa;
+}
+
+.activity-image-box img {
+    width: 100%;
+    height: 180px;
+    display: block;
+
+    object-fit: contain;
+
+    background: #eeeeee;
+
+    border-radius: 7px;
+
+    margin-bottom: 8px;
+}
+
+.activity-image-box .content-image-empty {
+    height: 180px;
+    margin-bottom: 8px;
+}
+
+.activity-image-box .secondary-button {
+    width: 100%;
+}
+
+
+/* ==================================================
+   活動実績操作
+================================================== */
+
+.activity-management-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.activity-management-actions button {
+    min-width: 120px;
+}
+
+
+/* ==================================================
+   空データ表示
+================================================== */
+
+.content-empty-message {
+    padding: 30px 20px;
+
+    text-align: center;
+
+    background: #f7f7f7;
+
+    border-radius: 10px;
+
+    color: #777777;
+
+    font-size: 14px;
+}
+
+.content-error {
+    padding: 15px;
+
+    background: #ffebee;
+
+    border-radius: 8px;
+
+    color: #c62828;
+
+    font-size: 14px;
+}
+
+
+/* ==================================================
+   活動実績編集モーダル
+================================================== */
+
+.content-editor-modal {
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 9999;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+
+    background: rgba(0, 0, 0, 0.55);
+
+    box-sizing: border-box;
+}
+
+.content-editor-modal-inner {
+    width: 100%;
+    max-width: 600px;
+    max-height: 90vh;
+
+    overflow-y: auto;
+
+    background: #ffffff;
+
+    border-radius: 15px;
+
+    padding: 25px;
+
+    box-sizing: border-box;
+
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.content-editor-modal-inner h3 {
+    margin: 0 0 20px;
+
+    font-size: 21px;
+}
+
+.content-editor-modal-inner label {
+    display: block;
+
+    margin-top: 16px;
+
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.content-editor-modal-inner input,
+.content-editor-modal-inner textarea {
+    display: block;
+
+    width: 100%;
+
+    box-sizing: border-box;
+
+    margin-top: 7px;
+
+    padding: 12px;
+
+    border: 1px solid #cccccc;
+
+    border-radius: 8px;
+
+    background: #ffffff;
+
+    font: inherit;
+}
+
+.content-editor-modal-inner textarea {
+    resize: vertical;
+
+    min-height: 120px;
+}
+
+.content-editor-modal-inner input:focus,
+.content-editor-modal-inner textarea:focus {
+    outline: none;
+
+    border-color: #1976d2;
+
+    box-shadow:
+        0 0 0 2px rgba(25, 118, 210, 0.12);
+}
+
+
+/* ==================================================
+   編集モーダルボタン
+================================================== */
+
+.content-editor-actions {
+    display: flex;
+
+    gap: 10px;
+
+    margin-top: 22px;
+}
+
+.content-editor-actions button {
+    flex: 1;
+}
+
+
+/* ==================================================
+   掲載コンテンツ用 primary button
+================================================== */
+
+.content-management-card .primary-button {
+    min-height: 42px;
+}
+
+
+/* ==================================================
+   スマートフォン
+================================================== */
+
+@media (max-width: 700px) {
+
+    .content-management-card {
+        padding: 18px;
+        margin-bottom: 18px;
+    }
+
+
+    .content-card-header {
+        flex-direction: column;
+
+        align-items: stretch;
+
+        gap: 12px;
+    }
+
+
+    .content-card-header .primary-button {
+        width: 100%;
+    }
+
+
+    .content-image-grid {
+        grid-template-columns: 1fr;
+    }
+
+
+    .content-image-preview {
+        height: 220px;
+    }
+
+
+    .content-image-empty {
+        height: 220px;
+    }
+
+
+    .activity-management-gallery {
+        grid-template-columns: 1fr;
+    }
+
+
+    .activity-management-card {
+        padding: 16px;
+    }
+
+
+    .activity-management-header {
+        align-items: flex-start;
+
+        flex-direction: column;
+    }
+
+
+    .activity-management-actions {
+        flex-direction: column;
+    }
+
+
+    .activity-management-actions button {
+        width: 100%;
+    }
+
+
+    .content-editor-modal {
+        align-items: flex-start;
+
+        padding: 15px;
+    }
+
+
+    .content-editor-modal-inner {
+        max-height: calc(100vh - 30px);
+
+        padding: 20px;
+    }
+
+
+    .content-editor-actions {
+        flex-direction: column;
+    }
+
+}
+
+
+/* ==================================================
+   タブレット
+================================================== */
+
+@media (
+    min-width: 701px
+) and (
+    max-width: 1000px
+) {
+
+    .content-image-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+
+    .activity-management-gallery {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+}
