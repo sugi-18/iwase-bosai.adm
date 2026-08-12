@@ -1,3 +1,1744 @@
+/\* ==================================================
+岩瀬自治会 防災アプリ
+管理者画面 CSS
+\================================================== \*/
+
+- {
+  box-sizing: border-box;
+  }
+
+body {
+margin: 0;
+padding: 0;
+font-family:
+-apple-system,
+BlinkMacSystemFont,
+"Segoe UI",
+"Hiragino Kaku Gothic ProN",
+"Hiragino Sans",
+Meiryo,
+sans-serif;
+background: #f4f6f8;
+color: #333;
+line-height: 1.6;
+}
+
+/\* ==================================================
+基本
+\================================================== \*/
+
+button,
+input {
+font-family: inherit;
+}
+
+button {
+display: inline-flex;
+align-items: center;
+justify-content: center;
+visibility: visible;
+opacity: 1;
+text-indent: 0;
+line-height: 1.4;
+white-space: nowrap;
+overflow: visible;
+}
+
+.hidden {
+display: none !important;
+}
+
+.screen {
+min-height: 100vh;
+}
+
+.error-message {
+margin-top: 15px;
+color: #d32f2f;
+white-space: pre-line;
+font-size: 14px;
+}
+
+/\* ==================================================
+ログイン
+\================================================== \*/
+
+\#loginScreen {
+display: flex;
+align-items: center;
+justify-content: center;
+min-height: 100vh;
+padding: 20px;
+}
+
+.login-box {
+width: 100%;
+max-width: 430px;
+background: #fff;
+padding: 35px 30px;
+border-radius: 14px;
+box-shadow: 0 5px 25px rgba(0, 0, 0, 0.08);
+}
+
+.login-box h1 {
+margin: 0 0 10px;
+text-align: center;
+font-size: 26px;
+}
+
+.login-description {
+margin: 0 0 30px;
+text-align: center;
+color: #777;
+}
+
+.login-box label {
+display: block;
+margin: 15px 0 7px;
+font-weight: bold;
+font-size: 14px;
+}
+
+.login-box input {
+width: 100%;
+padding: 13px 14px;
+border: 1px solid #ccc;
+border-radius: 8px;
+font-size: 16px;
+outline: none;
+}
+
+.login-box input\:focus {
+border-color: #1976d2;
+}
+
+/\* ==================================================
+ヘッダー
+\================================================== \*/
+
+.admin-header {
+display: flex;
+justify-content: space-between;
+align-items: center;
+gap: 20px;
+padding: 18px 30px;
+background: #1976d2;
+color: #fff;
+}
+
+.admin-header h1 {
+margin: 0;
+font-size: 24px;
+}
+
+.admin-header p {
+margin: 2px 0 0;
+opacity: 0.9;
+font-size: 14px;
+}
+
+.logout-button {
+display: inline-flex;
+align-items: center;
+justify-content: center;
+border: none;
+background: rgba(255, 255, 255, 0.15);
+color: #fff;
+padding: 10px 18px;
+border-radius: 8px;
+cursor: pointer;
+font-size: 14px;
+font-weight: bold;
+line-height: 1.4;
+min-height: 42px;
+}
+
+.logout-button\:hover {
+background: rgba(255, 255, 255, 0.25);
+}
+
+/\* ==================================================
+メイン
+\================================================== \*/
+
+.admin-container {
+width: 100%;
+max-width: 1200px;
+margin: 0 auto;
+padding: 25px 20px 50px;
+}
+
+.admin-section {
+margin-bottom: 30px;
+}
+
+.admin-section h2 {
+margin-top: 0;
+margin-bottom: 8px;
+font-size: 23px;
+}
+
+/\* ==================================================
+ダッシュボードタイトル
+\================================================== \*/
+
+.dashboard-title {
+display: flex;
+justify-content: space-between;
+align-items: center;
+gap: 15px;
+margin-bottom: 20px;
+}
+
+.dashboard-title p {
+margin: 0;
+color: #777;
+font-size: 14px;
+}
+
+/\* ==================================================
+統計カード
+\================================================== \*/
+
+.stats-grid {
+display: grid;
+grid-template-columns: repeat(4, 1fr);
+gap: 16px;
+margin-bottom: 16px;
+}
+
+.stat-card {
+background: #fff;
+border-radius: 12px;
+padding: 20px;
+box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.stat-label {
+display: block;
+margin-bottom: 8px;
+color: #777;
+font-size: 13px;
+}
+
+.stat-card strong {
+font-size: 31px;
+font-weight: 700;
+}
+
+.stat-card > div {
+display: flex;
+align-items: baseline;
+gap: 5px;
+}
+
+.small-stat {
+padding: 17px 20px;
+}
+
+.small-stat strong {
+font-size: 25px;
+}
+
+.popular-training-name {
+display: block;
+max-width: 100%;
+overflow: hidden;
+text-overflow: ellipsis;
+white-space: nowrap;
+}
+
+/\* ==================================================
+ダッシュボードカード
+\================================================== \*/
+
+.dashboard-card {
+background: #fff;
+border-radius: 12px;
+padding: 22px;
+margin-bottom: 18px;
+box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.dashboard-card h3 {
+margin: 0 0 5px;
+font-size: 18px;
+}
+
+.card-description {
+margin: 0 0 15px;
+color: #777;
+font-size: 13px;
+}
+
+.card-title-row {
+display: flex;
+justify-content: space-between;
+margin-bottom: 15px;
+}
+
+.card-title-row p {
+margin: 0;
+color: #777;
+font-size: 13px;
+}
+
+/\* ==================================================
+グラフ
+\================================================== \*/
+
+.chart-container {
+position: relative;
+width: 100%;
+height: 330px;
+}
+
+.chart-container canvas {
+width: 100% !important;
+height: 100% !important;
+}
+
+/\* ==================================================
+2カラム
+\================================================== \*/
+
+.dashboard-two-column {
+display: grid;
+grid-template-columns: repeat(2, 1fr);
+gap: 18px;
+}
+
+/\* ==================================================
+ランキング
+\================================================== \*/
+
+.ranking-list {
+margin-top: 10px;
+}
+
+.ranking-item {
+display: flex;
+align-items: center;
+gap: 12px;
+padding: 12px 0;
+border-bottom: none;
+}
+
+.ranking-number {
+width: 30px;
+height: 30px;
+display: flex;
+align-items: center;
+justify-content: center;
+flex-shrink: 0;
+background: #f0f3f6;
+border-radius: 50%;
+font-weight: bold;
+font-size: 13px;
+}
+
+.ranking-name {
+flex: 1;
+min-width: 0;
+overflow: hidden;
+text-overflow: ellipsis;
+white-space: nowrap;
+font-weight: bold;
+}
+
+.ranking-value {
+font-weight: bold;
+white-space: nowrap;
+}
+
+/\* ==================================================
+最近の参加
+\================================================== \*/
+
+.recent-item {
+padding: 11px 0;
+border-bottom: none;
+font-size: 14px;
+}
+
+.empty-message {
+padding: 25px;
+text-align: center;
+color: #777;
+}
+
+/\* ==================================================
+ナビゲーション
+\================================================== \*/
+
+.admin-nav {
+display: flex;
+gap: 8px;
+margin-bottom: 25px;
+background: #fff;
+padding: 8px;
+border-radius: 10px;
+box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.nav-button {
+flex: 1;
+display: inline-flex;
+align-items: center;
+justify-content: center;
+min-height: 44px;
+border: none;
+background: #f0f3f6;
+padding: 13px 15px;
+border-radius: 7px;
+cursor: pointer;
+font-size: 15px;
+font-weight: 500;
+color: #555;
+line-height: 1.4;
+text-align: center;
+white-space: nowrap;
+}
+
+.nav-button\:hover {
+background: #e3e8ed;
+}
+
+.nav-button.active {
+background: #1976d2;
+color: #fff;
+font-weight: bold;
+}
+
+/\* ==================================================
+セクション
+\================================================== \*/
+
+.section-header {
+display: flex;
+justify-content: space-between;
+align-items: center;
+gap: 15px;
+margin-bottom: 18px;
+}
+
+.section-header p {
+margin: 0;
+color: #777;
+font-size: 14px;
+}
+
+/\* ==================================================
+ボタン
+\================================================== \*/
+
+.primary-button,
+.secondary-button,
+.action-button,
+.view-button,
+.edit-button,
+.delete-button {
+display: inline-flex;
+align-items: center;
+justify-content: center;
+visibility: visible;
+opacity: 1;
+text-indent: 0;
+line-height: 1.4;
+text-align: center;
+white-space: nowrap;
+cursor: pointer;
+font-family: inherit;
+}
+
+/\* メインボタン \*/
+
+.primary-button {
+border: none;
+background: #1976d2;
+color: #fff;
+padding: 11px 20px;
+border-radius: 8px;
+font-size: 14px;
+font-weight: bold;
+min-height: 42px;
+}
+
+.primary-button\:hover {
+background: #1565c0;
+}
+
+/\* サブボタン \*/
+
+.secondary-button {
+border: none;
+background: #e9edf1;
+color: #444;
+padding: 10px 17px;
+border-radius: 8px;
+font-size: 14px;
+font-weight: 500;
+min-height: 42px;
+}
+
+.secondary-button\:hover {
+background: #dce2e7;
+}
+
+/\* 操作ボタン \*/
+
+.action-button {
+border: none;
+padding: 7px 12px;
+border-radius: 6px;
+font-size: 13px;
+font-weight: 500;
+margin: 2px;
+min-height: 34px;
+}
+
+/\* 編集 \*/
+
+.edit-button {
+background: #e3f2fd;
+color: #1565c0;
+}
+
+.edit-button\:hover {
+background: #d1e9fb;
+}
+
+/\* 削除 \*/
+
+.delete-button {
+background: #ffebee;
+color: #c62828;
+}
+
+.delete-button\:hover {
+background: #ffcdd2;
+}
+
+/\* 表示 \*/
+
+.view-button {
+background: #e8f5e9;
+color: #2e7d32;
+}
+
+.view-button\:hover {
+background: #d7ecd9;
+}
+
+/\* ボタン内の要素 \*/
+
+button span,
+button strong,
+button small {
+color: inherit;
+font-size: inherit;
+line-height: inherit;
+}
+
+/\* 無効ボタン \*/
+
+button\:disabled {
+opacity: 0.55;
+cursor: not-allowed;
+}
+
+/\* ==================================================
+テーブル
+\================================================== \*/
+
+.table-wrapper {
+width: 100%;
+overflow-x: auto;
+background: #fff;
+border-radius: 12px;
+box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+table {
+width: 100%;
+border-collapse: collapse;
+min-width: 650px;
+}
+
+thead {
+background: #f7f8fa;
+}
+
+th,
+td {
+padding: 13px 14px;
+border-bottom: 1px solid #eee;
+text-align: left;
+vertical-align: middle;
+}
+
+th {
+font-size: 13px;
+color: #666;
+}
+
+td {
+font-size: 14px;
+}
+
+tbody tr {
+background: #fafafa;
+}
+
+.participant-count {
+display: inline-block;
+min-width: 55px;
+padding: 4px 9px;
+background: #e3f2fd;
+color: #1565c0;
+border-radius: 20px;
+text-align: center;
+font-weight: bold;
+font-size: 13px;
+}
+
+/\* ==================================================
+モーダル
+\================================================== \*/
+
+.modal {
+position: fixed;
+z-index: 1000;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+display: flex;
+align-items: center;
+justify-content: center;
+padding: 20px;
+background: rgba(0, 0, 0, 0.45);
+}
+
+.modal-content {
+width: 100%;
+max-width: 500px;
+max-height: 90vh;
+overflow-y: auto;
+background: #fff;
+padding: 28px;
+border-radius: 14px;
+}
+
+.large-modal {
+max-width: 700px;
+}
+
+.modal-content h2 {
+margin-top: 0;
+}
+
+.modal-content label {
+display: block;
+margin: 14px 0 6px;
+font-size: 14px;
+font-weight: bold;
+}
+
+.modal-content input {
+width: 100%;
+padding: 12px;
+border: 1px solid #ccc;
+border-radius: 7px;
+font-size: 15px;
+}
+
+.modal-buttons {
+display: flex;
+justify-content: flex-end;
+gap: 10px;
+margin-top: 25px;
+}
+
+/\* ==================================================
+履歴
+\================================================== \*/
+
+.history-summary {
+margin-bottom: 15px;
+padding: 13px 15px;
+background: #f5f7f9;
+border-radius: 8px;
+font-weight: bold;
+}
+
+.history-list {
+border: 1px solid #eee;
+border-radius: 8px;
+overflow: hidden;
+}
+
+.history-item {
+display: flex;
+justify-content: space-between;
+align-items: center;
+gap: 15px;
+padding: 13px 15px;
+border-bottom: none;
+}
+
+.history-main {
+min-width: 0;
+}
+
+.history-title {
+font-weight: bold;
+}
+
+.history-date {
+color: #777;
+font-size: 13px;
+}
+
+/\* ==================================================
+スマートフォン
+\================================================== \*/
+
+@media (max-width: 800px) {
+
+```
+.stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.dashboard-two-column {
+    grid-template-columns: 1fr;
+}
+```
+
+}
+
+/\* ==================================================
+700px以下
+\================================================== \*/
+
+@media (max-width: 700px) {
+
+```
+.admin-header {
+    padding: 15px;
+}
+
+.admin-header h1 {
+    font-size: 20px;
+}
+
+.admin-container {
+    padding: 18px 12px 40px;
+}
+
+.dashboard-title {
+    align-items: stretch;
+    flex-direction: column;
+}
+
+.dashboard-title button {
+    width: 100%;
+}
+
+.stats-grid {
+    grid-template-columns: 1fr;
+}
+
+.chart-container {
+    height: 250px;
+}
+
+.admin-nav {
+    flex-direction: column;
+}
+
+.nav-button {
+    width: 100%;
+    min-height: 44px;
+}
+
+.section-header {
+    align-items: stretch;
+    flex-direction: column;
+}
+
+.section-header .primary-button {
+    width: 100%;
+}
+
+.modal {
+    padding: 10px;
+    align-items: flex-start;
+    padding-top: 30px;
+}
+
+.modal-content {
+    padding: 20px;
+}
+
+.modal-buttons {
+    flex-direction: column-reverse;
+}
+
+.modal-buttons button {
+    width: 100%;
+    min-height: 44px;
+}
+
+.history-item {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+}
+
+/* スマホでも操作ボタンの文字を確実に表示 */
+.action-button {
+    min-height: 38px;
+    padding: 8px 12px;
+}
+```
+
+}
+
+/\* ==================================================
+400px以下
+\================================================== \*/
+
+@media (max-width: 400px) {
+
+```
+.admin-header {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.logout-button {
+    width: 100%;
+}
+
+.login-box {
+    padding: 25px 20px;
+}
+
+.action-button {
+    font-size: 12px;
+    padding: 7px 9px;
+}
+```
+
+}
+
+/\* ==================================================
+参加者カルテ
+\================================================== \*/
+
+.participant-card-modal {
+max-width: 760px;
+}
+
+/\* ------------------------------------------
+モーダルヘッダー
+\------------------------------------------ \*/
+
+.participant-card-modal-header {
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 15px;
+margin-bottom: 20px;
+}
+
+.participant-card-modal-header h2 {
+margin: 0;
+}
+
+.participant-card-close {
+width: 38px;
+height: 38px;
+border: none;
+border-radius: 50%;
+background: #f1f3f5;
+color: #555;
+font-size: 26px;
+line-height: 1;
+cursor: pointer;
+}
+
+.participant-card-close\:hover {
+background: #e2e6ea;
+}
+
+/\* ------------------------------------------
+カルテ全体
+\------------------------------------------ \*/
+
+.participant-card {
+width: 100%;
+}
+
+/\* ------------------------------------------
+プロフィール
+\------------------------------------------ \*/
+
+.participant-card-profile {
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 20px;
+
+```
+padding: 20px;
+
+background: #f7f9fc;
+
+border-radius: 14px;
+
+margin-bottom: 15px;
+```
+
+}
+
+.participant-card-eyebrow {
+margin-bottom: 4px;
+
+```
+color: #777;
+
+font-size: 11px;
+
+font-weight: bold;
+
+letter-spacing: 1.5px;
+```
+
+}
+
+.participant-card-profile h3 {
+margin: 0 0 5px;
+
+```
+font-size: 25px;
+```
+
+}
+
+.participant-card-profile p {
+margin: 0;
+
+```
+color: #777;
+
+font-size: 13px;
+
+word-break: break-all;
+```
+
+}
+
+/\* ------------------------------------------
+認定ステータス
+\------------------------------------------ \*/
+
+.participant-card-status {
+flex-shrink: 0;
+
+```
+padding: 9px 14px;
+
+border-radius: 20px;
+
+font-size: 13px;
+
+font-weight: bold;
+
+white-space: nowrap;
+```
+
+}
+
+.participant-card-status.certified {
+background: #fff3cd;
+
+```
+color: #856404;
+```
+
+}
+
+.participant-card-status.not-certified {
+background: #e9edf1;
+
+```
+color: #555;
+```
+
+}
+
+/\* ------------------------------------------
+統計
+\------------------------------------------ \*/
+
+.participant-card-stat-grid {
+display: grid;
+
+```
+grid-template-columns:
+    repeat(4, 1fr);
+
+gap: 10px;
+
+margin-bottom: 15px;
+```
+
+}
+
+.participant-card-stat {
+padding: 16px 10px;
+
+```
+background: #fff;
+
+border: 1px solid #eee;
+
+border-radius: 10px;
+
+text-align: center;
+```
+
+}
+
+.participant-card-stat span {
+display: block;
+
+```
+margin-bottom: 8px;
+
+color: #777;
+
+font-size: 12px;
+```
+
+}
+
+.participant-card-stat strong {
+display: block;
+
+```
+font-size: 21px;
+
+line-height: 1.3;
+
+word-break: break-word;
+```
+
+}
+
+.participant-card-stat small {
+color: #777;
+
+```
+font-size: 11px;
+```
+
+}
+
+/\* ------------------------------------------
+登録情報
+\------------------------------------------ \*/
+
+.participant-card-info {
+display: grid;
+
+```
+grid-template-columns: 1fr;
+
+margin-bottom: 15px;
+```
+
+}
+
+.participant-card-info > div {
+padding: 14px 15px;
+
+```
+border: 1px solid #eee;
+
+border-radius: 10px;
+
+background: #fff;
+```
+
+}
+
+.participant-card-info span {
+display: block;
+
+```
+margin-bottom: 4px;
+
+color: #777;
+
+font-size: 12px;
+```
+
+}
+
+.participant-card-info strong {
+font-size: 14px;
+}
+
+/\* ------------------------------------------
+マイスター進捗
+\------------------------------------------ \*/
+
+.participant-card-progress {
+padding: 18px;
+
+```
+margin-bottom: 25px;
+
+background: #f7f9fc;
+
+border-radius: 12px;
+```
+
+}
+
+.participant-card-progress-header {
+display: flex;
+
+```
+align-items: center;
+
+justify-content: space-between;
+
+gap: 15px;
+
+margin-bottom: 10px;
+```
+
+}
+
+.participant-card-progress-header > div {
+display: flex;
+
+```
+flex-direction: column;
+
+gap: 3px;
+```
+
+}
+
+.participant-card-progress-header span {
+color: #777;
+
+```
+font-size: 12px;
+```
+
+}
+
+.participant-card-progress-header > strong {
+font-size: 16px;
+
+```
+white-space: nowrap;
+```
+
+}
+
+.participant-card-progress-track {
+width: 100%;
+
+```
+height: 10px;
+
+overflow: hidden;
+
+background: #e1e5e9;
+
+border-radius: 20px;
+```
+
+}
+
+.participant-card-progress-bar {
+height: 100%;
+
+```
+background: #1976d2;
+
+border-radius: 20px;
+
+transition:
+    width 0.3s ease;
+```
+
+}
+
+.participant-card-progress p {
+margin: 8px 0 0;
+
+```
+color: #666;
+
+font-size: 12px;
+```
+
+}
+
+/\* ------------------------------------------
+履歴見出し
+\------------------------------------------ \*/
+
+.participant-card-section-title {
+display: flex;
+
+```
+align-items: center;
+
+justify-content: space-between;
+
+gap: 15px;
+
+margin-bottom: 10px;
+```
+
+}
+
+.participant-card-section-title h3 {
+margin: 0;
+
+```
+font-size: 18px;
+```
+
+}
+
+.participant-card-section-title p {
+margin: 3px 0 0;
+
+```
+color: #777;
+
+font-size: 12px;
+```
+
+}
+
+.participant-card-section-title > span {
+flex-shrink: 0;
+
+```
+padding: 4px 10px;
+
+background: #e3f2fd;
+
+color: #1565c0;
+
+border-radius: 20px;
+
+font-size: 12px;
+
+font-weight: bold;
+```
+
+}
+
+/\* ------------------------------------------
+履歴リスト
+\------------------------------------------ \*/
+
+.participant-card-history-list {
+overflow: hidden;
+
+```
+border: 1px solid #eee;
+
+border-radius: 10px;
+```
+
+}
+
+.participant-card-history-item {
+display: flex;
+
+```
+align-items: center;
+
+justify-content: space-between;
+
+gap: 15px;
+
+padding: 14px 15px;
+
+border-bottom: 1px solid #eee;
+```
+
+}
+
+.participant-card-history-item\:last-child {
+border-bottom: none;
+}
+
+.participant-card-history-item > div {
+min-width: 0;
+}
+
+.participant-card-history-item strong {
+display: block;
+
+```
+margin-bottom: 3px;
+
+font-size: 14px;
+
+word-break: break-word;
+```
+
+}
+
+.participant-card-history-item span {
+color: #777;
+
+```
+font-size: 12px;
+```
+
+}
+
+.participant-card-delete {
+flex-shrink: 0;
+}
+
+/\* ------------------------------------------
+空・エラー・読み込み
+\------------------------------------------ \*/
+
+.participant-card-empty,
+.participant-card-error,
+.participant-card-loading {
+padding: 30px 15px;
+
+```
+text-align: center;
+
+color: #777;
+
+background: #f7f9fc;
+
+border-radius: 10px;
+```
+
+}
+
+.participant-card-error {
+color: #c62828;
+
+```
+background: #fff5f5;
+```
+
+}
+
+/\* ------------------------------------------
+スマートフォン
+\------------------------------------------ \*/
+
+@media (max-width: 700px) {
+
+```
+.participant-card-modal {
+    max-width: 100%;
+}
+
+
+.participant-card-profile {
+    align-items: flex-start;
+
+    flex-direction: column;
+
+    gap: 12px;
+}
+
+
+.participant-card-profile h3 {
+    font-size: 21px;
+}
+
+
+.participant-card-status {
+    align-self: flex-start;
+}
+
+
+.participant-card-stat-grid {
+    grid-template-columns:
+        repeat(2, 1fr);
+}
+
+
+.participant-card-stat {
+    padding: 14px 8px;
+}
+
+
+.participant-card-stat strong {
+    font-size: 18px;
+}
+
+
+.participant-card-progress-header {
+    align-items: flex-start;
+}
+
+
+.participant-card-history-item {
+    align-items: flex-start;
+
+    flex-direction: column;
+
+    gap: 8px;
+}
+
+
+.participant-card-delete {
+    width: 100%;
+}
+```
+
+}
+
+@media (max-width: 400px) {
+
+```
+.participant-card-stat-grid {
+    grid-template-columns: 1fr;
+}
+```
+
+}
+
+/\* ==================================================
+ボタン文字表示の最終修正
+\================================================== \*/
+
+/\*
+管理画面内のすべてのbuttonについて
+文字が確実に表示されるようにする
+\*/
+
+button {
+font-family: inherit;
+
+```
+font-weight: 500;
+
+text-align: center;
+
+text-indent: 0;
+
+line-height: 1.4;
+
+letter-spacing: normal;
+
+white-space: nowrap;
+
+overflow: visible;
+
+visibility: visible;
+
+opacity: 1;
+
+-webkit-text-fill-color: currentColor;
+```
+
+}
+
+/\* ==================================================
+ナビゲーションボタン
+\================================================== \*/
+
+.admin-nav .nav-button {
+display: inline-flex !important;
+
+```
+align-items: center !important;
+
+justify-content: center !important;
+
+color: #555 !important;
+
+font-size: 15px !important;
+
+font-weight: 500 !important;
+
+line-height: 1.4 !important;
+
+text-indent: 0 !important;
+
+visibility: visible !important;
+
+opacity: 1 !important;
+
+-webkit-text-fill-color: #555 !important;
+```
+
+}
+
+.admin-nav .nav-button.active {
+color: #fff !important;
+
+```
+-webkit-text-fill-color: #fff !important;
+```
+
+}
+
+/\* ==================================================
+メインボタン
+\================================================== \*/
+
+.primary-button {
+display: inline-flex !important;
+
+```
+align-items: center !important;
+
+justify-content: center !important;
+
+color: #fff !important;
+
+font-size: 14px !important;
+
+font-weight: bold !important;
+
+line-height: 1.4 !important;
+
+text-indent: 0 !important;
+
+visibility: visible !important;
+
+opacity: 1 !important;
+
+-webkit-text-fill-color: #fff !important;
+```
+
+}
+
+/\* ==================================================
+サブボタン
+\================================================== \*/
+
+.secondary-button {
+display: inline-flex !important;
+
+```
+align-items: center !important;
+
+justify-content: center !important;
+
+color: #444 !important;
+
+font-size: 14px !important;
+
+font-weight: 500 !important;
+
+line-height: 1.4 !important;
+
+text-indent: 0 !important;
+
+visibility: visible !important;
+
+opacity: 1 !important;
+
+-webkit-text-fill-color: #444 !important;
+```
+
+}
+
+/\* ==================================================
+操作ボタン
+\================================================== \*/
+
+.action-button {
+display: inline-flex !important;
+
+```
+align-items: center !important;
+
+justify-content: center !important;
+
+color: #333 !important;
+
+font-size: 13px !important;
+
+font-weight: 500 !important;
+
+line-height: 1.4 !important;
+
+text-indent: 0 !important;
+
+visibility: visible !important;
+
+opacity: 1 !important;
+
+-webkit-text-fill-color: currentColor !important;
+```
+
+}
+
+/\* ==================================================
+「参加者を見る」など
+\================================================== \*/
+
+.view-button {
+color: #2e7d32 !important;
+
+```
+-webkit-text-fill-color: #2e7d32 !important;
+```
+
+}
+
+/\* ==================================================
+編集
+\================================================== \*/
+
+.edit-button {
+color: #1565c0 !important;
+
+```
+-webkit-text-fill-color: #1565c0 !important;
+```
+
+}
+
+/\* ==================================================
+削除
+\================================================== \*/
+
+.delete-button {
+color: #c62828 !important;
+
+```
+-webkit-text-fill-color: #c62828 !important;
+```
+
+}
+
+/\* ==================================================
+モーダル内ボタン
+\================================================== \*/
+
+.modal-buttons button {
+display: inline-flex !important;
+
+```
+align-items: center !important;
+
+justify-content: center !important;
+
+visibility: visible !important;
+
+opacity: 1 !important;
+
+text-indent: 0 !important;
+
+line-height: 1.4 !important;
+
+overflow: visible !important;
+```
+
+}
+
+/\* ==================================================
+モーダルの閉じる・戻るボタン
+\================================================== \*/
+
+.modal-buttons .secondary-button {
+color: #444 !important;
+
+```
+-webkit-text-fill-color: #444 !important;
+```
+
+}
+
+/\* ==================================================
+ボタン内の文字・span等
+\================================================== \*/
+
+button span,
+button strong,
+button small {
+color: inherit !important;
+
+```
+-webkit-text-fill-color: inherit !important;
+
+visibility: visible !important;
+
+opacity: 1 !important;
+```
+
+}
+
+/\* ==================================================
+スマートフォン
+\================================================== \*/
+
+@media (max-width: 700px) {
+
+```
+.admin-nav .nav-button {
+    display: flex !important;
+
+    width: 100% !important;
+
+    min-height: 44px !important;
+
+    color: #555 !important;
+
+    -webkit-text-fill-color: #555 !important;
+}
+
+
+.admin-nav .nav-button.active {
+    color: #fff !important;
+
+    -webkit-text-fill-color: #fff !important;
+}
+
+
+.primary-button,
+.secondary-button,
+.action-button {
+    display: inline-flex !important;
+
+    visibility: visible !important;
+
+    opacity: 1 !important;
+
+    text-indent: 0 !important;
+}
+
+
+.modal-buttons button {
+    width: 100% !important;
+
+    min-height: 44px !important;
+}
+```
+
+}
 /* ==================================================
    参加者カルテ
 ================================================== */
