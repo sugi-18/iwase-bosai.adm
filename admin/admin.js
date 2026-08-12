@@ -2596,75 +2596,124 @@ async function loadTrainings() {
 
                 <td>
 
-                    <button
-                        type="button"
-                        class="action-button view-button"
-                    >
-                        参加者を見る
-                    </button>
+    <button
+        type="button"
+        class="action-button view-button"
+    >
+        参加者を見る
+    </button>
 
-                    <button
-                        type="button"
-                        class="action-button edit-button"
-                    >
-                        編集
-                    </button>
+    <button
+        type="button"
+        class="action-button qr-button"
+        data-action="training-qr"
+    >
+        QRコード
+    </button>
 
-                    <button
-                        type="button"
-                        class="action-button delete-button"
-                    >
-                        削除
-                    </button>
+    <button
+        type="button"
+        class="action-button edit-button"
+    >
+        編集
+    </button>
 
-                </td>
+    <button
+        type="button"
+        class="action-button delete-button"
+    >
+        削除
+    </button>
 
+</td>
             `;
 
 
             const buttons =
-                tr.querySelectorAll(
-                    "button"
+    tr.querySelectorAll(
+        "button"
+    );
+
+
+/* ==========================================
+   参加者を見る
+========================================== */
+
+buttons[0]
+    ?.addEventListener(
+        "click",
+        () => {
+
+            openTrainingParticipants(
+                training
+            );
+
+        }
+    );
+
+
+/* ==========================================
+   QRコード
+========================================== */
+
+buttons[1]
+    ?.addEventListener(
+        "click",
+        () => {
+
+            if (
+                typeof window.openTrainingQrModal ===
+                "function"
+            ) {
+
+                window.openTrainingQrModal(
+                    training
                 );
 
+            } else {
 
-            buttons[0]
-                ?.addEventListener(
-                    "click",
-                    () => {
-
-                        openTrainingParticipants(
-                            training
-                        );
-
-                    }
+                alert(
+                    "QRコード機能を読み込めませんでした。"
                 );
 
+            }
 
-            buttons[1]
-                ?.addEventListener(
-                    "click",
-                    () => {
-
-                        openTrainingModal(
-                            training
-                        );
-
-                    }
-                );
+        }
+    );
 
 
-            buttons[2]
-                ?.addEventListener(
-                    "click",
-                    () => {
+/* ==========================================
+   編集
+========================================== */
 
-                        deleteTraining(
-                            training.id
-                        );
+buttons[2]
+    ?.addEventListener(
+        "click",
+        () => {
 
-                    }
-                );
+            openTrainingModal(
+                training
+            );
+
+        }
+    );
+
+
+/* ==========================================
+   削除
+========================================== */
+
+buttons[3]
+    ?.addEventListener(
+        "click",
+        () => {
+
+            deleteTraining(
+                training.id
+            );
+
+        }
+    );
 
 
             tbody.appendChild(
