@@ -1,17 +1,41 @@
 // ==================================================
 // 岩瀬自治会 防災アプリ
 // 防災訓練 QR参加登録
-// 管理者登録訓練のみ参加可能
+//
+// 管理者訓練マスター連携版
 // ==================================================
 
 "use strict";
 
-const STORAGE_KEY = "iwaseStamp";
 
+// ==================================================
+// Supabase
+// ==================================================
+
+const TRAINING_SUPABASE_URL =
+    "https://zumbqukrojdpgfpfekjr.supabase.co";
+
+const TRAINING_SUPABASE_PUBLISHABLE_KEY =
+    "sb_publishable_8YXsMHOxLr7MOTEYShUM3w_LsZvR3Qn";
+
+
+let trainingSupabaseClient =
+    null;
+
+
+const STORAGE_KEY =
+    "iwaseStamp";
+
+
+// ==================================================
+// 初期化
+// ==================================================
 
 window.addEventListener(
     "DOMContentLoaded",
     async function () {
+
+        initializeTrainingSupabase();
 
         await initializeTrainingPage();
 
@@ -20,28 +44,295 @@ window.addEventListener(
 
 
 // ==================================================
-// 初期化
+// Supabase初期化
+// ==================================================
+
+function initializeTrainingSupabase() {
+
+    try {
+
+        if (
+            typeof window.supabase ===
+            "undefined"
+        ) {
+
+            throw new Error(
+                "Supabaseライブラリが読み込まれていません。"
+            );
+
+        }
+
+
+        trainingSupabaseClient =
+            window.supabase.createClient(
+                TRAINING_SUPABASE_URL,
+                TRAINING_SUPABASE_PUBLISHABLE_KEY
+            );
+
+
+        console.log(
+            "Training Supabase client initialized."
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Supabase初期化エラー:",
+            error
+        );
+
+    }
+
+}
+
+
+// ==================================================
+// ページ初期化
 // ==================================================
 
 async function initializeTrainingPage() {
 
     const params =
         new URLSearchParams(
-            window.location.search
+            location.search
         );
 
 
-    const trainingId =
-        params.get("training_id");
+    // ------------------------------------------
+    // 新方式
+    // 管理者が発行したtraining_id
+    // ------------------------------------------
 
+    const trainingId =
+        params.get(
+            "training_id"
+        );
+
+
+    // ------------------------------------------
+    // 旧方式
+    // event/date
+    // ------------------------------------------
 
     const event =
-        params.get("event");
+        params.get(
+            "event"
+        );
 
 
     const date =
-        params.get("date");
+        params.get(
+            "date"
+        );
 
+
+    // ------------------------------------------
+    // 管理者訓練を取得
+    // ------------------------------------------
+
+    let training =
+        null;
+
+
+    if (
+        trainingId
+    ) {
+
+        training =
+            await getTrainingById(
+                trainingId
+            );
+
+    } else if (
+        event &&
+        date
+    ) {
+
+        training =
+            await getTrainingByEventAndDate(
+                event,
+                date
+            );
+
+    }
+
+
+    // ------------------------------------------
+    // 訓練情報表示
+    // ------------------------------------------
+
+    displayTraining(
+        training,
+        event,
+        date
+    );
+
+
+    // ------------------------------------------
+    // 登録ボタン
+    // ------------------------------------------
+
+    const addButton =
+        document.getElementById(
+            "add-training"
+        );
+
+
+    if (!addButton) {
+
+        return;
+
+    }
+
+
+    addButton.addEventListener(
+        "click",
+        async function () {
+
+            await registerParticipation(
+                training,
+                trainingId,
+                event,
+                date
+            );
+
+        }
+    );
+
+}
+
+
+// ==================================================
+// training_idから訓練取得
+// ==================================================
+
+async function getTrainingById(
+    trainingId
+) {
+
+    if (
+        !trainingSupabaseClient
+    ) {
+
+        return null;
+
+    }
+
+
+    try {
+
+        const {
+            data,
+            error
+        } =
+            await trainingSupabaseClient
+                .from("trainings")
+                .select("*")
+                .eq(
+                    "training_id",
+                    trainingId
+                )
+                .maybeSingle();
+
+
+        if (error) {
+
+            throw error;
+
+        }
+
+
+        return data || null;
+
+
+    } catch (error) {
+
+        console.error(
+            "訓練取得エラー:",
+            error
+        );
+
+        return null;
+
+    }
+
+}
+
+
+// ==================================================
+// event/dateから訓練取得
+//
+// 旧QRとの互換用
+// ==================================================
+
+async function getTrainingByEventAndDate(
+    event,
+    date
+) {
+
+    if (
+        !trainingSupabaseClient
+    ) {
+
+        return null;
+
+    }
+
+
+    try {
+
+        const {
+            data,
+            error
+        } =
+            await trainingSupabaseClient
+                .from("trainings")
+                .select("*")
+                .eq(
+                    "title",
+                    event
+                )
+                .eq(
+                    "training_date",
+                    date
+                )
+                .maybeSingle();
+
+
+        if (error) {
+
+            throw error;
+
+        }
+
+
+        return data || null;
+
+
+    } catch (error) {
+
+        console.error(
+            "旧方式訓練検索エラー:",
+            error
+        );
+
+        return null;
+
+    }
+
+}
+
+
+// ==================================================
+// 訓練情報表示
+// ==================================================
+
+function displayTraining(
+    training,
+    fallbackEvent,
+    fallbackDate
+) {
 
     const eventName =
         document.getElementById(
@@ -55,22 +346,13 @@ async function initializeTrainingPage() {
         );
 
 
-    const result =
-        document.getElementById(
-            "result"
-        );
-
-
-    // --------------------------------------------------
-    // QRにtraining_idがない旧形式への対応
-    // --------------------------------------------------
-
-    if (!trainingId) {
+    if (training) {
 
         if (eventName) {
 
             eventName.textContent =
-                event || "防災訓練";
+                training.title ||
+                "防災訓練";
 
         }
 
@@ -78,29 +360,10 @@ async function initializeTrainingPage() {
         if (eventDate) {
 
             eventDate.textContent =
-                date || "";
-
-        }
-
-
-        if (result) {
-
-            result.textContent =
-                "このQRコードは現在の方式に対応していません。";
-
-        }
-
-
-        const button =
-            document.getElementById(
-                "add-training"
-            );
-
-
-        if (button) {
-
-            button.disabled =
-                true;
+                formatDate(
+                    training.training_date ||
+                    training.date
+                );
 
         }
 
@@ -110,129 +373,15 @@ async function initializeTrainingPage() {
     }
 
 
-    // --------------------------------------------------
-    // Supabase確認
-    // --------------------------------------------------
-
-    if (
-        typeof supabaseClient ===
-        "undefined"
-    ) {
-
-        console.error(
-            "supabaseClient がありません。"
-        );
-
-        if (result) {
-
-            result.textContent =
-                "システムに接続できませんでした。";
-
-        }
-
-        return;
-
-    }
-
-
-    // --------------------------------------------------
-    // 管理者が登録した訓練を取得
-    // --------------------------------------------------
-
-    const {
-        data: training,
-        error
-    } =
-        await supabaseClient
-            .from("trainings")
-            .select(
-                "training_id, title, training_date"
-            )
-            .eq(
-                "training_id",
-                trainingId
-            )
-            .maybeSingle();
-
-
-    if (error) {
-
-        console.error(
-            "訓練情報取得エラー:",
-            error
-        );
-
-
-        if (result) {
-
-            result.textContent =
-                "訓練情報を取得できませんでした。";
-
-        }
-
-        return;
-
-    }
-
-
-    // --------------------------------------------------
-    // 管理者登録訓練が存在しない
-    // --------------------------------------------------
-
-    if (!training) {
-
-        if (eventName) {
-
-            eventName.textContent =
-                "登録されていない訓練です";
-
-        }
-
-
-        if (eventDate) {
-
-            eventDate.textContent =
-                "";
-
-        }
-
-
-        if (result) {
-
-            result.textContent =
-                "この訓練は現在登録されていません。";
-
-        }
-
-
-        const button =
-            document.getElementById(
-                "add-training"
-            );
-
-
-        if (button) {
-
-            button.disabled =
-                true;
-
-        }
-
-
-        return;
-
-    }
-
-
-    // --------------------------------------------------
-    // 最新の訓練情報を表示
-    // --------------------------------------------------
+    // ------------------------------------------
+    // 訓練が存在しない場合
+    // ------------------------------------------
 
     if (eventName) {
 
         eventName.textContent =
-            training.title ||
-            "防災訓練";
+            fallbackEvent ||
+            "訓練情報が見つかりません";
 
     }
 
@@ -240,16 +389,11 @@ async function initializeTrainingPage() {
     if (eventDate) {
 
         eventDate.textContent =
-            formatTrainingDate(
-                training.training_date
-            );
+            fallbackDate ||
+            "";
 
     }
 
-
-    // --------------------------------------------------
-    // 参加登録ボタン
-    // --------------------------------------------------
 
     const addButton =
         document.getElementById(
@@ -260,19 +404,24 @@ async function initializeTrainingPage() {
     if (addButton) {
 
         addButton.disabled =
-            false;
+            true;
+
+        addButton.textContent =
+            "参加登録できません";
+
+    }
 
 
-        addButton.addEventListener(
-            "click",
-            async function () {
-
-                await addTraining(
-                    training
-                );
-
-            }
+    const result =
+        document.getElementById(
+            "result"
         );
+
+
+    if (result) {
+
+        result.textContent =
+            "この訓練は管理者画面に登録されていません。";
 
     }
 
@@ -283,8 +432,11 @@ async function initializeTrainingPage() {
 // 参加登録
 // ==================================================
 
-async function addTraining(
-    training
+async function registerParticipation(
+    training,
+    trainingId,
+    fallbackEvent,
+    fallbackDate
 ) {
 
     const result =
@@ -293,9 +445,56 @@ async function addTraining(
         );
 
 
-    // --------------------------------------------------
+    const addButton =
+        document.getElementById(
+            "add-training"
+        );
+
+
+    // ------------------------------------------
+    // 訓練確認
+    // ------------------------------------------
+
+    if (!training) {
+
+        if (result) {
+
+            result.textContent =
+                "この訓練は管理者画面に登録されていません。";
+
+        }
+
+        return;
+
+    }
+
+
+    // ------------------------------------------
+    // training_id確定
+    // ------------------------------------------
+
+    const actualTrainingId =
+        training.training_id ||
+        trainingId;
+
+
+    if (!actualTrainingId) {
+
+        if (result) {
+
+            result.textContent =
+                "訓練IDを確認できませんでした。";
+
+        }
+
+        return;
+
+    }
+
+
+    // ------------------------------------------
     // 利用者情報
-    // --------------------------------------------------
+    // ------------------------------------------
 
     const saved =
         localStorage.getItem(
@@ -314,19 +513,17 @@ async function addTraining(
     }
 
 
-    let data;
+    let participant;
 
 
     try {
 
-        data =
+        participant =
             JSON.parse(
                 saved
             );
 
-    }
-
-    catch (error) {
+    } catch (error) {
 
         console.error(
             error
@@ -342,8 +539,8 @@ async function addTraining(
 
 
     if (
-        !data.id ||
-        !data.name
+        !participant.id ||
+        !participant.name
     ) {
 
         alert(
@@ -355,77 +552,16 @@ async function addTraining(
     }
 
 
+    // ------------------------------------------
+    // Supabase確認
+    // ------------------------------------------
+
     if (
-        !Array.isArray(
-            data.stamps
-        )
+        !trainingSupabaseClient
     ) {
 
-        data.stamps = [];
-
-    }
-
-
-    // --------------------------------------------------
-    // ローカル側の重複確認
-    // --------------------------------------------------
-
-    const localExists =
-        data.stamps.some(
-            stamp =>
-                stamp.training_id ===
-                training.training_id
-        );
-
-
-    if (localExists) {
-
-        if (result) {
-
-            result.textContent =
-                "この訓練はすでに登録されています。";
-
-        }
-
-        return;
-
-    }
-
-
-    // --------------------------------------------------
-    // Supabase参加者登録
-    // --------------------------------------------------
-
-    const {
-        error: participantError
-    } =
-        await supabaseClient
-            .from("participants")
-            .upsert(
-                {
-                    participant_id:
-                        data.id,
-
-                    name:
-                        data.name
-
-                },
-                {
-                    onConflict:
-                        "participant_id"
-                }
-            );
-
-
-    if (participantError) {
-
-        console.error(
-            "participants ERROR:",
-            participantError
-        );
-
         alert(
-            "参加者情報の保存に失敗しました。"
+            "Supabaseに接続できません。"
         );
 
         return;
@@ -433,217 +569,251 @@ async function addTraining(
     }
 
 
-    // --------------------------------------------------
-    // Supabase参加履歴確認
-    // --------------------------------------------------
+    if (addButton) {
 
-    const {
-        data: existingParticipation,
-        error: checkError
-    } =
-        await supabaseClient
-            .from("participations")
-            .select("id")
-            .eq(
-                "participant_id",
-                data.id
-            )
-            .eq(
-                "training_id",
-                training.training_id
-            )
-            .maybeSingle();
-
-
-    if (checkError) {
-
-        console.error(
-            "参加履歴確認エラー:",
-            checkError
-        );
-
-        alert(
-            "参加履歴を確認できませんでした。"
-        );
-
-        return;
-
-    }
-
-
-    // --------------------------------------------------
-    // 既に登録済み
-    // --------------------------------------------------
-
-    if (existingParticipation) {
-
-        if (result) {
-
-            result.textContent =
-                "この訓練はすでに登録されています。";
-
-        }
-
-
-        // ローカルにも反映
-        syncLocalStamp(
-            data,
-            training
-        );
-
-
-        return;
-
-    }
-
-
-    // --------------------------------------------------
-    // 参加履歴登録
-    // --------------------------------------------------
-
-    const {
-        error: participationError
-    } =
-        await supabaseClient
-            .from("participations")
-            .insert(
-                {
-                    participant_id:
-                        data.id,
-
-                    training_id:
-                        training.training_id
-                }
-            );
-
-
-    if (participationError) {
-
-        console.error(
-            "participations INSERT ERROR:",
-            participationError
-        );
-
-        alert(
-            "参加記録の保存に失敗しました。\n" +
-            participationError.message
-        );
-
-        return;
-
-    }
-
-
-    // --------------------------------------------------
-    // ローカルスタンプ更新
-    // --------------------------------------------------
-
-    syncLocalStamp(
-        data,
-        training
-    );
-
-
-    // --------------------------------------------------
-    // 完了
-    // --------------------------------------------------
-
-    if (result) {
-
-        result.textContent =
-            "✅ 参加登録しました！";
-
-    }
-
-
-    const button =
-        document.getElementById(
-            "add-training"
-        );
-
-
-    if (button) {
-
-        button.disabled =
+        addButton.disabled =
             true;
 
-        button.textContent =
-            "登録済み";
-
-    }
-
-}
-
-
-// ==================================================
-// ローカルスタンプ同期
-// ==================================================
-
-function syncLocalStamp(
-    data,
-    training
-) {
-
-    if (
-        !Array.isArray(
-            data.stamps
-        )
-    ) {
-
-        data.stamps = [];
+        addButton.textContent =
+            "登録中……";
 
     }
 
 
-    const exists =
-        data.stamps.some(
-            stamp =>
-                stamp.training_id ===
-                training.training_id
-        );
+    try {
+
+        // ==========================================
+        // ① participants
+        // ==========================================
+
+        const {
+            error: participantError
+        } =
+            await trainingSupabaseClient
+                .from("participants")
+                .upsert(
+                    {
+                        participant_id:
+                            participant.id,
+
+                        name:
+                            participant.name
+                    },
+                    {
+                        onConflict:
+                            "participant_id"
+                    }
+                );
 
 
-    if (exists) {
+        if (participantError) {
+
+            throw participantError;
+
+        }
+
+
+        // ==========================================
+        // ② 既存参加確認
+        // ==========================================
+
+        const {
+            data: existingParticipation,
+            error: checkError
+        } =
+            await trainingSupabaseClient
+                .from("participations")
+                .select(
+                    "id"
+                )
+                .eq(
+                    "participant_id",
+                    participant.id
+                )
+                .eq(
+                    "training_id",
+                    actualTrainingId
+                )
+                .maybeSingle();
+
+
+        if (checkError) {
+
+            throw checkError;
+
+        }
+
+
+        if (
+            existingParticipation
+        ) {
+
+            if (result) {
+
+                result.textContent =
+                    "この訓練はすでに参加登録されています。";
+
+            }
+
+
+            return;
+
+        }
+
+
+        // ==========================================
+        // ③ participationsのみINSERT
+        //
+        // ★ trainingsにはINSERTしない
+        // ==========================================
+
+        const {
+            error: participationError
+        } =
+            await trainingSupabaseClient
+                .from("participations")
+                .insert(
+                    {
+                        participant_id:
+                            participant.id,
+
+                        training_id:
+                            actualTrainingId
+                    }
+                );
+
+
+        if (participationError) {
+
+            throw participationError;
+
+        }
+
+
+        // ==========================================
+        // ④ localStorage更新
+        // ==========================================
+
+        if (
+            !Array.isArray(
+                participant.stamps
+            )
+        ) {
+
+            participant.stamps =
+                [];
+
+        }
+
+
+        const trainingDate =
+            training.training_date ||
+            training.date ||
+            fallbackDate ||
+            "";
+
+
+        const trainingTitle =
+            training.title ||
+            fallbackEvent ||
+            "防災訓練";
+
+
+        const alreadyLocal =
+            participant.stamps.some(
+                stamp =>
+                    String(
+                        stamp.training_id
+                    ) ===
+                    String(
+                        actualTrainingId
+                    )
+            );
+
+
+        if (!alreadyLocal) {
+
+            if (
+                participant.stamps.length >=
+                10
+            ) {
+
+                participant.stamps.shift();
+
+            }
+
+
+            participant.stamps.push({
+
+                training_id:
+                    actualTrainingId,
+
+                date:
+                    trainingDate,
+
+                event:
+                    trainingTitle
+
+            });
+
+        }
+
 
         localStorage.setItem(
             STORAGE_KEY,
-            JSON.stringify(data)
+            JSON.stringify(
+                participant
+            )
         );
 
-        return;
+
+        // ==========================================
+        // 完了
+        // ==========================================
+
+        if (result) {
+
+            result.textContent =
+                "✅ 参加登録が完了しました！";
+
+        }
+
+
+        if (addButton) {
+
+            addButton.textContent =
+                "登録済み";
+
+        }
+
+
+    } catch (error) {
+
+        console.error(
+            "参加登録エラー:",
+            error
+        );
+
+
+        if (result) {
+
+            result.textContent =
+                "参加登録に失敗しました。";
+
+        }
+
+
+        if (addButton) {
+
+            addButton.disabled =
+                false;
+
+            addButton.textContent =
+                "参加登録する";
+
+        }
 
     }
-
-
-    if (
-        data.stamps.length >= 10
-    ) {
-
-        return;
-
-    }
-
-
-    data.stamps.push({
-
-        training_id:
-            training.training_id,
-
-        date:
-            training.training_date ||
-            "",
-
-        event:
-            training.title ||
-            ""
-
-    });
-
-
-    localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(data)
-    );
 
 }
 
@@ -652,11 +822,11 @@ function syncLocalStamp(
 // 日付表示
 // ==================================================
 
-function formatTrainingDate(
-    date
+function formatDate(
+    value
 ) {
 
-    if (!date) {
+    if (!value) {
 
         return "";
 
@@ -664,25 +834,25 @@ function formatTrainingDate(
 
 
     const parts =
-        String(date).split("-");
+        String(value).split("-");
 
 
     if (
-        parts.length !== 3
+        parts.length === 3
     ) {
 
-        return date;
+        return (
+            parts[0] +
+            "年" +
+            Number(parts[1]) +
+            "月" +
+            Number(parts[2]) +
+            "日"
+        );
 
     }
 
 
-    return (
-        parts[0] +
-        "年" +
-        Number(parts[1]) +
-        "月" +
-        Number(parts[2]) +
-        "日"
-    );
+    return String(value);
 
 }
