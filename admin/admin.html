@@ -96,7 +96,6 @@
 
 
 
-
 <!-- ==================================================
      管理画面
 ================================================== -->
@@ -105,6 +104,7 @@
     id="adminScreen"
     class="screen hidden"
 >
+
 
 <header class="admin-header">
 
@@ -129,7 +129,6 @@
     </button>
 
 </header>
-
 
 
 
@@ -467,12 +466,12 @@
 
 
 
-
 <!-- ==================================================
      ナビゲーション
 ================================================== -->
 
 <nav class="admin-nav">
+
 
     <button
         type="button"
@@ -481,6 +480,19 @@
     >
         参加者管理
     </button>
+
+
+
+    <!-- ★ Step 2 -->
+
+    <button
+        type="button"
+        class="nav-button"
+        data-target="participantAnalysisSection"
+    >
+        参加者分析
+    </button>
+
 
 
     <button
@@ -492,6 +504,7 @@
     </button>
 
 
+
     <button
         type="button"
         class="nav-button"
@@ -500,8 +513,8 @@
         参加履歴
     </button>
 
-</nav>
 
+</nav>
 
 
 
@@ -513,6 +526,7 @@
     id="participantsSection"
     class="admin-section content-section"
 >
+
 
     <div class="section-header">
 
@@ -529,6 +543,7 @@
         </div>
 
     </div>
+
 
 
     <div class="table-wrapper">
@@ -580,6 +595,431 @@
 
 
 
+<!-- ==================================================
+     Step 2
+     参加者分析
+================================================== -->
+
+<section
+    id="participantAnalysisSection"
+    class="admin-section content-section hidden"
+>
+
+
+    <div class="section-header">
+
+        <div>
+
+            <h2>
+                参加者分析
+            </h2>
+
+            <p>
+                地域の防災活動への参加状況を分析します。
+            </p>
+
+        </div>
+
+
+        <button
+            type="button"
+            id="refreshParticipantAnalysisButton"
+            class="secondary-button"
+        >
+            ↻ 更新
+        </button>
+
+    </div>
+
+
+
+    <!-- ==================================================
+         基本統計
+    ================================================== -->
+
+    <div class="stats-grid dashboard-stats">
+
+
+        <div class="stat-card">
+
+            <span class="stat-label">
+                登録参加者
+            </span>
+
+            <div>
+
+                <strong id="analysisTotalParticipants">
+                    0
+                </strong>
+
+                <span>
+                    人
+                </span>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="stat-card">
+
+            <span class="stat-label">
+                参加経験者
+            </span>
+
+            <div>
+
+                <strong id="analysisActiveParticipants">
+                    0
+                </strong>
+
+                <span>
+                    人
+                </span>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="stat-card">
+
+            <span class="stat-label">
+                未参加者
+            </span>
+
+            <div>
+
+                <strong id="analysisInactiveParticipants">
+                    0
+                </strong>
+
+                <span>
+                    人
+                </span>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="stat-card">
+
+            <span class="stat-label">
+                参加率
+            </span>
+
+            <div>
+
+                <strong id="analysisParticipationRate">
+                    0
+                </strong>
+
+                <span>
+                    %
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ==================================================
+         詳細統計
+    ================================================== -->
+
+    <div class="stats-grid secondary-stats">
+
+
+        <div class="stat-card small-stat">
+
+            <span class="stat-label">
+                平均参加回数
+            </span>
+
+            <div>
+
+                <strong id="analysisAverageParticipation">
+                    0
+                </strong>
+
+                <span>
+                    回 / 人
+                </span>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="stat-card small-stat">
+
+            <span class="stat-label">
+                2回以上参加
+            </span>
+
+            <div>
+
+                <strong id="analysisRepeatParticipants">
+                    0
+                </strong>
+
+                <span>
+                    人
+                </span>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="stat-card small-stat">
+
+            <span class="stat-label">
+                5回以上参加
+            </span>
+
+            <div>
+
+                <strong id="analysisMasterParticipants">
+                    0
+                </strong>
+
+                <span>
+                    人
+                </span>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="stat-card small-stat">
+
+            <span class="stat-label">
+                マイスター相当率
+            </span>
+
+            <div>
+
+                <strong id="analysisMasterRate">
+                    0
+                </strong>
+
+                <span>
+                    %
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ==================================================
+         参加回数分布
+    ================================================== -->
+
+    <div class="dashboard-card chart-card">
+
+        <div class="card-title-row">
+
+            <div>
+
+                <h3>
+                    参加回数の分布
+                </h3>
+
+                <p>
+                    参加者が何回の訓練・講座に参加しているか
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="chart-container participant-analysis-chart">
+
+            <canvas
+                id="participantDistributionChart"
+            ></canvas>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ==================================================
+         ランキング・未参加者
+    ================================================== -->
+
+    <div class="dashboard-two-column">
+
+
+        <!-- ランキング -->
+
+        <div class="dashboard-card">
+
+            <h3>
+                参加回数ランキング
+            </h3>
+
+            <p class="card-description">
+                参加回数の多い参加者
+            </p>
+
+
+            <div
+                id="analysisRanking"
+                class="ranking-list"
+            >
+                読み込み中...
+            </div>
+
+        </div>
+
+
+
+        <!-- 未参加者 -->
+
+        <div class="dashboard-card">
+
+            <h3>
+                未参加者
+            </h3>
+
+            <p class="card-description">
+                まだ訓練・講座に参加していない参加者
+            </p>
+
+
+            <div
+                id="analysisInactiveList"
+                class="ranking-list"
+            >
+                読み込み中...
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ==================================================
+         全参加者一覧
+    ================================================== -->
+
+    <div class="dashboard-card">
+
+        <div class="card-title-row">
+
+            <div>
+
+                <h3>
+                    参加者別分析
+                </h3>
+
+                <p>
+                    各参加者の参加状況
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="table-wrapper">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            順位
+                        </th>
+
+                        <th>
+                            参加者
+                        </th>
+
+                        <th>
+                            参加回数
+                        </th>
+
+                        <th>
+                            状況
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody
+                    id="participantAnalysisTable"
+                >
+
+                    <tr>
+
+                        <td colspan="4">
+                            読み込み中...
+                        </td>
+
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ==================================================
+         分析説明
+    ================================================== -->
+
+    <div class="analysis-note">
+
+        <strong>
+            分析について
+        </strong>
+
+        <p>
+            参加率は、登録されている参加者のうち、
+            1回以上の訓練・講座参加記録がある人の割合です。
+        </p>
+
+        <p>
+            「5回以上参加」は、
+            現在の「いわぽん防災マイスター」の
+            5回参加基準に合わせています。
+        </p>
+
+    </div>
+
+
+</section>
+
+
 
 <!-- ==================================================
      訓練・講座管理
@@ -589,6 +1029,7 @@
     id="trainingsSection"
     class="admin-section content-section hidden"
 >
+
 
     <div class="section-header">
 
@@ -614,6 +1055,7 @@
         </button>
 
     </div>
+
 
 
     <div class="table-wrapper">
@@ -669,7 +1111,6 @@
 
 
 
-
 <!-- ==================================================
      参加履歴
 ================================================== -->
@@ -678,6 +1119,7 @@
     id="participationsSection"
     class="admin-section content-section hidden"
 >
+
 
     <div class="section-header">
 
@@ -694,6 +1136,7 @@
         </div>
 
     </div>
+
 
 
     <div class="table-wrapper">
@@ -750,7 +1193,6 @@
 
 
 
-
 <!-- ==================================================
      参加者編集モーダル
 ================================================== -->
@@ -760,7 +1202,9 @@
     class="modal hidden"
 >
 
+
     <div class="modal-content">
+
 
         <h2>
             参加者編集
@@ -797,6 +1241,7 @@
 
         <div class="modal-buttons">
 
+
             <button
                 type="button"
                 id="cancelParticipantButton"
@@ -804,6 +1249,7 @@
             >
                 キャンセル
             </button>
+
 
 
             <button
@@ -814,12 +1260,13 @@
                 保存
             </button>
 
+
         </div>
+
 
     </div>
 
 </div>
-
 
 
 
@@ -832,7 +1279,9 @@
     class="modal hidden"
 >
 
+
     <div class="modal-content large-modal">
+
 
         <h2 id="participantHistoryTitle">
             参加履歴
@@ -849,6 +1298,7 @@
 
         <div class="modal-buttons">
 
+
             <button
                 type="button"
                 id="closeParticipantHistoryButton"
@@ -857,12 +1307,13 @@
                 閉じる
             </button>
 
+
         </div>
+
 
     </div>
 
 </div>
-
 
 
 
@@ -875,7 +1326,9 @@
     class="modal hidden"
 >
 
+
     <div class="modal-content">
+
 
         <h2 id="trainingModalTitle">
             訓練・講座を登録
@@ -912,6 +1365,7 @@
 
         <div class="modal-buttons">
 
+
             <button
                 type="button"
                 id="cancelTrainingButton"
@@ -919,6 +1373,7 @@
             >
                 キャンセル
             </button>
+
 
 
             <button
@@ -929,12 +1384,13 @@
                 保存
             </button>
 
+
         </div>
+
 
     </div>
 
 </div>
-
 
 
 
@@ -947,7 +1403,9 @@
     class="modal hidden"
 >
 
+
     <div class="modal-content large-modal">
+
 
         <h2 id="trainingParticipantsTitle">
             参加者一覧
@@ -964,6 +1422,7 @@
 
         <div class="modal-buttons">
 
+
             <button
                 type="button"
                 id="closeTrainingParticipantsButton"
@@ -972,12 +1431,13 @@
                 閉じる
             </button>
 
+
         </div>
+
 
     </div>
 
 </div>
-
 
 
 
@@ -990,6 +1450,7 @@
 ></script>
 
 
+
 <!-- ==================================================
      Supabase
 ================================================== -->
@@ -999,9 +1460,11 @@
 ></script>
 
 
+
 <script
     src="../stamp/supabase.js"
 ></script>
+
 
 
 <!-- ==================================================
@@ -1011,11 +1474,21 @@
 <script src="admin.js"></script>
 
 
+
 <!-- ==================================================
      参加者カルテ
 ================================================== -->
 
 <script src="participant-card.js"></script>
+
+
+
+<!-- ==================================================
+     Step 2
+     参加者分析
+================================================== -->
+
+<script src="participant-analysis.js"></script>
 
 
 </body>
