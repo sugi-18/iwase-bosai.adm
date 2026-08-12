@@ -1,10 +1,15 @@
 /* ==================================================
    岩瀬自治会 防災アプリ
    お知らせ・緊急情報表示
+   詳細表示・NEW表示対応
 ================================================== */
 
 "use strict";
 
+
+/* ==================================================
+   Supabase設定
+================================================== */
 
 const ANNOUNCEMENT_SUPABASE_URL =
     "https://zumbqukrojdpgfpfekjr.supabase.co";
@@ -14,8 +19,15 @@ const ANNOUNCEMENT_SUPABASE_KEY =
     "sb_publishable_8YXsMHOxLr7MOTEYShUM3w_LsZvR3Qn";
 
 
-let announcementClient =
-    null;
+let announcementClient = null;
+
+
+/* ==================================================
+   NEW表示期間
+   7日以内のお知らせをNEWとする
+================================================== */
+
+const ANNOUNCEMENT_NEW_DAYS = 7;
 
 
 /* ==================================================
@@ -45,6 +57,9 @@ document.addEventListener(
                     ANNOUNCEMENT_SUPABASE_URL,
                     ANNOUNCEMENT_SUPABASE_KEY
                 );
+
+
+            createAnnouncementModal();
 
 
             await loadPublicAnnouncements();
@@ -84,6 +99,10 @@ async function loadPublicAnnouncements() {
     }
 
 
+    const now =
+        new Date().toISOString();
+
+
     const {
         data,
         error
@@ -101,7 +120,7 @@ async function loadPublicAnnouncements() {
             )
             .or(
                 "expires_at.is.null,expires_at.gt." +
-                new Date().toISOString()
+                now
             )
             .order(
                 "published_at",
@@ -130,7 +149,7 @@ async function loadPublicAnnouncements() {
 
 
 /* ==================================================
-   表示
+   お知らせ表示
 ================================================== */
 
 function renderPublicAnnouncements(
@@ -161,63 +180,120 @@ function renderPublicAnnouncements(
     }
 
 
-    announcements
-        .sort(
-            (
-                a,
-                b
-            ) => {
+    /*
+       緊急 → 重要 → 通常
+       同じ種類の場合は新しい順
+    */
 
-                const priority = {
+    announcements.sort(
+        (
+            a,
+            b
+        ) => {
 
-                    urgent: 0,
+            const priority = {
 
-                    important: 1,
+                urgent: 0,
 
-                    normal: 2
+                important: 1,
 
-                };
+                normal: 2
+
+            };
 
 
-                return (
-                    priority[a.type] -
-                    priority[b.type]
-                );
+            const priorityDifference =
+                priority[a.type] -
+                priority[b.type];
+
+
+            if (
+                priorityDifference !== 0
+            ) {
+
+                return priorityDifference;
 
             }
-        )
-        .forEach(
-            announcement => {
-
-                const card =
-                    document.createElement(
-                        "article"
-                    );
 
 
-                card.className =
-                    "announcement-card " +
-                    getPublicTypeClass(
-                        announcement.type
-                    );
+            return (
+                new Date(
+                    b.published_at
+                ) -
+                new Date(
+                    a.published_at
+                )
+            );
+
+        }
+    );
 
 
-                const label =
-                    getPublicTypeLabel(
-                        announcement.type
-                    );
+    announcements.forEach(
+        announcement => {
+
+            const card =
+                document.createElement(
+                    "article"
+                );
 
 
-                const date =
-                    formatPublicDate(
-                        announcement.published_at
-                    );
+            card.className =
+                "announcement-card " +
+                getPublicTypeClass(
+                    announcement.type
+                );
 
 
-                card.innerHTML = `
+            const label =
+                getPublicTypeLabel(
+                    announcement.type
+                );
+
+
+            const date =
+                formatPublicDate(
+                    announcement.published_at
+                );
+
+
+            const isNew =
+                isAnnouncementNew(
+                    announcement.published_at
+                );
+
+
+            const newBadge =
+                isNew
+                    ? `
+                        <span
+                            class="announcement-new-badge"
+                        >
+                            NEW
+                        </span>
+                    `
+                    : "";
+
+
+            /*
+               本文はトップページでは
+               最大3行程度のプレビュー
+            */
+
+            const preview =
+                createAnnouncementPreview(
+                    announcement.body
+                );
+
+
+            card.innerHTML = `
+
+                <div
+                    class="announcement-card-header"
+                >
 
                     <div
-                        class="announcement-card-header"
+                        class="announcement-card-labels"
                     >
 
                         <span
@@ -226,38 +302,460 @@ function renderPublicAnnouncements(
                             ${label}
                         </span>
 
-                        <time>
-                            ${date}
-                        </time>
+                        ${newBadge}
 
                     </div>
 
 
-                    <h3>
-                        ${escapeHtml(
-                            announcement.title
-                        )}
-                    </h3>
+                    <time>
+                        ${date}
+                    </time>
+
+                </div>
 
 
-                    <p>
-                        ${escapeHtml(
-                            announcement.body
-                        ).replace(
-                            /\n/g,
-                            "<br>"
-                        )}
-                    </p>
-
-                `;
+                <h3>
+                    ${escapeHtml(
+                        announcement.title
+                    )}
+                </h3>
 
 
-                container.appendChild(
-                    card
+                <p
+                    class="announcement-preview"
+                >
+                    ${escapeHtml(
+                        preview
+                    )}
+                </p>
+
+
+                <div
+                    class="announcement-card-footer"
+                >
+
+                    <button
+                        type="button"
+                        class="announcement-detail-button"
+                        data-announcement-id="${announcement.id}"
+                    >
+                        詳細を見る
+                    </button>
+
+                </div>
+
+            `;
+
+
+            const detailButton =
+                card.querySelector(
+                    ".announcement-detail-button"
+                );
+
+
+            if (detailButton) {
+
+                detailButton.addEventListener(
+                    "click",
+                    () => {
+
+                        openAnnouncementDetail(
+                            announcement
+                        );
+
+                    }
                 );
 
             }
+
+
+            container.appendChild(
+                card
+            );
+
+        }
+    );
+
+}
+
+
+/* ==================================================
+   詳細モーダル作成
+================================================== */
+
+function createAnnouncementModal() {
+
+    if (
+        document.getElementById(
+            "announcementDetailModal"
+        )
+    ) {
+
+        return;
+
+    }
+
+
+    const modal =
+        document.createElement(
+            "div"
         );
+
+
+    modal.id =
+        "announcementDetailModal";
+
+
+    modal.className =
+        "announcement-detail-modal";
+
+
+    modal.innerHTML = `
+
+        <div
+            class="announcement-detail-overlay"
+            id="announcementDetailOverlay"
+        ></div>
+
+
+        <div
+            class="announcement-detail-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="announcementDetailTitle"
+        >
+
+            <button
+                type="button"
+                class="announcement-detail-close"
+                id="announcementDetailClose"
+                aria-label="閉じる"
+            >
+                ×
+            </button>
+
+
+            <div
+                id="announcementDetailContent"
+                class="announcement-detail-content"
+            ></div>
+
+        </div>
+
+    `;
+
+
+    document.body.appendChild(
+        modal
+    );
+
+
+    document
+        .getElementById(
+            "announcementDetailClose"
+        )
+        ?.addEventListener(
+            "click",
+            closeAnnouncementDetail
+        );
+
+
+    document
+        .getElementById(
+            "announcementDetailOverlay"
+        )
+        ?.addEventListener(
+            "click",
+            closeAnnouncementDetail
+        );
+
+
+    document.addEventListener(
+        "keydown",
+        event => {
+
+            if (
+                event.key === "Escape"
+            ) {
+
+                closeAnnouncementDetail();
+
+            }
+
+        }
+    );
+
+}
+
+
+/* ==================================================
+   詳細表示
+================================================== */
+
+function openAnnouncementDetail(
+    announcement
+) {
+
+    const modal =
+        document.getElementById(
+            "announcementDetailModal"
+        );
+
+
+    const content =
+        document.getElementById(
+            "announcementDetailContent"
+        );
+
+
+    if (
+        !modal ||
+        !content
+    ) {
+
+        return;
+
+    }
+
+
+    const label =
+        getPublicTypeLabel(
+            announcement.type
+        );
+
+
+    const typeClass =
+        getPublicTypeClass(
+            announcement.type
+        );
+
+
+    const date =
+        formatPublicDateTime(
+            announcement.published_at
+        );
+
+
+    const isNew =
+        isAnnouncementNew(
+            announcement.published_at
+        );
+
+
+    const newBadge =
+        isNew
+            ? `
+                <span
+                    class="announcement-new-badge"
+                >
+                    NEW
+                </span>
+            `
+            : "";
+
+
+    content.innerHTML = `
+
+        <div
+            class="announcement-detail-header
+                   ${typeClass}"
+        >
+
+            <div
+                class="announcement-detail-labels"
+            >
+
+                <span
+                    class="announcement-badge"
+                >
+                    ${label}
+                </span>
+
+                ${newBadge}
+
+            </div>
+
+
+            <time>
+                ${date}
+            </time>
+
+        </div>
+
+
+        <h2
+            id="announcementDetailTitle"
+        >
+            ${escapeHtml(
+                announcement.title
+            )}
+        </h2>
+
+
+        <div
+            class="announcement-detail-body"
+        >
+            ${escapeHtml(
+                announcement.body
+            ).replace(
+                /\n/g,
+                "<br>"
+            )}
+        </div>
+
+    `;
+
+
+    modal.classList.add(
+        "active"
+    );
+
+
+    document.body.classList.add(
+        "announcement-modal-open"
+    );
+
+}
+
+
+/* ==================================================
+   詳細を閉じる
+================================================== */
+
+function closeAnnouncementDetail() {
+
+    const modal =
+        document.getElementById(
+            "announcementDetailModal"
+        );
+
+
+    if (!modal) {
+
+        return;
+
+    }
+
+
+    modal.classList.remove(
+        "active"
+    );
+
+
+    document.body.classList.remove(
+        "announcement-modal-open"
+    );
+
+}
+
+
+/* ==================================================
+   NEW判定
+================================================== */
+
+function isAnnouncementNew(
+    publishedAt
+) {
+
+    if (!publishedAt) {
+
+        return false;
+
+    }
+
+
+    const publishedDate =
+        new Date(
+            publishedAt
+        );
+
+
+    const now =
+        new Date();
+
+
+    if (
+        Number.isNaN(
+            publishedDate.getTime()
+        )
+    ) {
+
+        return false;
+
+    }
+
+
+    const diff =
+        now.getTime() -
+        publishedDate.getTime();
+
+
+    const days =
+        diff /
+        (
+            1000 *
+            60 *
+            60 *
+            24
+        );
+
+
+    return (
+        days >= 0 &&
+        days <=
+        ANNOUNCEMENT_NEW_DAYS
+    );
+
+}
+
+
+/* ==================================================
+   本文プレビュー
+================================================== */
+
+function createAnnouncementPreview(
+    body
+) {
+
+    if (!body) {
+
+        return "";
+
+    }
+
+
+    const cleanText =
+        String(
+            body
+        )
+        .replace(
+            /\s+/g,
+            " "
+        )
+        .trim();
+
+
+    const maxLength =
+        90;
+
+
+    if (
+        cleanText.length <=
+        maxLength
+    ) {
+
+        return cleanText;
+
+    }
+
+
+    return (
+        cleanText.substring(
+            0,
+            maxLength
+        ) +
+        "..."
+    );
 
 }
 
@@ -372,6 +870,64 @@ function formatPublicDate(
 }
 
 
+function formatPublicDateTime(
+    value
+) {
+
+    const date =
+        new Date(
+            value
+        );
+
+
+    if (
+        Number.isNaN(
+            date.getTime()
+        )
+    ) {
+
+        return "";
+
+    }
+
+
+    return (
+
+        date.getFullYear() +
+        "/" +
+        String(
+            date.getMonth() + 1
+        ).padStart(
+            2,
+            "0"
+        ) +
+        "/" +
+        String(
+            date.getDate()
+        ).padStart(
+            2,
+            "0"
+        ) +
+        " " +
+        String(
+            date.getHours()
+        ).padStart(
+            2,
+            "0"
+        ) +
+        ":" +
+        String(
+            date.getMinutes()
+        ).padStart(
+            2,
+            "0"
+        )
+
+    );
+
+}
+
+
 /* ==================================================
    エラー
 ================================================== */
@@ -393,7 +949,9 @@ function showAnnouncementError() {
 
     container.innerHTML = `
 
-        <div class="announcement-error">
+        <div
+            class="announcement-error"
+        >
 
             お知らせを取得できませんでした。
 
