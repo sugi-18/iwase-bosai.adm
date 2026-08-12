@@ -3,21 +3,21 @@
 
 <head>
 
-<meta charset="UTF-8">
+    <meta charset="UTF-8">
 
-<meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
->
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-<title>
-    管理者画面 | いわぽん防災
-</title>
+    <title>
+        管理者画面 | いわぽん防災
+    </title>
 
-<link
-    rel="stylesheet"
-    href="admin.css"
->
+    <link
+        rel="stylesheet"
+        href="admin.css"
+    >
 
 </head>
 
@@ -1406,12 +1406,107 @@
     </div>
 
 </div>
+
+
+
+<!-- ==================================================
+     訓練QRコードモーダル
+================================================== -->
+
+<div
+    id="trainingQrModal"
+    class="modal hidden"
+>
+
+    <div class="modal-content qr-modal">
+
+        <h2>
+            訓練参加QRコード
+        </h2>
+
+
+        <div
+            id="trainingQrSummary"
+            class="qr-summary"
+        >
+            読み込み中...
+        </div>
+
+
+        <div class="qr-code-area">
+
+            <div
+                id="trainingQrCode"
+                class="qr-code"
+            ></div>
+
+        </div>
+
+
+        <p class="qr-description">
+            このQRコードをスマートフォンで読み取ると、
+            この訓練の参加登録ページが開きます。
+        </p>
+
+
+        <div
+            id="trainingQrUrl"
+            class="qr-url"
+        ></div>
+
+
+        <div class="modal-buttons">
+
+            <button
+                type="button"
+                id="downloadTrainingQrButton"
+                class="primary-button"
+            >
+                QRコードを保存
+            </button>
+
+
+            <button
+                type="button"
+                id="printTrainingQrButton"
+                class="secondary-button"
+            >
+                印刷
+            </button>
+
+
+            <button
+                type="button"
+                id="closeTrainingQrButton"
+                class="secondary-button"
+            >
+                閉じる
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
 <!-- ==================================================
      Chart.js
 ================================================== -->
 
 <script
     src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"
+></script>
+
+
+
+<!-- ==================================================
+     QRコード生成
+================================================== -->
+
+<script
+    src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"
 ></script>
 
 
