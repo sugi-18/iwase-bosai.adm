@@ -2,157 +2,398 @@
 <html lang="ja">
 
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>岩瀬防災訓練</title>
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
+
+<title>
+    岩瀬防災訓練
+</title>
 
 <style>
-/* ---------- 全体 ---------- */
+
 body {
+
     margin: 0;
+
     font-family:
-    -apple-system,
-    BlinkMacSystemFont,
-    "Helvetica Neue",
-    "Yu Gothic",
-    "Meiryo",
-    sans-serif;
+        -apple-system,
+        BlinkMacSystemFont,
+        "Helvetica Neue",
+        "Yu Gothic",
+        "Meiryo",
+        sans-serif;
+
     background-color: #f7f7f7;
+
     color: #333;
+
     text-align: center;
+
 }
 
-/* ---------- ヘッダー ---------- */
+
 .header {
+
     background-color: #d62828;
+
     color: white;
+
     padding: 30px 20px;
+
 }
+
 
 .header h1 {
+
     margin: 0 0 10px;
+
     font-size: 28px;
+
 }
+
 
 .header p {
+
     margin: 0;
+
     font-size: 16px;
+
 }
 
-/* ---------- メイン ---------- */
+
 main {
+
     max-width: 900px;
+
     margin: 0 auto;
+
     padding: 30px 20px 50px;
+
 }
 
-/* ---------- 訓練案内 ---------- */
+
 .training-photo-area {
+
     margin: 20px auto 40px;
+
 }
+
 
 .training-photo-area h2 {
+
     display: inline-block;
+
     color: #d62828;
+
     padding-bottom: 8px;
+
     border-bottom: 4px solid #d62828;
+
     margin-bottom: 30px;
+
 }
 
-/* ---------- 写真 ---------- */
+
 .training-gallery {
+
     display: flex;
+
     flex-direction: column;
+
     align-items: center;
+
     gap: 20px;
+
 }
+
 
 .training-gallery img {
+
     width: 100%;
+
     max-width: 700px;
+
     height: auto;
+
     display: block;
+
     border-radius: 10px;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+
+    box-shadow:
+        0 3px 10px
+        rgba(0,0,0,0.15);
+
 }
 
-/* ---------- 戻るボタン ---------- */
+
+.loading {
+
+    padding: 30px;
+
+    color: #777;
+
+}
+
+
+.empty {
+
+    padding: 30px;
+
+    color: #777;
+
+    background: #eee;
+
+    border-radius: 10px;
+
+}
+
+
 .back-button {
+
     display: inline-block;
+
     margin-top: 10px;
+
     padding: 15px 35px;
+
     background-color: #1976d2;
+
     color: white;
+
     text-decoration: none;
+
     border-radius: 30px;
+
     font-size: 18px;
+
     font-weight: bold;
-    transition: 0.3s;
+
 }
 
-.back-button:hover {
-    background-color: #125aa0;
-    transform: translateY(-2px);
-}
 
-/* ---------- フッター ---------- */
-footer {
-    padding: 20px;
-    background-color: #eeeeee;
-    color: #666;
-    font-size: 14px;
-}
-
-/* ---------- スマホ ---------- */
 @media (max-width: 600px) {
+
     .header h1 {
+
         font-size: 24px;
+
     }
 
     main {
+
         padding: 25px 15px 40px;
+
     }
 
     .training-photo-area h2 {
+
         font-size: 22px;
+
     }
 
     .back-button {
+
         width: 80%;
+
         max-width: 300px;
+
         box-sizing: border-box;
-        padding: 15px 20px;
+
     }
+
 }
+
 </style>
 
 </head>
 
+
 <body>
 
+
 <header class="header">
-<h1>📅 岩瀬防災訓練</h1>
-<p>次回防災訓練のお知らせ</p>
+
+<h1>
+    📅 岩瀬防災訓練
+</h1>
+
+<p>
+    次回防災訓練のお知らせ
+</p>
+
 </header>
+
 
 <main>
 
 <section class="training-photo-area">
-<h2>次回訓練案内</h2>
 
-<div class="training-gallery">
+<h2>
+    次回訓練案内
+</h2>
 
-<img src="training1.png" alt="次回防災訓練案内1" onerror="this.style.display='none';">
-<img src="training2.png" alt="次回防災訓練案内2" onerror="this.style.display='none';">
-<img src="training3.png" alt="次回防災訓練案内3" onerror="this.style.display='none';">
+
+<div
+    id="trainingGallery"
+    class="training-gallery"
+>
+
+    <div class="loading">
+        読み込み中...
+    </div>
 
 </div>
+
 </section>
 
-<a href="../index.html" class="back-button">トップページへ戻る</a>
+
+<a
+    href="../index.html"
+    class="back-button"
+>
+    トップページへ戻る
+</a>
 
 </main>
 
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+
+<script>
+
+"use strict";
+
+
+const SUPABASE_URL =
+    "https://zumbqukrojdpgfpfekjr.supabase.co";
+
+
+const SUPABASE_KEY =
+    "sb_publishable_8YXsMHOxLr7MOTEYShUM3w_LsZvR3Qn";
+
+
+const supabaseClient =
+    window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+    );
+
+
+async function loadTrainingImages() {
+
+    const gallery =
+        document.getElementById(
+            "trainingGallery"
+        );
+
+
+    try {
+
+        const {
+            data,
+            error
+        } =
+        await supabaseClient
+            .from("site_contents")
+            .select("*")
+            .eq(
+                "content_type",
+                "next_training"
+            )
+            .is(
+                "content_group_id",
+                null
+            )
+            .order(
+                "slot",
+                {
+                    ascending: true
+                }
+            );
+
+
+        if (error) {
+            throw error;
+        }
+
+
+        gallery.innerHTML = "";
+
+
+        const items =
+            (data || [])
+                .filter(
+                    item =>
+                        item.image_url
+                );
+
+
+        if (
+            items.length === 0
+        ) {
+
+            gallery.innerHTML =
+                `<div class="empty">
+                    現在、次回訓練の案内はありません。
+                </div>`;
+
+            return;
+
+        }
+
+
+        items.forEach(
+            item => {
+
+                const img =
+                    document.createElement(
+                        "img"
+                    );
+
+                img.src =
+                    item.image_url;
+
+                img.alt =
+                    item.title ||
+                    "次回防災訓練案内";
+
+
+                gallery.appendChild(
+                    img
+                );
+
+            }
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            error
+        );
+
+
+        gallery.innerHTML =
+            `<div class="empty">
+                訓練案内を読み込めませんでした。
+            </div>`;
+
+    }
+
+}
+
+
+loadTrainingImages();
+
+</script>
+
+
 </body>
+
 </html>
