@@ -4791,12 +4791,17 @@ function escapeHtml(
 
 /* ==================================================
    訓練QRコード機能
+   training_id直接指定方式
 ================================================== */
 
 (function () {
 
     "use strict";
 
+
+    /* ==================================================
+       現在表示中の訓練
+    ================================================== */
 
     let currentQrTraining = null;
 
@@ -4805,11 +4810,14 @@ function escapeHtml(
        初期化
     ================================================== */
 
-    document.addEventListener("DOMContentLoaded", () => {
+    document.addEventListener(
+        "DOMContentLoaded",
+        () => {
 
-        setupTrainingQrEvents();
+            setupTrainingQrEvents();
 
-    });
+        }
+    );
 
 
     /* ==================================================
@@ -4823,15 +4831,18 @@ function escapeHtml(
                 "closeTrainingQrButton"
             );
 
+
         const downloadButton =
             document.getElementById(
                 "downloadTrainingQrButton"
             );
 
+
         const printButton =
             document.getElementById(
                 "printTrainingQrButton"
             );
+
 
         const modal =
             document.getElementById(
@@ -4873,7 +4884,7 @@ function escapeHtml(
 
             modal.addEventListener(
                 "click",
-                (event) => {
+                event => {
 
                     if (
                         event.target === modal
@@ -4899,12 +4910,18 @@ function escapeHtml(
         function (training) {
 
             const button =
-                document.createElement("button");
+                document.createElement(
+                    "button"
+                );
 
 
-            button.type = "button";
+            button.type =
+                "button";
 
-            button.className = "qr-button";
+
+            button.className =
+                "qr-button";
+
 
             button.textContent =
                 "QRコード";
@@ -4934,7 +4951,8 @@ function escapeHtml(
     window.openTrainingQrModal =
         function (training) {
 
-            currentQrTraining = training;
+            currentQrTraining =
+                training;
 
 
             const modal =
@@ -4942,15 +4960,18 @@ function escapeHtml(
                     "trainingQrModal"
                 );
 
+
             const summary =
                 document.getElementById(
                     "trainingQrSummary"
                 );
 
+
             const qrContainer =
                 document.getElementById(
                     "trainingQrCode"
                 );
+
 
             const urlContainer =
                 document.getElementById(
@@ -4965,60 +4986,121 @@ function escapeHtml(
                 !urlContainer
             ) {
 
+                console.error(
+                    "QRコード表示用HTMLが見つかりません。"
+                );
+
                 return;
 
             }
 
 
-            /* ------------------------------
-               QRコードを一度削除
-            ------------------------------ */
-
-            qrContainer.innerHTML = "";
-
-
-            /* ------------------------------
-               訓練情報
-            ------------------------------ */
+            /* ==================================================
+               training_idを取得
+            ================================================== */
 
             const trainingId =
-                training.training_id ||
-                training.id ||
+                training?.training_id ||
                 "";
 
 
+            /* ==================================================
+               訓練名
+            ================================================== */
+
             const title =
-                training.title ||
-                training.name ||
+                training?.title ||
+                training?.name ||
                 "訓練・講座";
 
 
+            /* ==================================================
+               実施日
+            ================================================== */
+
             const date =
-                training.date ||
-                training.training_date ||
+                training?.training_date ||
+                training?.date ||
                 "";
 
 
+            /* ==================================================
+               training_id確認
+            ================================================== */
+
+            if (!trainingId) {
+
+                summary.innerHTML = `
+                    <div class="qr-summary-title">
+                        QRコードを作成できません
+                    </div>
+
+                    <div class="qr-summary-date">
+                        training_id が設定されていません。
+                    </div>
+                `;
+
+
+                qrContainer.innerHTML =
+                    "";
+
+
+                urlContainer.textContent =
+                    "";
+
+
+                modal.classList.remove(
+                    "hidden"
+                );
+
+
+                return;
+
+            }
+
+
+            /* ==================================================
+               QRコードをクリア
+            ================================================== */
+
+            qrContainer.innerHTML =
+                "";
+
+
+            /* ==================================================
+               訓練情報表示
+            ================================================== */
+
             summary.innerHTML = `
+
                 <div class="qr-summary-title">
                     ${escapeQrHtml(title)}
                 </div>
 
                 <div class="qr-summary-date">
                     実施日：
-                    ${escapeQrHtml(date || "未設定")}
+                    ${escapeQrHtml(
+                        date || "未設定"
+                    )}
                 </div>
+
+                <div class="qr-summary-id">
+                    訓練ID：
+                    ${escapeQrHtml(
+                        trainingId
+                    )}
+                </div>
+
             `;
 
 
-            /* ------------------------------
-               training.html URL
-            ------------------------------ */
+            /* ==================================================
+               QR参照URL
+            ================================================== */
 
             const trainingUrl =
                 createTrainingUrl(
-                    trainingId,
-                    date
+                    trainingId
                 );
 
 
@@ -5026,9 +5108,9 @@ function escapeHtml(
                 trainingUrl;
 
 
-            /* ------------------------------
-               QRコード生成
-            ------------------------------ */
+            /* ==================================================
+               QRライブラリ確認
+            ================================================== */
 
             if (
                 typeof QRCode ===
@@ -5036,44 +5118,67 @@ function escapeHtml(
             ) {
 
                 qrContainer.innerHTML =
-                    "<p>QRコードライブラリを読み込めませんでした。</p>";
+                    `
+                    <p>
+                        QRコードライブラリを
+                        読み込めませんでした。
+                    </p>
+                    `;
+
+                modal.classList.remove(
+                    "hidden"
+                );
 
                 return;
 
             }
 
 
+            /* ==================================================
+               QRコード生成
+            ================================================== */
+
             new QRCode(
                 qrContainer,
                 {
-                    text: trainingUrl,
 
-                    width: 260,
+                    text:
+                        trainingUrl,
 
-                    height: 260,
+                    width:
+                        260,
+
+                    height:
+                        260,
 
                     correctLevel:
                         QRCode.CorrectLevel.H
+
                 }
             );
 
 
-            /* ------------------------------
+            /* ==================================================
                モーダル表示
-            ------------------------------ */
+            ================================================== */
 
-            modal.classList.remove("hidden");
+            modal.classList.remove(
+                "hidden"
+            );
 
         };
 
 
     /* ==================================================
        training.html URL生成
+       
+       ★重要
+       event/date方式ではなく
+       training_idを直接渡す
     ================================================== */
 
     function createTrainingUrl(
-        trainingId,
-        date
+        trainingId
     ) {
 
         try {
@@ -5085,23 +5190,18 @@ function escapeHtml(
                 );
 
 
+            /* ==================================================
+               training_idを直接指定
+            ================================================== */
+
             url.searchParams.set(
-                "event",
+                "training_id",
                 trainingId
             );
 
 
-            if (date) {
-
-                url.searchParams.set(
-                    "date",
-                    date
-                );
-
-            }
-
-
             return url.toString();
+
 
         } catch (error) {
 
@@ -5149,7 +5249,8 @@ function escapeHtml(
             );
 
 
-        let dataUrl = null;
+        let dataUrl =
+            null;
 
 
         if (canvas) {
@@ -5193,20 +5294,30 @@ function escapeHtml(
 
 
         const link =
-            document.createElement("a");
+            document.createElement(
+                "a"
+            );
 
 
-        link.href = dataUrl;
+        link.href =
+            dataUrl;
+
 
         link.download =
             `${safeTitle}_QRコード.png`;
 
 
-        document.body.appendChild(link);
+        document.body.appendChild(
+            link
+        );
+
 
         link.click();
 
-        document.body.removeChild(link);
+
+        document.body.removeChild(
+            link
+        );
 
     }
 
@@ -5223,7 +5334,7 @@ function escapeHtml(
 
 
     /* ==================================================
-       モーダルを閉じる
+       QRモーダルを閉じる
     ================================================== */
 
     function closeTrainingQrModal() {
@@ -5236,39 +5347,59 @@ function escapeHtml(
 
         if (modal) {
 
-            modal.classList.add("hidden");
+            modal.classList.add(
+                "hidden"
+            );
 
         }
 
 
-        currentQrTraining = null;
+        currentQrTraining =
+            null;
 
     }
 
 
     /* ==================================================
-       HTMLエスケープ
+       QR用HTMLエスケープ
     ================================================== */
 
-    function escapeQrHtml(value) {
+    function escapeQrHtml(
+        value
+    ) {
 
-        return String(value ?? "")
+        if (
+            value === null ||
+            value === undefined
+        ) {
+
+            return "";
+
+        }
+
+
+        return String(value)
+
             .replace(
                 /&/g,
                 "&amp;"
             )
+
             .replace(
                 /</g,
                 "&lt;"
             )
+
             .replace(
                 />/g,
                 "&gt;"
             )
+
             .replace(
                 /"/g,
                 "&quot;"
             )
+
             .replace(
                 /'/g,
                 "&#039;"
