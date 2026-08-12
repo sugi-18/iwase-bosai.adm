@@ -1,1174 +1,829 @@
 /* ==================================================
-岩瀬自治会 防災アプリ
-管理者画面 CSS
+   岩瀬自治会 防災アプリ
+   管理者画面 CSS
 ================================================== */
 
-{
-box-sizing: border-box;
+* {
+    box-sizing: border-box;
 }
 
 body {
-
-margin: 0;
-
-padding: 0;
-
-font-family:
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    "Hiragino Kaku Gothic ProN",
-    "Hiragino Sans",
-    Meiryo,
-    sans-serif;
-
-background: #f4f6f8;
-
-color: #333;
-
-line-height: 1.6;
-
+    margin: 0;
+    padding: 0;
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        "Hiragino Kaku Gothic ProN",
+        "Hiragino Sans",
+        Meiryo,
+        sans-serif;
+    background: #f4f6f8;
+    color: #333;
+    line-height: 1.6;
 }
+
+/* ==================================================
+   基本
+================================================== */
 
 button,
 input {
+    font-family: inherit;
+}
 
-font-family: inherit;
-
+button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    visibility: visible;
+    opacity: 1;
+    text-indent: 0;
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: visible;
 }
 
 .hidden {
-
-display: none !important;
-
+    display: none !important;
 }
 
 .screen {
-
-min-height: 100vh;
-
+    min-height: 100vh;
 }
 
 .error-message {
-
-margin-top: 15px;
-
-color: #d32f2f;
-
-white-space: pre-line;
-
-font-size: 14px;
-
+    margin-top: 15px;
+    color: #d32f2f;
+    white-space: pre-line;
+    font-size: 14px;
 }
 
 /* ==================================================
-ログイン
+   ログイン
 ================================================== */
 
 #loginScreen {
-
-display: flex;
-
-align-items: center;
-
-justify-content: center;
-
-min-height: 100vh;
-
-padding: 20px;
-
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
 }
 
 .login-box {
-
-width: 100%;
-
-max-width: 430px;
-
-background: #fff;
-
-padding: 35px 30px;
-
-border-radius: 14px;
-
-box-shadow:
-    0 5px 25px
-    rgba(0,0,0,0.08);
-
+    width: 100%;
+    max-width: 430px;
+    background: #fff;
+    padding: 35px 30px;
+    border-radius: 14px;
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.08);
 }
 
 .login-box h1 {
-
-margin: 0 0 10px;
-
-text-align: center;
-
-font-size: 26px;
-
+    margin: 0 0 10px;
+    text-align: center;
+    font-size: 26px;
 }
 
 .login-description {
-
-margin: 0 0 30px;
-
-text-align: center;
-
-color: #777;
-
+    margin: 0 0 30px;
+    text-align: center;
+    color: #777;
 }
 
 .login-box label {
-
-display: block;
-
-margin: 15px 0 7px;
-
-font-weight: bold;
-
-font-size: 14px;
-
+    display: block;
+    margin: 15px 0 7px;
+    font-weight: bold;
+    font-size: 14px;
 }
 
 .login-box input {
-
-width: 100%;
-
-padding: 13px 14px;
-
-border: 1px solid #ccc;
-
-border-radius: 8px;
-
-font-size: 16px;
-
-outline: none;
-
+    width: 100%;
+    padding: 13px 14px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 16px;
+    outline: none;
 }
 
-.login-box input {
-
-border-color: #1976d2;
-
+.login-box input:focus {
+    border-color: #1976d2;
 }
 
 /* ==================================================
-ヘッダー
+   ヘッダー
 ================================================== */
 
 .admin-header {
-
-display: flex;
-
-justify-content: space-between;
-
-align-items: center;
-
-gap: 20px;
-
-padding: 18px 30px;
-
-background: #1976d2;
-
-color: #fff;
-
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    padding: 18px 30px;
+    background: #1976d2;
+    color: #fff;
 }
 
 .admin-header h1 {
-
-margin: 0;
-
-font-size: 24px;
-
+    margin: 0;
+    font-size: 24px;
 }
 
 .admin-header p {
-
-margin: 2px 0 0;
-
-opacity: 0.9;
-
-font-size: 14px;
-
+    margin: 2px 0 0;
+    opacity: 0.9;
+    font-size: 14px;
 }
 
 .logout-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    padding: 10px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    line-height: 1.4;
+    min-height: 42px;
+}
 
-border: none;
-
-background: rgba(255,255,255,0.15);
-
-color: #fff;
-
-padding: 10px 18px;
-
-border-radius: 8px;
-
-cursor: pointer;
-
+.logout-button:hover {
+    background: rgba(255, 255, 255, 0.25);
 }
 
 /* ==================================================
-メイン
+   メイン
 ================================================== */
 
 .admin-container {
-
-width: 100%;
-
-max-width: 1200px;
-
-margin: 0 auto;
-
-padding: 25px 20px 50px;
-
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 25px 20px 50px;
 }
 
 .admin-section {
-
-margin-bottom: 30px;
-
+    margin-bottom: 30px;
 }
 
 .admin-section h2 {
-
-margin-top: 0;
-
-margin-bottom: 8px;
-
-font-size: 23px;
-
+    margin-top: 0;
+    margin-bottom: 8px;
+    font-size: 23px;
 }
 
 /* ==================================================
-ダッシュボードタイトル
+   ダッシュボードタイトル
 ================================================== */
 
 .dashboard-title {
-
-display: flex;
-
-justify-content: space-between;
-
-align-items: center;
-
-gap: 15px;
-
-margin-bottom: 20px;
-
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
 }
 
 .dashboard-title p {
-
-margin: 0;
-
-color: #777;
-
-font-size: 14px;
-
+    margin: 0;
+    color: #777;
+    font-size: 14px;
 }
 
 /* ==================================================
-統計カード
+   統計カード
 ================================================== */
 
 .stats-grid {
-
-display: grid;
-
-grid-template-columns:
-    repeat(4, 1fr);
-
-gap: 16px;
-
-margin-bottom: 16px;
-
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 16px;
 }
 
 .stat-card {
-
-background: #fff;
-
-border-radius: 12px;
-
-padding: 20px;
-
-box-shadow:
-    0 2px 10px
-    rgba(0,0,0,0.05);
-
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
 .stat-label {
-
-display: block;
-
-margin-bottom: 8px;
-
-color: #777;
-
-font-size: 13px;
-
+    display: block;
+    margin-bottom: 8px;
+    color: #777;
+    font-size: 13px;
 }
 
 .stat-card strong {
-
-font-size: 31px;
-
-font-weight: 700;
-
+    font-size: 31px;
+    font-weight: 700;
 }
 
 .stat-card > div {
-
-display: flex;
-
-align-items: baseline;
-
-gap: 5px;
-
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
 }
 
 .small-stat {
-
-padding: 17px 20px;
-
+    padding: 17px 20px;
 }
 
 .small-stat strong {
-
-font-size: 25px;
-
+    font-size: 25px;
 }
 
 .popular-training-name {
-
-display: block;
-
-max-width: 100%;
-
-overflow: hidden;
-
-text-overflow: ellipsis;
-
-white-space: nowrap;
-
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* ==================================================
-ダッシュボードカード
+   ダッシュボードカード
 ================================================== */
 
 .dashboard-card {
-
-background: #fff;
-
-border-radius: 12px;
-
-padding: 22px;
-
-margin-bottom: 18px;
-
-box-shadow:
-    0 2px 10px
-    rgba(0,0,0,0.05);
-
+    background: #fff;
+    border-radius: 12px;
+    padding: 22px;
+    margin-bottom: 18px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
 .dashboard-card h3 {
-
-margin: 0 0 5px;
-
-font-size: 18px;
-
+    margin: 0 0 5px;
+    font-size: 18px;
 }
 
 .card-description {
-
-margin: 0 0 15px;
-
-color: #777;
-
-font-size: 13px;
-
+    margin: 0 0 15px;
+    color: #777;
+    font-size: 13px;
 }
 
 .card-title-row {
-
-display: flex;
-
-justify-content: space-between;
-
-margin-bottom: 15px;
-
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
 }
 
 .card-title-row p {
-
-margin: 0;
-
-color: #777;
-
-font-size: 13px;
-
+    margin: 0;
+    color: #777;
+    font-size: 13px;
 }
 
 /* ==================================================
-グラフ
+   グラフ
 ================================================== */
 
 .chart-container {
-
-position: relative;
-
-width: 100%;
-
-height: 330px;
-
+    position: relative;
+    width: 100%;
+    height: 330px;
 }
 
 .chart-container canvas {
-
-width: 100% !important;
-
-height: 100% !important;
-
+    width: 100% !important;
+    height: 100% !important;
 }
 
 /* ==================================================
-2カラム
+   2カラム
 ================================================== */
 
 .dashboard-two-column {
-
-display: grid;
-
-grid-template-columns:
-    repeat(2, 1fr);
-
-gap: 18px;
-
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
 }
 
 /* ==================================================
-ランキング
+   ランキング
 ================================================== */
 
 .ranking-list {
-
-margin-top: 10px;
-
+    margin-top: 10px;
 }
 
 .ranking-item {
-
-display: flex;
-
-align-items: center;
-
-gap: 12px;
-
-padding: 12px 0;
-
-border-bottom: 1px solid #eee;
-
-}
-
-.ranking-item {
-
-border-bottom: none;
-
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: none;
 }
 
 .ranking-number {
-
-width: 30px;
-
-height: 30px;
-
-display: flex;
-
-align-items: center;
-
-justify-content: center;
-
-background: #f0f3f6;
-
-border-radius: 50%;
-
-font-weight: bold;
-
-font-size: 13px;
-
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: #f0f3f6;
+    border-radius: 50%;
+    font-weight: bold;
+    font-size: 13px;
 }
 
 .ranking-name {
-
-flex: 1;
-
-min-width: 0;
-
-overflow: hidden;
-
-text-overflow: ellipsis;
-
-white-space: nowrap;
-
-font-weight: bold;
-
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: bold;
 }
 
 .ranking-value {
-
-font-weight: bold;
-
-white-space: nowrap;
-
+    font-weight: bold;
+    white-space: nowrap;
 }
 
 /* ==================================================
-最近の参加
+   最近の参加
 ================================================== */
 
 .recent-item {
-
-padding: 11px 0;
-
-border-bottom: 1px solid #eee;
-
-font-size: 14px;
-
-}
-
-.recent-item {
-
-border-bottom: none;
-
+    padding: 11px 0;
+    border-bottom: none;
+    font-size: 14px;
 }
 
 .empty-message {
-
-padding: 25px;
-
-text-align: center;
-
-color: #777;
-
+    padding: 25px;
+    text-align: center;
+    color: #777;
 }
 
 /* ==================================================
-ナビゲーション
+   ナビゲーション
 ================================================== */
 
 .admin-nav {
-
-display: flex;
-
-gap: 8px;
-
-margin-bottom: 25px;
-
-background: #fff;
-
-padding: 8px;
-
-border-radius: 10px;
-
-box-shadow:
-    0 2px 8px
-    rgba(0,0,0,0.04);
-
+    display: flex;
+    gap: 8px;
+    margin-bottom: 25px;
+    background: #fff;
+    padding: 8px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .nav-button {
-
-flex: 1;
-
-border: none;
-
-background: transparent;
-
-padding: 13px 15px;
-
-border-radius: 7px;
-
-cursor: pointer;
-
-font-size: 15px;
-
-color: #555;
-
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    border: none;
+    background: #f0f3f6;
+    padding: 13px 15px;
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 500;
+    color: #555;
+    line-height: 1.4;
+    text-align: center;
+    white-space: nowrap;
 }
 
-.nav-button {
-
-background: #f0f3f6;
-
+.nav-button:hover {
+    background: #e3e8ed;
 }
 
 .nav-button.active {
-
-background: #1976d2;
-
-color: #fff;
-
-font-weight: bold;
-
+    background: #1976d2;
+    color: #fff;
+    font-weight: bold;
 }
 
 /* ==================================================
-セクション
+   セクション
 ================================================== */
 
 .section-header {
-
-display: flex;
-
-justify-content: space-between;
-
-align-items: center;
-
-gap: 15px;
-
-margin-bottom: 18px;
-
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 18px;
 }
 
 .section-header p {
-
-margin: 0;
-
-color: #777;
-
-font-size: 14px;
-
+    margin: 0;
+    color: #777;
+    font-size: 14px;
 }
 
 /* ==================================================
-ボタン
+   ボタン
 ================================================== */
 
-.primary-button {
-
-border: none;
-
-background: #1976d2;
-
-color: #fff;
-
-padding: 11px 20px;
-
-border-radius: 8px;
-
-cursor: pointer;
-
-font-size: 14px;
-
-font-weight: bold;
-
+.primary-button,
+.secondary-button,
+.action-button,
+.view-button,
+.edit-button,
+.delete-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    visibility: visible;
+    opacity: 1;
+    text-indent: 0;
+    line-height: 1.4;
+    text-align: center;
+    white-space: nowrap;
+    cursor: pointer;
+    font-family: inherit;
 }
 
+/* メインボタン */
+
 .primary-button {
-
-background: #1565c0;
-
+    border: none;
+    background: #1976d2;
+    color: #fff;
+    padding: 11px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    min-height: 42px;
 }
+
+.primary-button:hover {
+    background: #1565c0;
+}
+
+/* サブボタン */
 
 .secondary-button {
-
-border: none;
-
-background: #e9edf1;
-
-color: #444;
-
-padding: 10px 17px;
-
-border-radius: 8px;
-
-cursor: pointer;
-
-font-size: 14px;
-
+    border: none;
+    background: #e9edf1;
+    color: #444;
+    padding: 10px 17px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    min-height: 42px;
 }
+
+.secondary-button:hover {
+    background: #dce2e7;
+}
+
+/* 操作ボタン */
 
 .action-button {
-
-border: none;
-
-padding: 7px 12px;
-
-border-radius: 6px;
-
-cursor: pointer;
-
-font-size: 13px;
-
-margin: 2px;
-
+    border: none;
+    padding: 7px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    margin: 2px;
+    min-height: 34px;
 }
+
+/* 編集 */
 
 .edit-button {
-
-background: #e3f2fd;
-
-color: #1565c0;
-
+    background: #e3f2fd;
+    color: #1565c0;
 }
+
+.edit-button:hover {
+    background: #d1e9fb;
+}
+
+/* 削除 */
 
 .delete-button {
-
-background: #ffebee;
-
-color: #c62828;
-
+    background: #ffebee;
+    color: #c62828;
 }
 
+.delete-button:hover {
+    background: #ffcdd2;
+}
+
+/* 表示 */
+
 .view-button {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
 
-background: #e8f5e9;
+.view-button:hover {
+    background: #d7ecd9;
+}
 
-color: #2e7d32;
+/* ボタン内の要素 */
 
+button span,
+button strong,
+button small {
+    color: inherit;
+    font-size: inherit;
+    line-height: inherit;
+}
+
+/* 無効ボタン */
+
+button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
 }
 
 /* ==================================================
-テーブル
+   テーブル
 ================================================== */
 
 .table-wrapper {
-
-width: 100%;
-
-overflow-x: auto;
-
-background: #fff;
-
-border-radius: 12px;
-
-box-shadow:
-    0 2px 10px
-    rgba(0,0,0,0.05);
-
+    width: 100%;
+    overflow-x: auto;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
 table {
-
-width: 100%;
-
-border-collapse: collapse;
-
-min-width: 650px;
-
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 650px;
 }
 
 thead {
-
-background: #f7f8fa;
-
+    background: #f7f8fa;
 }
 
 th,
 td {
-
-padding: 13px 14px;
-
-border-bottom: 1px solid #eee;
-
-text-align: left;
-
-vertical-align: middle;
-
+    padding: 13px 14px;
+    border-bottom: 1px solid #eee;
+    text-align: left;
+    vertical-align: middle;
 }
 
 th {
-
-font-size: 13px;
-
-color: #666;
-
+    font-size: 13px;
+    color: #666;
 }
 
 td {
-
-font-size: 14px;
-
+    font-size: 14px;
 }
 
 tbody tr {
-
-background: #fafafa;
-
+    background: #fafafa;
 }
 
 .participant-count {
-
-display: inline-block;
-
-min-width: 55px;
-
-padding: 4px 9px;
-
-background: #e3f2fd;
-
-color: #1565c0;
-
-border-radius: 20px;
-
-text-align: center;
-
-font-weight: bold;
-
-font-size: 13px;
-
+    display: inline-block;
+    min-width: 55px;
+    padding: 4px 9px;
+    background: #e3f2fd;
+    color: #1565c0;
+    border-radius: 20px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 13px;
 }
 
 /* ==================================================
-モーダル
+   モーダル
 ================================================== */
 
 .modal {
-
-position: fixed;
-
-z-index: 1000;
-
-top: 0;
-
-left: 0;
-
-width: 100%;
-
-height: 100%;
-
-display: flex;
-
-align-items: center;
-
-justify-content: center;
-
-padding: 20px;
-
-background:
-    rgba(0,0,0,0.45);
-
+    position: fixed;
+    z-index: 1000;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.45);
 }
 
 .modal-content {
-
-width: 100%;
-
-max-width: 500px;
-
-max-height: 90vh;
-
-overflow-y: auto;
-
-background: #fff;
-
-padding: 28px;
-
-border-radius: 14px;
-
+    width: 100%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    background: #fff;
+    padding: 28px;
+    border-radius: 14px;
 }
 
 .large-modal {
-
-max-width: 700px;
-
+    max-width: 700px;
 }
 
 .modal-content h2 {
-
-margin-top: 0;
-
+    margin-top: 0;
 }
 
 .modal-content label {
-
-display: block;
-
-margin: 14px 0 6px;
-
-font-size: 14px;
-
-font-weight: bold;
-
+    display: block;
+    margin: 14px 0 6px;
+    font-size: 14px;
+    font-weight: bold;
 }
 
 .modal-content input {
-
-width: 100%;
-
-padding: 12px;
-
-border: 1px solid #ccc;
-
-border-radius: 7px;
-
-font-size: 15px;
-
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 7px;
+    font-size: 15px;
 }
 
 .modal-buttons {
-
-display: flex;
-
-justify-content: flex-end;
-
-gap: 10px;
-
-margin-top: 25px;
-
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 25px;
 }
 
 /* ==================================================
-履歴
+   履歴
 ================================================== */
 
 .history-summary {
-
-margin-bottom: 15px;
-
-padding: 13px 15px;
-
-background: #f5f7f9;
-
-border-radius: 8px;
-
-font-weight: bold;
-
+    margin-bottom: 15px;
+    padding: 13px 15px;
+    background: #f5f7f9;
+    border-radius: 8px;
+    font-weight: bold;
 }
 
 .history-list {
-
-border: 1px solid #eee;
-
-border-radius: 8px;
-
-overflow: hidden;
-
+    border: 1px solid #eee;
+    border-radius: 8px;
+    overflow: hidden;
 }
 
 .history-item {
-
-display: flex;
-
-justify-content: space-between;
-
-align-items: center;
-
-gap: 15px;
-
-padding: 13px 15px;
-
-border-bottom: 1px solid #eee;
-
-}
-
-.history-item {
-
-border-bottom: none;
-
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    padding: 13px 15px;
+    border-bottom: none;
 }
 
 .history-main {
-
-min-width: 0;
-
+    min-width: 0;
 }
 
 .history-title {
-
-font-weight: bold;
-
+    font-weight: bold;
 }
 
 .history-date {
-
-color: #777;
-
-font-size: 13px;
-
+    color: #777;
+    font-size: 13px;
 }
 
 /* ==================================================
-スマートフォン
+   スマートフォン
 ================================================== */
 
 @media (max-width: 800px) {
 
-.stats-grid {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
 
-    grid-template-columns:
-        repeat(2, 1fr);
-
-}
-
-
-.dashboard-two-column {
-
-    grid-template-columns:
-        1fr;
+    .dashboard-two-column {
+        grid-template-columns: 1fr;
+    }
 
 }
 
-}
+/* ==================================================
+   700px以下
+================================================== */
 
 @media (max-width: 700px) {
 
-.admin-header {
+    .admin-header {
+        padding: 15px;
+    }
 
-    padding: 15px;
+    .admin-header h1 {
+        font-size: 20px;
+    }
 
-}
+    .admin-container {
+        padding: 18px 12px 40px;
+    }
 
+    .dashboard-title {
+        align-items: stretch;
+        flex-direction: column;
+    }
 
-.admin-header h1 {
+    .dashboard-title button {
+        width: 100%;
+    }
 
-    font-size: 20px;
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
 
-}
+    .chart-container {
+        height: 250px;
+    }
 
+    .admin-nav {
+        flex-direction: column;
+    }
 
-.admin-container {
+    .nav-button {
+        width: 100%;
+        min-height: 44px;
+    }
 
-    padding:
-        18px
-        12px
-        40px;
+    .section-header {
+        align-items: stretch;
+        flex-direction: column;
+    }
 
-}
+    .section-header .primary-button {
+        width: 100%;
+    }
 
+    .modal {
+        padding: 10px;
+        align-items: flex-start;
+        padding-top: 30px;
+    }
 
-.dashboard-title {
+    .modal-content {
+        padding: 20px;
+    }
 
-    align-items: stretch;
+    .modal-buttons {
+        flex-direction: column-reverse;
+    }
 
-    flex-direction: column;
+    .modal-buttons button {
+        width: 100%;
+        min-height: 44px;
+    }
 
-}
+    .history-item {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 5px;
+    }
 
-
-.dashboard-title button {
-
-    width: 100%;
-
-}
-
-
-.stats-grid {
-
-    grid-template-columns:
-        1fr;
-
-}
-
-
-.chart-container {
-
-    height: 250px;
-
-}
-
-
-.admin-nav {
-
-    flex-direction: column;
-
-}
-
-
-.nav-button {
-
-    width: 100%;
-
-}
-
-
-.section-header {
-
-    align-items: stretch;
-
-    flex-direction: column;
-
-}
-
-
-.section-header .primary-button {
-
-    width: 100%;
+    /* スマホでも操作ボタンの文字を確実に表示 */
+    .action-button {
+        min-height: 38px;
+        padding: 8px 12px;
+    }
 
 }
 
-
-.modal {
-
-    padding: 10px;
-
-    align-items: flex-start;
-
-    padding-top: 30px;
-
-}
-
-
-.modal-content {
-
-    padding: 20px;
-
-}
-
-
-.modal-buttons {
-
-    flex-direction: column-reverse;
-
-}
-
-
-.modal-buttons button {
-
-    width: 100%;
-
-}
-
-
-.history-item {
-
-    align-items: flex-start;
-
-    flex-direction: column;
-
-    gap: 5px;
-
-}
-
-}
+/* ==================================================
+   400px以下
+================================================== */
 
 @media (max-width: 400px) {
 
-.admin-header {
+    .admin-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
 
-    flex-direction: column;
+    .logout-button {
+        width: 100%;
+    }
 
-    align-items: stretch;
+    .login-box {
+        padding: 25px 20px;
+    }
 
-}
-
-
-.logout-button {
-
-    width: 100%;
-
-}
-
-
-.login-box {
-
-    padding:
-        25px
-        20px;
-
-}
+    .action-button {
+        font-size: 12px;
+        padding: 7px 9px;
+    }
 
 }
