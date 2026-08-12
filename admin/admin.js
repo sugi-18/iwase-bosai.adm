@@ -1,8 +1,11 @@
 /* ==================================================
    岩瀬自治会 防災アプリ
    管理者画面
-   Supabase Auth対応
-   ================================================== */
+   Step 2 参加者分析
+   training_date 対応版
+================================================== */
+
+"use strict";
 
 
 /* ==================================================
@@ -19,6 +22,8 @@ const ADMIN_SUPABASE_PUBLISHABLE_KEY =
 let adminSupabaseClient = null;
 
 let monthlyChart = null;
+
+let participantDistributionChart = null;
 
 
 /* ==================================================
@@ -119,6 +124,20 @@ document.addEventListener(
                 async () => {
 
                     await loadDashboard();
+
+                }
+            );
+
+
+        document
+            .getElementById(
+                "refreshParticipantAnalysisButton"
+            )
+            ?.addEventListener(
+                "click",
+                async () => {
+
+                    await loadParticipantAnalysis();
 
                 }
             );
@@ -305,8 +324,7 @@ if (loginForm) {
 
 
                 loginError.textContent =
-                    "ログインできませんでした。\n" +
-                    error.message;
+                    "ログインに失敗しました。メールアドレスまたはパスワードを確認してください。";
 
             }
 
@@ -326,35 +344,14 @@ if (logoutButton) {
         "click",
         async () => {
 
-            if (
-                !confirm(
-                    "ログアウトしますか？"
-                )
-            ) {
-
-                return;
-
-            }
-
-
             try {
 
                 checkSupabaseClient();
 
 
-                const {
-                    error
-                } =
-                    await adminSupabaseClient
-                        .auth
-                        .signOut();
-
-
-                if (error) {
-
-                    throw error;
-
-                }
+                await adminSupabaseClient
+                    .auth
+                    .signOut();
 
 
                 showLoginScreen();
@@ -363,13 +360,8 @@ if (logoutButton) {
             } catch (error) {
 
                 console.error(
+                    "Logout error:",
                     error
-                );
-
-
-                alert(
-                    "ログアウトに失敗しました。\n" +
-                    error.message
                 );
 
             }
@@ -381,70 +373,41 @@ if (logoutButton) {
 
 
 /* ==================================================
-   Auth状態監視
-================================================== */
-
-if (
-    adminSupabaseClient &&
-    adminSupabaseClient.auth
-) {
-
-    adminSupabaseClient
-        .auth
-        .onAuthStateChange(
-            (event, session) => {
-
-                if (
-                    session &&
-                    event !== "SIGNED_OUT"
-                ) {
-
-                    showAdminScreen();
-
-                }
-
-
-                if (
-                    !session ||
-                    event === "SIGNED_OUT"
-                ) {
-
-                    showLoginScreen();
-
-                }
-
-            }
-        );
-
-}
-
-
-/* ==================================================
-   画面
+   画面切り替え
 ================================================== */
 
 function showLoginScreen() {
 
-    loginScreen?.classList.remove(
-        "hidden"
-    );
+    loginScreen
+        ?.classList
+        .remove(
+            "hidden"
+        );
 
-    adminScreen?.classList.add(
-        "hidden"
-    );
+
+    adminScreen
+        ?.classList
+        .add(
+            "hidden"
+        );
 
 }
 
 
 function showAdminScreen() {
 
-    loginScreen?.classList.add(
-        "hidden"
-    );
+    loginScreen
+        ?.classList
+        .add(
+            "hidden"
+        );
 
-    adminScreen?.classList.remove(
-        "hidden"
-    );
+
+    adminScreen
+        ?.classList
+        .remove(
+            "hidden"
+        );
 
 }
 
@@ -461,55 +424,71 @@ function setupNavigation() {
         );
 
 
-    buttons.forEach(button => {
+    buttons.forEach(
+        button => {
 
-        button.addEventListener(
-            "click",
-            () => {
+            button.addEventListener(
+                "click",
+                async () => {
 
-                const target =
-                    button.dataset.target;
+                    const target =
+                        button.dataset.target;
 
 
-                document
-                    .querySelectorAll(
-                        ".content-section"
-                    )
-                    .forEach(section => {
+                    document
+                        .querySelectorAll(
+                            ".content-section"
+                        )
+                        .forEach(
+                            section => {
 
-                        section.classList.add(
+                                section.classList.add(
+                                    "hidden"
+                                );
+
+                            }
+                        );
+
+
+                    document
+                        .getElementById(
+                            target
+                        )
+                        ?.classList.remove(
                             "hidden"
                         );
 
-                    });
 
+                    buttons.forEach(
+                        item => {
 
-                document
-                    .getElementById(
-                        target
-                    )
-                    ?.classList.remove(
-                        "hidden"
+                            item.classList.remove(
+                                "active"
+                            );
+
+                        }
                     );
 
 
-                buttons.forEach(item => {
-
-                    item.classList.remove(
+                    button.classList.add(
                         "active"
                     );
 
-                });
 
+                    if (
+                        target ===
+                        "participantAnalysisSection"
+                    ) {
 
-                button.classList.add(
-                    "active"
-                );
+                        await loadParticipantAnalysis();
 
-            }
-        );
+                    }
 
-    });
+                }
+            );
+
+        }
+    );
 
 }
 
@@ -529,6 +508,9 @@ async function loadAllData() {
         await loadParticipations();
 
         await loadDashboard();
+
+        await loadParticipantAnalysis();
+
 
     } catch (error) {
 
@@ -602,18 +584,12 @@ async function loadDashboard() {
         const participants =
             participantsResult.data || [];
 
-
         const trainings =
             trainingsResult.data || [];
-
 
         const participations =
             participationsResult.data || [];
 
-
-        /* ------------------------------------------
-           基本統計
-        ------------------------------------------ */
 
         const participantCount =
             participants.length;
@@ -643,10 +619,10 @@ async function loadDashboard() {
 
 
         const averageParticipation =
-            activeParticipantCount > 0
+            participantCount > 0
                 ? (
                     participationCount /
-                    activeParticipantCount
+                    participantCount
                 ).toFixed(1)
                 : "0";
 
@@ -681,9 +657,9 @@ async function loadDashboard() {
         );
 
 
-        /* ------------------------------------------
-           今月
-        ------------------------------------------ */
+        /*
+         * 実施日基準
+         */
 
         const now =
             new Date();
@@ -692,17 +668,25 @@ async function loadDashboard() {
         const currentYear =
             now.getFullYear();
 
-
         const currentMonth =
             now.getMonth();
 
 
-        const monthlyParticipations =
+        const currentMonthParticipations =
             participations.filter(
-                item => {
+                participation => {
+
+                    const training =
+                        trainings.find(
+                            item =>
+                                item.training_id ===
+                                participation.training_id
+                        );
+
 
                     if (
-                        !item.registered_at
+                        !training ||
+                        !training.training_date
                     ) {
 
                         return false;
@@ -710,26 +694,35 @@ async function loadDashboard() {
                     }
 
 
-                    const date =
-                        new Date(
-                            item.registered_at
-                        );
+                    const parts =
+                        String(
+                            training.training_date
+                        ).split("-");
+
+
+                    if (
+                        parts.length !== 3
+                    ) {
+
+                        return false;
+
+                    }
 
 
                     return (
-                        date.getFullYear() ===
-                            currentYear &&
-                        date.getMonth() ===
-                            currentMonth
+                        Number(parts[0]) ===
+                        currentYear &&
+                        Number(parts[1]) - 1 ===
+                        currentMonth
                     );
 
                 }
             );
 
 
-        const monthlyParticipantIds =
+        const currentMonthParticipantIds =
             new Set(
-                monthlyParticipations
+                currentMonthParticipations
                     .map(
                         item =>
                             item.participant_id
@@ -740,90 +733,21 @@ async function loadDashboard() {
 
         setText(
             "monthlyParticipantCount",
-            monthlyParticipantIds.size
+            currentMonthParticipantIds.size
         );
 
 
         setText(
             "monthlyParticipationCount",
-            monthlyParticipations.length
+            currentMonthParticipations.length
         );
 
-
-        /* ------------------------------------------
-           訓練ランキング
-        ------------------------------------------ */
-
-        const trainingCounts =
-            {};
-
-
-        participations.forEach(item => {
-
-            if (
-                !item.training_id
-            ) {
-
-                return;
-
-            }
-
-
-            trainingCounts[
-                item.training_id
-            ] =
-                (
-                    trainingCounts[
-                        item.training_id
-                    ] || 0
-                ) + 1;
-
-        });
-
-
-        const trainingRanking =
-            trainings
-                .map(training => ({
-
-                    training,
-
-                    count:
-                        trainingCounts[
-                            training.training_id
-                        ] || 0
-
-                }))
-                .sort(
-                    (a, b) =>
-                        b.count - a.count
-                );
-
-
-        const popularTraining =
-            trainingRanking[0];
-
-
-        setText(
-            "mostPopularTraining",
-            popularTraining &&
-            popularTraining.count > 0
-                ? `${popularTraining.training.title}（${popularTraining.count}人）`
-                : "-"
-        );
-
-
-        /* ------------------------------------------
-           グラフ
-        ------------------------------------------ */
 
         createMonthlyChart(
-            participations
+            participations,
+            trainings
         );
 
-
-        /* ------------------------------------------
-           参加者ランキング
-        ------------------------------------------ */
 
         createParticipantRanking(
             participants,
@@ -831,23 +755,16 @@ async function loadDashboard() {
         );
 
 
-        /* ------------------------------------------
-           訓練ランキング
-        ------------------------------------------ */
-
         createTrainingRanking(
-            trainingRanking
+            trainings,
+            participations
         );
 
 
-        /* ------------------------------------------
-           最近の参加
-        ------------------------------------------ */
-
         createRecentParticipations(
-            participations,
             participants,
-            trainings
+            trainings,
+            participations
         );
 
 
@@ -865,10 +782,12 @@ async function loadDashboard() {
 
 /* ==================================================
    月別グラフ
+   ★ training_date 基準
 ================================================== */
 
 function createMonthlyChart(
-    participations
+    participations,
+    trainings
 ) {
 
     const canvas =
@@ -936,10 +855,19 @@ function createMonthlyChart(
 
         const count =
             participations.filter(
-                item => {
+                participation => {
+
+                    const training =
+                        trainings.find(
+                            item =>
+                                item.training_id ===
+                                participation.training_id
+                        );
+
 
                     if (
-                        !item.registered_at
+                        !training ||
+                        !training.training_date
                     ) {
 
                         return false;
@@ -947,17 +875,26 @@ function createMonthlyChart(
                     }
 
 
-                    const registered =
-                        new Date(
-                            item.registered_at
-                        );
+                    const parts =
+                        String(
+                            training.training_date
+                        ).split("-");
+
+
+                    if (
+                        parts.length !== 3
+                    ) {
+
+                        return false;
+
+                    }
 
 
                     return (
-                        registered.getFullYear() ===
-                            year &&
-                        registered.getMonth() ===
-                            month
+                        Number(parts[0]) ===
+                        year &&
+                        Number(parts[1]) - 1 ===
+                        month
                     );
 
                 }
@@ -1012,18 +949,15 @@ function createMonthlyChart(
 
                 options: {
 
-                    responsive:
-                        true,
+                    responsive: true,
 
-                    maintainAspectRatio:
-                        false,
+                    maintainAspectRatio: false,
 
                     plugins: {
 
                         legend: {
 
-                            display:
-                                false
+                            display: false
 
                         }
 
@@ -1033,13 +967,11 @@ function createMonthlyChart(
 
                         y: {
 
-                            beginAtZero:
-                                true,
+                            beginAtZero: true,
 
                             ticks: {
 
-                                precision:
-                                    0
+                                precision: 0
 
                             }
 
@@ -1077,54 +1009,42 @@ function createParticipantRanking(
     }
 
 
-    const counts =
-        {};
-
-
-    participations.forEach(item => {
-
-        if (
-            item.participant_id
-        ) {
-
-            counts[
-                item.participant_id
-            ] =
-                (
-                    counts[
-                        item.participant_id
-                    ] || 0
-                ) + 1;
-
-        }
-
-    });
-
-
     const ranking =
         participants
-            .map(participant => ({
+            .map(
+                participant => {
 
-                participant,
+                    const count =
+                        participations.filter(
+                            item =>
+                                item.participant_id ===
+                                participant.participant_id
+                        ).length;
 
-                count:
-                    counts[
-                        participant.participant_id
-                    ] || 0
 
-            }))
-            .filter(
-                item =>
-                    item.count > 0
+                    return {
+
+                        participant,
+
+                        count
+
+                    };
+
+                }
             )
             .sort(
                 (a, b) =>
-                    b.count - a.count
+                    b.count -
+                    a.count
             )
             .slice(
                 0,
-                5
+                10
             );
+
+
+    container.innerHTML =
+        "";
 
 
     if (
@@ -1133,16 +1053,12 @@ function createParticipantRanking(
 
         container.innerHTML =
             `<div class="empty-message">
-                まだ参加記録がありません。
+                参加者はいません。
             </div>`;
 
         return;
 
     }
-
-
-    container.innerHTML =
-        "";
 
 
     ranking.forEach(
@@ -1160,20 +1076,20 @@ function createParticipantRanking(
 
             div.innerHTML = `
 
-                <div class="ranking-number">
+                <span class="ranking-number">
                     ${index + 1}
-                </div>
+                </span>
 
-                <div class="ranking-name">
+                <span class="ranking-name">
                     ${escapeHtml(
                         item.participant.name ||
                         "名前未登録"
                     )}
-                </div>
+                </span>
 
-                <div class="ranking-value">
+                <strong>
                     ${item.count}回
-                </div>
+                </strong>
 
             `;
 
@@ -1193,7 +1109,8 @@ function createParticipantRanking(
 ================================================== */
 
 function createTrainingRanking(
-    ranking
+    trainings,
+    participations
 ) {
 
     const container =
@@ -1209,25 +1126,51 @@ function createTrainingRanking(
     }
 
 
-    const top =
-        ranking
-            .filter(
-                item =>
-                    item.count > 0
+    const ranking =
+        trainings
+            .map(
+                training => {
+
+                    const count =
+                        participations.filter(
+                            item =>
+                                item.training_id ===
+                                training.training_id
+                        ).length;
+
+
+                    return {
+
+                        training,
+
+                        count
+
+                    };
+
+                }
+            )
+            .sort(
+                (a, b) =>
+                    b.count -
+                    a.count
             )
             .slice(
                 0,
-                5
+                10
             );
 
 
+    container.innerHTML =
+        "";
+
+
     if (
-        top.length === 0
+        ranking.length === 0
     ) {
 
         container.innerHTML =
             `<div class="empty-message">
-                まだ参加記録がありません。
+                訓練・講座はありません。
             </div>`;
 
         return;
@@ -1235,11 +1178,7 @@ function createTrainingRanking(
     }
 
 
-    container.innerHTML =
-        "";
-
-
-    top.forEach(
+    ranking.forEach(
         (item, index) => {
 
             const div =
@@ -1254,19 +1193,20 @@ function createTrainingRanking(
 
             div.innerHTML = `
 
-                <div class="ranking-number">
+                <span class="ranking-number">
                     ${index + 1}
-                </div>
+                </span>
 
-                <div class="ranking-name">
+                <span class="ranking-name">
                     ${escapeHtml(
-                        item.training.title
+                        item.training.title ||
+                        item.training.training_id
                     )}
-                </div>
+                </span>
 
-                <div class="ranking-value">
+                <strong>
                     ${item.count}人
-                </div>
+                </strong>
 
             `;
 
@@ -1275,6 +1215,19 @@ function createTrainingRanking(
                 div
             );
 
+
+            if (
+                index === 0
+            ) {
+
+                setText(
+                    "mostPopularTraining",
+                    item.training.title ||
+                    item.training.training_id
+                );
+
+            }
+
         }
     );
 
@@ -1282,13 +1235,13 @@ function createTrainingRanking(
 
 
 /* ==================================================
-   最近の参加
+   最近の参加記録
 ================================================== */
 
 function createRecentParticipations(
-    participations,
     participants,
-    trainings
+    trainings,
+    participations
 ) {
 
     const container =
@@ -1339,47 +1292,56 @@ function createRecentParticipations(
         "";
 
 
-    recent.forEach(item => {
+    recent.forEach(
+        item => {
 
-        const participant =
-            participants.find(
-                p =>
-                    p.participant_id ===
-                    item.participant_id
+            const participant =
+                participants.find(
+                    p =>
+                        p.participant_id ===
+                        item.participant_id
+                );
+
+
+            const training =
+                trainings.find(
+                    t =>
+                        t.training_id ===
+                        item.training_id
+                );
+
+
+            const div =
+                document.createElement(
+                    "div"
+                );
+
+
+            div.className =
+                "recent-item";
+
+
+            div.textContent =
+                `${participant?.name || "名前未登録"}　` +
+                `${training?.title || item.training_id}　` +
+                `実施日：${
+                    formatTrainingDate(
+                        training?.training_date
+                    )
+                }　` +
+                `登録：${
+                    formatDate(
+                        item.registered_at
+                    )
+                }`;
+
+
+            container.appendChild(
+                div
             );
 
-
-        const training =
-            trainings.find(
-                t =>
-                    t.training_id ===
-                    item.training_id
-            );
-
-
-        const div =
-            document.createElement(
-                "div"
-            );
-
-
-        div.className =
-            "recent-item";
-
-
-        div.textContent =
-            `${participant?.name || "名前未登録"}　` +
-            `${training?.title || item.training_id}　` +
-            `${formatDate(
-                item.registered_at
-            )}`;
-
-
-        container.appendChild(
-            div
-        );
-
-    });
+        }
+    );
 
 }
 
@@ -1457,7 +1419,9 @@ async function loadParticipants() {
             );
 
 
-    if (participationError) {
+    if (
+        participationError
+    ) {
 
         console.error(
             "Participation loading error:",
@@ -1465,10 +1429,6 @@ async function loadParticipants() {
         );
 
     }
-
-
-    const list =
-        participations || [];
 
 
     tbody.innerHTML =
@@ -1490,6 +1450,10 @@ async function loadParticipants() {
         return;
 
     }
+
+
+    const list =
+        participations || [];
 
 
     data.forEach(
@@ -1580,108 +1544,100 @@ async function loadParticipants() {
     );
 
 
-    /* ------------------------------------------
-       参加履歴
-       participant-card.js が
-       「参加者カルテ」に変更します
-    ------------------------------------------ */
-
     tbody
         .querySelectorAll(
             '[data-action="participant-history"]'
         )
-        .forEach(button => {
+        .forEach(
+            button => {
 
-            button.addEventListener(
-                "click",
-                () => {
+                button.addEventListener(
+                    "click",
+                    () => {
 
-                    const participant =
-                        data.find(
-                            item =>
-                                item.id ===
-                                button.dataset.id
-                        );
+                        const participant =
+                            data.find(
+                                item =>
+                                    item.id ===
+                                    button.dataset.id
+                            );
 
 
-                    if (participant) {
+                        if (participant) {
 
-                        openParticipantHistory(
-                            participant
-                        );
+                            openParticipantHistory(
+                                participant
+                            );
+
+                        }
 
                     }
+                );
 
-                }
-            );
+            }
+        );
 
-        });
-
-
-    /* ------------------------------------------
-       編集
-    ------------------------------------------ */
 
     tbody
         .querySelectorAll(
             '[data-action="edit-participant"]'
         )
-        .forEach(button => {
+        .forEach(
+            button => {
 
-            button.addEventListener(
-                "click",
-                () => {
+                button.addEventListener(
+                    "click",
+                    () => {
 
-                    const participant =
-                        data.find(
-                            item =>
-                                item.id ===
-                                button.dataset.id
-                        );
+                        const participant =
+                            data.find(
+                                item =>
+                                    item.id ===
+                                    button.dataset.id
+                            );
 
 
-                    if (participant) {
+                        if (participant) {
 
-                        openParticipantModal(
-                            participant
-                        );
+                            openParticipantModal(
+                                participant
+                            );
+
+                        }
 
                     }
+                );
 
-                }
-            );
+            }
+        );
 
-        });
-
-
-    /* ------------------------------------------
-       削除
-    ------------------------------------------ */
 
     tbody
         .querySelectorAll(
             '[data-action="delete-participant"]'
         )
-        .forEach(button => {
+        .forEach(
+            button => {
 
-            button.addEventListener(
-                "click",
-                () => {
+                button.addEventListener(
+                    "click",
+                    () => {
 
-                    deleteParticipant(
-                        button.dataset.id
-                    );
+                        deleteParticipant(
+                            button.dataset.id
+                        );
 
-                }
-            );
+                    }
+                );
 
-        });
+            }
+        );
 
 }
 
 
 /* ==================================================
-   参加者編集モーダル
+   参加者モーダル
 ================================================== */
 
 function setupParticipantModal() {
@@ -1715,19 +1671,19 @@ function openParticipantModal(
     document.getElementById(
         "editParticipantDbId"
     ).value =
-        participant.id;
+        participant?.id || "";
 
 
     document.getElementById(
         "editParticipantId"
     ).value =
-        participant.participant_id;
+        participant?.participant_id || "";
 
 
     document.getElementById(
         "editParticipantName"
     ).value =
-        participant.name || "";
+        participant?.name || "";
 
 
     document.getElementById(
@@ -1743,7 +1699,7 @@ function closeParticipantModal() {
 
     document.getElementById(
         "participantModal"
-    ).classList.add(
+    )?.classList.add(
         "hidden"
     );
 
@@ -1776,35 +1732,40 @@ async function saveParticipant() {
     }
 
 
-    const {
-        error
-    } =
-        await adminSupabaseClient
-            .from("participants")
-            .update({
-                name
-            })
-            .eq(
-                "id",
-                id
-            );
+    try {
+
+        const result =
+            await adminSupabaseClient
+                .from("participants")
+                .update({
+                    name
+                })
+                .eq(
+                    "id",
+                    id
+                );
 
 
-    if (error) {
+        if (result.error) {
+
+            throw result.error;
+
+        }
+
+
+        closeParticipantModal();
+
+        await loadAllData();
+
+
+    } catch (error) {
 
         alert(
             "保存に失敗しました。\n" +
             error.message
         );
 
-        return;
-
     }
-
-
-    closeParticipantModal();
-
-    await loadAllData();
 
 }
 
@@ -1854,13 +1815,23 @@ async function deleteParticipant(
         }
 
 
-        await adminSupabaseClient
-            .from("participations")
-            .delete()
-            .eq(
-                "participant_id",
-                participant.participant_id
-            );
+        const historyResult =
+            await adminSupabaseClient
+                .from("participations")
+                .delete()
+                .eq(
+                    "participant_id",
+                    participant.participant_id
+                );
+
+
+        if (
+            historyResult.error
+        ) {
+
+            throw historyResult.error;
+
+        }
 
 
         const result =
@@ -1989,6 +1960,16 @@ async function openParticipantHistory(
     }
 
 
+    const {
+        data: trainings
+    } =
+        await adminSupabaseClient
+            .from("trainings")
+            .select(
+                "training_id, title, training_date"
+            );
+
+
     if (
         !data ||
         data.length === 0
@@ -2004,14 +1985,8 @@ async function openParticipantHistory(
     }
 
 
-    const {
-        data: trainings
-    } =
-        await adminSupabaseClient
-            .from("trainings")
-            .select(
-                "training_id, title"
-            );
+    const trainingList =
+        trainings || [];
 
 
     content.innerHTML = `
@@ -2031,86 +2006,101 @@ async function openParticipantHistory(
         );
 
 
-    data.forEach(item => {
+    data.forEach(
+        item => {
 
-        const training =
-            trainings?.find(
-                t =>
-                    t.training_id ===
-                    item.training_id
-            );
-
-
-        const div =
-            document.createElement(
-                "div"
-            );
-
-
-        div.className =
-            "history-item";
-
-
-        div.innerHTML = `
-
-            <div class="history-main">
-
-                <div class="history-title">
-                    ${escapeHtml(
-                        training?.title ||
+            const training =
+                trainingList.find(
+                    t =>
+                        t.training_id ===
                         item.training_id
-                    )}
+                );
+
+
+            const div =
+                document.createElement(
+                    "div"
+                );
+
+
+            div.className =
+                "history-item";
+
+
+            div.innerHTML = `
+
+                <div class="history-main">
+
+                    <div class="history-title">
+
+                        ${escapeHtml(
+                            training?.title ||
+                            item.training_id
+                        )}
+
+                    </div>
+
+                    <div class="history-date">
+
+                        実施日：
+                        ${formatTrainingDate(
+                            training?.training_date
+                        )}
+
+                        <br>
+
+                        登録：
+                        ${formatDate(
+                            item.registered_at
+                        )}
+
+                    </div>
+
                 </div>
 
-                <div class="history-date">
-                    ${formatDate(
-                        item.registered_at
-                    )}
-                </div>
 
-            </div>
+                <button
+                    type="button"
+                    class="action-button delete-button"
+                >
+                    削除
+                </button>
 
-            <button
-                type="button"
-                class="action-button delete-button"
-            >
-                削除
-            </button>
-
-        `;
+            `;
 
 
-        div
-            .querySelector(
-                "button"
-            )
-            .addEventListener(
-                "click",
-                async () => {
+            div
+                .querySelector(
+                    "button"
+                )
+                .addEventListener(
+                    "click",
+                    async () => {
 
-                    const deleted =
-                        await deleteParticipation(
-                            item.id
-                        );
+                        const deleted =
+                            await deleteParticipation(
+                                item.id
+                            );
 
 
-                    if (deleted) {
+                        if (deleted) {
 
-                        openParticipantHistory(
-                            participant
-                        );
+                            openParticipantHistory(
+                                participant
+                            );
+
+                        }
 
                     }
+                );
 
-                }
+
+            list.appendChild(
+                div
             );
 
-
-        list.appendChild(
-            div
-        );
-
-    });
+        }
+    );
 
 }
 
@@ -2161,22 +2151,60 @@ function openTrainingModal(
     training = null
 ) {
 
-    document.getElementById(
-        "editTrainingDbId"
-    ).value =
+    const idInput =
+        document.getElementById(
+            "editTrainingDbId"
+        );
+
+
+    const trainingIdInput =
+        document.getElementById(
+            "editTrainingId"
+        );
+
+
+    const titleInput =
+        document.getElementById(
+            "editTrainingTitle"
+        );
+
+
+    const dateInput =
+        document.getElementById(
+            "editTrainingDate"
+        );
+
+
+    idInput.value =
         training?.id || "";
 
 
-    document.getElementById(
-        "editTrainingId"
-    ).value =
+    trainingIdInput.value =
         training?.training_id || "";
 
 
-    document.getElementById(
-        "editTrainingTitle"
-    ).value =
+    titleInput.value =
         training?.title || "";
+
+
+    dateInput.value =
+        training?.training_date || "";
+
+
+    /*
+     * 既存訓練のIDは変更禁止
+     */
+
+    trainingIdInput.readOnly =
+        Boolean(training);
+
+
+    document.getElementById(
+        "trainingIdEditNote"
+    ).textContent =
+        training
+            ? "※既存の訓練を編集する場合、訓練IDは変更できません。"
+            : "※訓練IDは個人画面との紐付けに使用します。";
 
 
     document.getElementById(
@@ -2207,6 +2235,10 @@ function closeTrainingModal() {
 }
 
 
+/* ==================================================
+   訓練保存
+================================================== */
+
 async function saveTraining() {
 
     const id =
@@ -2215,11 +2247,16 @@ async function saveTraining() {
         ).value;
 
 
-    const trainingId =
+    const trainingIdInput =
         document.getElementById(
             "editTrainingId"
-        ).value
-        .trim();
+        );
+
+
+    const trainingId =
+        trainingIdInput
+            .value
+            .trim();
 
 
     const title =
@@ -2229,13 +2266,20 @@ async function saveTraining() {
         .trim();
 
 
+    const trainingDate =
+        document.getElementById(
+            "editTrainingDate"
+        ).value;
+
+
     if (
         !trainingId ||
-        !title
+        !title ||
+        !trainingDate
     ) {
 
         alert(
-            "訓練IDとタイトルを入力してください。"
+            "訓練ID、タイトル、実施日を入力してください。"
         );
 
         return;
@@ -2250,15 +2294,19 @@ async function saveTraining() {
 
         if (id) {
 
+            /*
+             * 編集時はtraining_idを変更しない
+             */
+
             result =
                 await adminSupabaseClient
                     .from("trainings")
                     .update({
 
-                        training_id:
-                            trainingId,
+                        title,
 
-                        title
+                        training_date:
+                            trainingDate
 
                     })
                     .eq(
@@ -2268,6 +2316,45 @@ async function saveTraining() {
 
         } else {
 
+            /*
+             * 新規登録
+             */
+
+            const existing =
+                await adminSupabaseClient
+                    .from("trainings")
+                    .select(
+                        "id"
+                    )
+                    .eq(
+                        "training_id",
+                        trainingId
+                    )
+                    .maybeSingle();
+
+
+            if (
+                existing.error
+            ) {
+
+                throw existing.error;
+
+            }
+
+
+            if (
+                existing.data
+            ) {
+
+                alert(
+                    "その訓練IDはすでに使用されています。"
+                );
+
+                return;
+
+            }
+
+
             result =
                 await adminSupabaseClient
                     .from("trainings")
@@ -2276,7 +2363,10 @@ async function saveTraining() {
                         training_id:
                             trainingId,
 
-                        title
+                        title,
+
+                        training_date:
+                            trainingDate
 
                     });
 
@@ -2295,7 +2385,20 @@ async function saveTraining() {
         await loadAllData();
 
 
+        alert(
+            id
+                ? "訓練・講座を更新しました。"
+                : "訓練・講座を登録しました。"
+        );
+
+
     } catch (error) {
+
+        console.error(
+            "Save training error:",
+            error
+        );
+
 
         alert(
             "保存に失敗しました。\n" +
@@ -2328,7 +2431,7 @@ async function loadTrainings() {
 
     tbody.innerHTML =
         `<tr>
-            <td colspan="5">
+            <td colspan="6">
                 読み込み中...
             </td>
         </tr>`;
@@ -2342,9 +2445,10 @@ async function loadTrainings() {
             .from("trainings")
             .select("*")
             .order(
-                "created_at",
+                "training_date",
                 {
-                    ascending: false
+                    ascending: false,
+                    nullsFirst: false
                 }
             );
 
@@ -2359,7 +2463,7 @@ async function loadTrainings() {
 
         tbody.innerHTML =
             `<tr>
-                <td colspan="5">
+                <td colspan="6">
                     読み込みに失敗しました。
                 </td>
             </tr>`;
@@ -2390,7 +2494,7 @@ async function loadTrainings() {
 
         tbody.innerHTML =
             `<tr>
-                <td colspan="5">
+                <td colspan="6">
                     訓練・講座はありません。
                 </td>
             </tr>`;
@@ -2400,10 +2504,13 @@ async function loadTrainings() {
     }
 
 
-    data.forEach(training => {
+    data.forEach(
+        training => {
 
-        const count =
-            (participations || [])
+            const count =
+                (
+                    participations || []
+                )
                 .filter(
                     item =>
                         item.training_id ===
@@ -2412,118 +2519,137 @@ async function loadTrainings() {
                 .length;
 
 
-        const tr =
-            document.createElement(
-                "tr"
-            );
+            const tr =
+                document.createElement(
+                    "tr"
+                );
 
 
-        tr.innerHTML = `
+            tr.innerHTML = `
 
-            <td>
-                ${escapeHtml(
-                    training.training_id
-                )}
-            </td>
-
-            <td>
-                <strong>
+                <td>
                     ${escapeHtml(
-                        training.title
+                        training.training_id
                     )}
-                </strong>
-            </td>
+                </td>
 
-            <td>
-                <span class="participant-count">
-                    ${count}人
-                </span>
-            </td>
+                <td>
 
-            <td>
-                ${formatDate(
-                    training.created_at
-                )}
-            </td>
+                    <strong>
+                        ${escapeHtml(
+                            training.title
+                        )}
+                    </strong>
 
-            <td>
+                </td>
 
-                <button
-                    type="button"
-                    class="action-button view-button"
-                >
-                    参加者を見る
-                </button>
+                <td>
 
-                <button
-                    type="button"
-                    class="action-button edit-button"
-                >
-                    編集
-                </button>
+                    ${
+                        training.training_date
+                            ? formatTrainingDate(
+                                training.training_date
+                            )
+                            : "未設定"
+                    }
 
-                <button
-                    type="button"
-                    class="action-button delete-button"
-                >
-                    削除
-                </button>
+                </td>
 
-            </td>
+                <td>
 
-        `;
+                    <span class="participant-count">
+                        ${count}人
+                    </span>
+
+                </td>
+
+                <td>
+
+                    ${formatDate(
+                        training.created_at
+                    )}
+
+                </td>
+
+                <td>
+
+                    <button
+                        type="button"
+                        class="action-button view-button"
+                    >
+                        参加者を見る
+                    </button>
+
+                    <button
+                        type="button"
+                        class="action-button edit-button"
+                    >
+                        編集
+                    </button>
+
+                    <button
+                        type="button"
+                        class="action-button delete-button"
+                    >
+                        削除
+                    </button>
+
+                </td>
+
+            `;
 
 
-        const buttons =
-            tr.querySelectorAll(
-                "button"
+            const buttons =
+                tr.querySelectorAll(
+                    "button"
+                );
+
+
+            buttons[0]
+                .addEventListener(
+                    "click",
+                    () => {
+
+                        openTrainingParticipants(
+                            training
+                        );
+
+                    }
+                );
+
+
+            buttons[1]
+                .addEventListener(
+                    "click",
+                    () => {
+
+                        openTrainingModal(
+                            training
+                        );
+
+                    }
+                );
+
+
+            buttons[2]
+                .addEventListener(
+                    "click",
+                    () => {
+
+                        deleteTraining(
+                            training.id
+                        );
+
+                    }
+                );
+
+
+            tbody.appendChild(
+                tr
             );
 
-
-        buttons[0]
-            .addEventListener(
-                "click",
-                () => {
-
-                    openTrainingParticipants(
-                        training
-                    );
-
-                }
-            );
-
-
-        buttons[1]
-            .addEventListener(
-                "click",
-                () => {
-
-                    openTrainingModal(
-                        training
-                    );
-
-                }
-            );
-
-
-        buttons[2]
-            .addEventListener(
-                "click",
-                () => {
-
-                    deleteTraining(
-                        training.id
-                    );
-
-                }
-            );
-
-
-        tbody.appendChild(
-            tr
-        );
-
-    });
+        }
+    );
 
 }
 
@@ -2650,7 +2776,17 @@ async function openTrainingParticipants(
     content.innerHTML = `
 
         <div class="history-summary">
-            参加人数：${data.length}人
+
+            参加人数：
+            ${data.length}人
+
+            <br>
+
+            実施日：
+            ${formatTrainingDate(
+                training.training_date
+            )}
+
         </div>
 
         <div class="history-list"></div>
@@ -2664,86 +2800,96 @@ async function openTrainingParticipants(
         );
 
 
-    data.forEach(item => {
+    data.forEach(
+        item => {
 
-        const participant =
-            participants?.find(
-                p =>
-                    p.participant_id ===
-                    item.participant_id
-            );
-
-
-        const div =
-            document.createElement(
-                "div"
-            );
+            const participant =
+                (
+                    participants || []
+                ).find(
+                    p =>
+                        p.participant_id ===
+                        item.participant_id
+                );
 
 
-        div.className =
-            "history-item";
+            const div =
+                document.createElement(
+                    "div"
+                );
 
 
-        div.innerHTML = `
+            div.className =
+                "history-item";
 
-            <div class="history-main">
 
-                <div class="history-title">
-                    ${escapeHtml(
-                        participant?.name ||
-                        "名前未登録"
-                    )}
+            div.innerHTML = `
+
+                <div class="history-main">
+
+                    <div class="history-title">
+
+                        ${escapeHtml(
+                            participant?.name ||
+                            "名前未登録"
+                        )}
+
+                    </div>
+
+                    <div class="history-date">
+
+                        登録：
+                        ${formatDate(
+                            item.registered_at
+                        )}
+
+                    </div>
+
                 </div>
 
-                <div class="history-date">
-                    ${formatDate(
-                        item.registered_at
-                    )}
-                </div>
 
-            </div>
+                <button
+                    type="button"
+                    class="action-button delete-button"
+                >
+                    削除
+                </button>
 
-            <button
-                type="button"
-                class="action-button delete-button"
-            >
-                削除
-            </button>
-
-        `;
+            `;
 
 
-        div
-            .querySelector(
-                "button"
-            )
-            .addEventListener(
-                "click",
-                async () => {
+            div
+                .querySelector(
+                    "button"
+                )
+                .addEventListener(
+                    "click",
+                    async () => {
 
-                    const deleted =
-                        await deleteParticipation(
-                            item.id
-                        );
+                        const deleted =
+                            await deleteParticipation(
+                                item.id
+                            );
 
 
-                    if (deleted) {
+                        if (deleted) {
 
-                        openTrainingParticipants(
-                            training
-                        );
+                            openTrainingParticipants(
+                                training
+                            );
+
+                        }
 
                     }
+                );
 
-                }
+
+            list.appendChild(
+                div
             );
 
-
-        list.appendChild(
-            div
-        );
-
-    });
+        }
+    );
 
 }
 
@@ -2793,13 +2939,23 @@ async function deleteTraining(
         }
 
 
-        await adminSupabaseClient
-            .from("participations")
-            .delete()
-            .eq(
-                "training_id",
-                training.training_id
-            );
+        const historyResult =
+            await adminSupabaseClient
+                .from("participations")
+                .delete()
+                .eq(
+                    "training_id",
+                    training.training_id
+                );
+
+
+        if (
+            historyResult.error
+        ) {
+
+            throw historyResult.error;
+
+        }
 
 
         const result =
@@ -2855,7 +3011,7 @@ async function loadParticipations() {
 
     tbody.innerHTML =
         `<tr>
-            <td colspan="4">
+            <td colspan="5">
                 読み込み中...
             </td>
         </tr>`;
@@ -2888,7 +3044,7 @@ async function loadParticipations() {
 
         tbody.innerHTML =
             `<tr>
-                <td colspan="4">
+                <td colspan="5">
                     読み込みに失敗しました。
                 </td>
             </tr>`;
@@ -2913,7 +3069,7 @@ async function loadParticipations() {
             adminSupabaseClient
                 .from("trainings")
                 .select(
-                    "training_id, title"
+                    "training_id, title, training_date"
                 )
 
         ]);
@@ -2938,7 +3094,7 @@ async function loadParticipations() {
 
         tbody.innerHTML =
             `<tr>
-                <td colspan="4">
+                <td colspan="5">
                     参加履歴はありません。
                 </td>
             </tr>`;
@@ -2948,87 +3104,111 @@ async function loadParticipations() {
     }
 
 
-    data.forEach(item => {
+    data.forEach(
+        item => {
 
-        const participant =
-            participants.find(
-                p =>
-                    p.participant_id ===
-                    item.participant_id
-            );
-
-
-        const training =
-            trainings.find(
-                t =>
-                    t.training_id ===
-                    item.training_id
-            );
+            const participant =
+                participants.find(
+                    p =>
+                        p.participant_id ===
+                        item.participant_id
+                );
 
 
-        const tr =
-            document.createElement(
-                "tr"
-            );
+            const training =
+                trainings.find(
+                    t =>
+                        t.training_id ===
+                        item.training_id
+                );
 
 
-        tr.innerHTML = `
-
-            <td>
-                ${escapeHtml(
-                    participant?.name ||
-                    "名前未登録"
-                )}
-            </td>
-
-            <td>
-                ${escapeHtml(
-                    training?.title ||
-                    item.training_id
-                )}
-            </td>
-
-            <td>
-                ${formatDate(
-                    item.registered_at
-                )}
-            </td>
-
-            <td>
-
-                <button
-                    type="button"
-                    class="action-button delete-button"
-                >
-                    削除
-                </button>
-
-            </td>
-
-        `;
+            const tr =
+                document.createElement(
+                    "tr"
+                );
 
 
-        tr
-            .querySelector(
-                "button"
-            )
-            .addEventListener(
-                "click",
-                () => {
+            tr.innerHTML = `
 
-                    deleteParticipation(
-                        item.id
-                    );
+                <td>
 
-                }
-            );
+                    ${escapeHtml(
+                        participant?.name ||
+                        "名前未登録"
+                    )}
+
+                </td>
 
 
-        tbody.appendChild(
+                <td>
+
+                    ${escapeHtml(
+                        training?.title ||
+                        item.training_id
+                    )}
+
+                </td>
+
+
+                <td>
+
+                    ${
+                        training?.training_date
+                            ? formatTrainingDate(
+                                training.training_date
+                            )
+                            : "未設定"
+                    }
+
+                </td>
+
+
+                <td>
+
+                    ${formatDate(
+                        item.registered_at
+                    )}
+
+                </td>
+
+
+                <td>
+
+                    <button
+                        type="button"
+                        class="action-button delete-button"
+                    >
+                        削除
+                    </button>
+
+                </td>
+
+            `;
+
+
             tr
-        );
+                .querySelector(
+                    "button"
+                )
+                .addEventListener(
+                    "click",
+                    async () => {
 
-    });
+                        await deleteParticipation(
+                            item.id
+                        );
+
+                    }
+                );
+
+
+            tbody.appendChild(
+                tr
+            );
+
+        }
+    );
 
 }
 
@@ -3095,7 +3275,786 @@ async function deleteParticipation(
 
 
 /* ==================================================
-   共通：テキスト設定
+   Step 2
+   参加者分析
+================================================== */
+
+async function loadParticipantAnalysis() {
+
+    try {
+
+        const [
+            participantsResult,
+            participationsResult
+        ] =
+            await Promise.all([
+
+                adminSupabaseClient
+                    .from("participants")
+                    .select(
+                        "participant_id, name"
+                    ),
+
+                adminSupabaseClient
+                    .from("participations")
+                    .select(
+                        "id, participant_id, training_id, registered_at"
+                    )
+
+            ]);
+
+
+        if (
+            participantsResult.error
+        ) {
+
+            throw participantsResult.error;
+
+        }
+
+
+        if (
+            participationsResult.error
+        ) {
+
+            throw participationsResult.error;
+
+        }
+
+
+        const participants =
+            participantsResult.data || [];
+
+
+        const participations =
+            participationsResult.data || [];
+
+
+        const participationMap =
+            {};
+
+
+        participants.forEach(
+            participant => {
+
+                participationMap[
+                    participant.participant_id
+                ] = 0;
+
+            }
+        );
+
+
+        participations.forEach(
+            participation => {
+
+                if (
+                    Object.prototype.hasOwnProperty.call(
+                        participationMap,
+                        participation.participant_id
+                    )
+                ) {
+
+                    participationMap[
+                        participation.participant_id
+                    ]++;
+
+                }
+
+            }
+        );
+
+
+        const total =
+            participants.length;
+
+
+        const active =
+            participants.filter(
+                participant =>
+                    (
+                        participationMap[
+                            participant.participant_id
+                        ] || 0
+                    ) >= 1
+            ).length;
+
+
+        const inactive =
+            total -
+            active;
+
+
+        const repeat =
+            participants.filter(
+                participant =>
+                    (
+                        participationMap[
+                            participant.participant_id
+                        ] || 0
+                    ) >= 2
+            ).length;
+
+
+        const master =
+            participants.filter(
+                participant =>
+                    (
+                        participationMap[
+                            participant.participant_id
+                        ] || 0
+                    ) >= 5
+            ).length;
+
+
+        const rate =
+            total > 0
+                ? (
+                    active /
+                    total *
+                    100
+                )
+                : 0;
+
+
+        const average =
+            total > 0
+                ? (
+                    participations.length /
+                    total
+                )
+                : 0;
+
+
+        const masterRate =
+            total > 0
+                ? (
+                    master /
+                    total *
+                    100
+                )
+                : 0;
+
+
+        setText(
+            "analysisTotalParticipants",
+            total
+        );
+
+
+        setText(
+            "analysisActiveParticipants",
+            active
+        );
+
+
+        setText(
+            "analysisInactiveParticipants",
+            inactive
+        );
+
+
+        setText(
+            "analysisParticipationRate",
+            rate.toFixed(1)
+        );
+
+
+        setText(
+            "analysisAverageParticipation",
+            average.toFixed(1)
+        );
+
+
+        setText(
+            "analysisRepeatParticipants",
+            repeat
+        );
+
+
+        setText(
+            "analysisMasterParticipants",
+            master
+        );
+
+
+        setText(
+            "analysisMasterRate",
+            masterRate.toFixed(1)
+        );
+
+
+        createParticipantDistributionChart(
+            participationMap
+        );
+
+
+        createAnalysisRanking(
+            participants,
+            participationMap
+        );
+
+
+        createInactiveParticipantList(
+            participants,
+            participationMap
+        );
+
+
+        createParticipantAnalysisTable(
+            participants,
+            participationMap
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Participant analysis error:",
+            error
+        );
+
+    }
+
+}
+
+
+/* ==================================================
+   参加回数分布
+================================================== */
+
+function createParticipantDistributionChart(
+    participationMap
+) {
+
+    const canvas =
+        document.getElementById(
+            "participantDistributionChart"
+        );
+
+
+    if (!canvas) {
+
+        return;
+
+    }
+
+
+    if (
+        typeof Chart ===
+        "undefined"
+    ) {
+
+        return;
+
+    }
+
+
+    const distribution = {
+
+        zero: 0,
+
+        one: 0,
+
+        twoThree: 0,
+
+        four: 0,
+
+        fivePlus: 0
+
+    };
+
+
+    Object.values(
+        participationMap
+    ).forEach(
+        count => {
+
+            if (
+                count === 0
+            ) {
+
+                distribution.zero++;
+
+            } else if (
+                count === 1
+            ) {
+
+                distribution.one++;
+
+            } else if (
+                count <= 3
+            ) {
+
+                distribution.twoThree++;
+
+            } else if (
+                count === 4
+            ) {
+
+                distribution.four++;
+
+            } else {
+
+                distribution.fivePlus++;
+
+            }
+
+        }
+    );
+
+
+    if (
+        participantDistributionChart
+    ) {
+
+        participantDistributionChart.destroy();
+
+    }
+
+
+    participantDistributionChart =
+        new Chart(
+            canvas,
+            {
+
+                type: "bar",
+
+                data: {
+
+                    labels: [
+
+                        "0回",
+
+                        "1回",
+
+                        "2～3回",
+
+                        "4回",
+
+                        "5回以上"
+
+                    ],
+
+                    datasets: [
+
+                        {
+
+                            label:
+                                "参加者数",
+
+                            data: [
+
+                                distribution.zero,
+
+                                distribution.one,
+
+                                distribution.twoThree,
+
+                                distribution.four,
+
+                                distribution.fivePlus
+
+                            ],
+
+                            borderWidth:
+                                1
+
+                        }
+
+                    ]
+
+                },
+
+                options: {
+
+                    responsive: true,
+
+                    maintainAspectRatio: false,
+
+                    plugins: {
+
+                        legend: {
+
+                            display: false
+
+                        }
+
+                    },
+
+                    scales: {
+
+                        y: {
+
+                            beginAtZero: true,
+
+                            ticks: {
+
+                                precision: 0
+
+                            }
+
+                        }
+
+                    }
+
+                }
+
+            }
+        );
+
+}
+
+
+/* ==================================================
+   分析ランキング
+================================================== */
+
+function createAnalysisRanking(
+    participants,
+    participationMap
+) {
+
+    const container =
+        document.getElementById(
+            "analysisRanking"
+        );
+
+
+    if (!container) {
+
+        return;
+
+    }
+
+
+    const ranking =
+        participants
+            .map(
+                participant => ({
+
+                    participant,
+
+                    count:
+                        participationMap[
+                            participant.participant_id
+                        ] || 0
+
+                })
+            )
+            .sort(
+                (a, b) =>
+                    b.count -
+                    a.count
+            )
+            .slice(
+                0,
+                10
+            );
+
+
+    container.innerHTML =
+        "";
+
+
+    if (
+        ranking.length === 0
+    ) {
+
+        container.innerHTML =
+            `<div class="empty-message">
+                参加者はいません。
+            </div>`;
+
+        return;
+
+    }
+
+
+    ranking.forEach(
+        (item, index) => {
+
+            const div =
+                document.createElement(
+                    "div"
+                );
+
+
+            div.className =
+                "ranking-item";
+
+
+            div.innerHTML = `
+
+                <span class="ranking-number">
+                    ${index + 1}
+                </span>
+
+                <span class="ranking-name">
+                    ${escapeHtml(
+                        item.participant.name ||
+                        "名前未登録"
+                    )}
+                </span>
+
+                <strong>
+                    ${item.count}回
+                </strong>
+
+            `;
+
+
+            container.appendChild(
+                div
+            );
+
+        }
+    );
+
+}
+
+
+/* ==================================================
+   未参加者
+================================================== */
+
+function createInactiveParticipantList(
+    participants,
+    participationMap
+) {
+
+    const container =
+        document.getElementById(
+            "analysisInactiveList"
+        );
+
+
+    if (!container) {
+
+        return;
+
+    }
+
+
+    const inactive =
+        participants.filter(
+            participant =>
+                (
+                    participationMap[
+                        participant.participant_id
+                    ] || 0
+                ) === 0
+        );
+
+
+    container.innerHTML =
+        "";
+
+
+    if (
+        inactive.length === 0
+    ) {
+
+        container.innerHTML =
+            `<div class="empty-message">
+                全員が1回以上参加しています。
+            </div>`;
+
+        return;
+
+    }
+
+
+    inactive.forEach(
+        participant => {
+
+            const div =
+                document.createElement(
+                    "div"
+                );
+
+
+            div.className =
+                "ranking-item";
+
+
+            div.innerHTML = `
+
+                <span class="ranking-name">
+                    ${escapeHtml(
+                        participant.name ||
+                        "名前未登録"
+                    )}
+                </span>
+
+                <span>
+                    未参加
+                </span>
+
+            `;
+
+
+            container.appendChild(
+                div
+            );
+
+        }
+    );
+
+}
+
+
+/* ==================================================
+   参加者分析テーブル
+================================================== */
+
+function createParticipantAnalysisTable(
+    participants,
+    participationMap
+) {
+
+    const tbody =
+        document.getElementById(
+            "participantAnalysisTable"
+        );
+
+
+    if (!tbody) {
+
+        return;
+
+    }
+
+
+    const ranking =
+        participants
+            .map(
+                participant => ({
+
+                    participant,
+
+                    count:
+                        participationMap[
+                            participant.participant_id
+                        ] || 0
+
+                })
+            )
+            .sort(
+                (a, b) => {
+
+                    if (
+                        b.count !==
+                        a.count
+                    ) {
+
+                        return (
+                            b.count -
+                            a.count
+                        );
+
+                    }
+
+
+                    return String(
+                        a.participant.name ||
+                        ""
+                    ).localeCompare(
+                        String(
+                            b.participant.name ||
+                            ""
+                        ),
+                        "ja"
+                    );
+
+                }
+            );
+
+
+    tbody.innerHTML =
+        "";
+
+
+    ranking.forEach(
+        (item, index) => {
+
+            let status;
+
+
+            if (
+                item.count === 0
+            ) {
+
+                status =
+                    "未参加";
+
+            } else if (
+                item.count >= 5
+            ) {
+
+                status =
+                    "5回以上";
+
+            } else if (
+                item.count >= 2
+            ) {
+
+                status =
+                    "リピーター";
+
+            } else {
+
+                status =
+                    "参加経験あり";
+
+            }
+
+
+            const tr =
+                document.createElement(
+                    "tr"
+                );
+
+
+            tr.innerHTML = `
+
+                <td>
+                    ${index + 1}
+                </td>
+
+                <td>
+                    ${escapeHtml(
+                        item.participant.name ||
+                        "名前未登録"
+                    )}
+                </td>
+
+                <td>
+                    <strong>
+                        ${item.count}
+                    </strong>
+                    回
+                </td>
+
+                <td>
+                    ${status}
+                </td>
+
+            `;
+
+
+            tbody.appendChild(
+                tr
+            );
+
+        }
+    );
+
+}
+
+
+/* ==================================================
+   共通テキスト
 ================================================== */
 
 function setText(
@@ -3120,7 +4079,7 @@ function setText(
 
 
 /* ==================================================
-   共通：日付
+   通常日時
 ================================================== */
 
 function formatDate(
@@ -3135,7 +4094,9 @@ function formatDate(
 
 
     const date =
-        new Date(value);
+        new Date(
+            value
+        );
 
 
     if (
@@ -3144,33 +4105,79 @@ function formatDate(
         )
     ) {
 
-        return value;
+        return "-";
 
     }
 
 
-    return date.toLocaleString(
-        "ja-JP",
-        {
-
-            year: "numeric",
-
-            month: "2-digit",
-
-            day: "2-digit",
-
-            hour: "2-digit",
-
-            minute: "2-digit"
-
-        }
+    return (
+        date.getFullYear() +
+        "/" +
+        String(
+            date.getMonth() + 1
+        ).padStart(
+            2,
+            "0"
+        ) +
+        "/" +
+        String(
+            date.getDate()
+        ).padStart(
+            2,
+            "0"
+        )
     );
 
 }
 
 
 /* ==================================================
-   共通：HTMLエスケープ
+   訓練実施日
+   timezoneによる日付ずれを防止
+================================================== */
+
+function formatTrainingDate(
+    value
+) {
+
+    if (!value) {
+
+        return "-";
+
+    }
+
+
+    const parts =
+        String(
+            value
+        ).split("-");
+
+
+    if (
+        parts.length !== 3
+    ) {
+
+        return String(
+            value
+        );
+
+    }
+
+
+    return (
+        Number(parts[0]) +
+        "年" +
+        Number(parts[1]) +
+        "月" +
+        Number(parts[2]) +
+        "日"
+    );
+
+}
+
+
+/* ==================================================
+   HTMLエスケープ
 ================================================== */
 
 function escapeHtml(
@@ -3187,28 +4194,25 @@ function escapeHtml(
     }
 
 
-    return String(value)
-
+    return String(
+        value
+    )
         .replace(
             /&/g,
             "&amp;"
         )
-
         .replace(
             /</g,
             "&lt;"
         )
-
         .replace(
             />/g,
             "&gt;"
         )
-
         .replace(
             /"/g,
             "&quot;"
         )
-
         .replace(
             /'/g,
             "&#039;"
