@@ -1322,7 +1322,7 @@
 
 
 <!-- ==================================================
-     訓練参加者モーダル
+     訓練参加者管理モーダル
 ================================================== -->
 
 <div
@@ -1333,15 +1333,61 @@
     <div class="modal-content large-modal">
 
         <h2 id="trainingParticipantsTitle">
-            参加者一覧
+            参加者管理
         </h2>
 
 
+        <!-- 訓練情報 -->
+
         <div
-            id="trainingParticipantsContent"
-            class="history-content"
+            id="trainingParticipantsSummary"
+            class="history-summary"
         >
             読み込み中...
+        </div>
+
+
+        <!-- 参加者追加 -->
+
+        <div class="training-participant-add">
+
+            <h3>
+                参加者を追加
+            </h3>
+
+            <div
+                id="availableParticipants"
+                class="participant-select-list"
+            >
+                読み込み中...
+            </div>
+
+            <button
+                type="button"
+                id="addSelectedParticipantsButton"
+                class="primary-button"
+            >
+                選択した参加者を追加
+            </button>
+
+        </div>
+
+
+        <!-- 現在の参加者 -->
+
+        <div class="training-participant-current">
+
+            <h3>
+                現在の参加者
+            </h3>
+
+            <div
+                id="trainingParticipantsContent"
+                class="history-content"
+            >
+                読み込み中...
+            </div>
+
         </div>
 
 
@@ -1360,9 +1406,6 @@
     </div>
 
 </div>
-
-
-
 <!-- ==================================================
      Chart.js
 ================================================== -->
