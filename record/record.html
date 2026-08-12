@@ -5,69 +5,141 @@
 
 <meta charset="UTF-8">
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
 
-<title>活動実績</title>
+<title>
+    活動実績
+</title>
 
-<link rel="stylesheet" href="../style.css">
+<link
+    rel="stylesheet"
+    href="../style.css"
+>
 
 
 <style>
 
 .activity {
 
-    max-width:900px;
+    max-width: 900px;
 
-    margin:30px auto;
+    margin: 30px auto;
 
-    padding:20px;
+    padding: 20px;
 
-    text-align:center;
+    text-align: center;
 
 }
 
 
 .activity h1 {
 
-    font-size:32px;
+    font-size: 32px;
 
-    margin-bottom:25px;
+    margin-bottom: 30px;
 
 }
 
 
-/* 写真一覧 */
+.activity-list {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 35px;
+
+}
+
+
+.activity-card {
+
+    background: white;
+
+    padding: 25px;
+
+    border-radius: 15px;
+
+    box-shadow:
+        0 4px 10px
+        rgba(0,0,0,0.12);
+
+}
+
+
+.activity-title {
+
+    font-size: 24px;
+
+    margin: 0 0 8px;
+
+}
+
+
+.activity-date {
+
+    color: #777;
+
+    font-size: 14px;
+
+    margin-bottom: 15px;
+
+}
+
+
+.activity-description {
+
+    text-align: left;
+
+    line-height: 1.8;
+
+    margin-bottom: 20px;
+
+    white-space: pre-wrap;
+
+}
+
 
 .activity-gallery {
 
-    display:flex;
+    display: flex;
 
-    flex-direction:column;
+    flex-direction: column;
 
-    gap:25px;
-
-    align-items:center;
+    gap: 20px;
 
 }
 
 
 .activity-image {
 
-    width:100%;
+    width: 100%;
 
-    max-width:800px;
+    max-width: 800px;
 
-    height:auto;
+    height: auto;
 
-    border-radius:15px;
+    border-radius: 12px;
 
-    box-shadow:0 4px 10px rgba(0,0,0,0.2);
+    box-shadow:
+        0 4px 10px
+        rgba(0,0,0,0.15);
 
 }
 
 
+.loading,
+.empty {
 
-/* 戻るボタン */
+    padding: 30px;
+
+    color: #777;
+
+}
+
 
 .back-button {
 
@@ -87,19 +159,7 @@
 
     font-size:18px;
 
-    transition:0.3s;
-
 }
-
-
-.back-button:hover {
-
-    background-color:#0d47a1;
-
-    transform:scale(1.05);
-
-}
-
 
 
 @media(max-width:600px){
@@ -117,8 +177,21 @@
 
     }
 
-}
 
+    .activity-card {
+
+        padding:18px;
+
+    }
+
+
+    .activity-title {
+
+        font-size:21px;
+
+    }
+
+}
 
 </style>
 
@@ -133,53 +206,352 @@
 
 
 <h1>
-📷 活動実績
+    📷 活動実績
 </h1>
 
 
-<div class="activity-gallery">
-
-
-<img
-src="activity01.JPG"
-alt="活動実績1"
-class="activity-image"
+<div
+    id="activityList"
+    class="activity-list"
 >
 
-
-<img
-src="activity02.jpg"
-alt="活動実績2"
-class="activity-image"
->
-
-
-<img
-src="activity03.JPG"
-alt="活動実績3"
-class="activity-image"
->
-
-
-<img
-src="activity04.jpg"
-alt="活動実績4"
-class="activity-image"
->
-
+    <div class="loading">
+        読み込み中...
+    </div>
 
 </div>
 
 
-<a href="../index.html" class="back-button">
-トップページへ戻る
+<a
+    href="../index.html"
+    class="back-button"
+>
+    トップページへ戻る
 </a>
 
 
 </section>
 
 
-</body>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+
+<script>
+
+"use strict";
+
+
+const SUPABASE_URL =
+    "https://zumbqukrojdpgfpfekjr.supabase.co";
+
+
+const SUPABASE_KEY =
+    "sb_publishable_8YXsMHOxLr7MOTEYShUM3w_LsZvR3Qn";
+
+
+const supabaseClient =
+    window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+    );
+
+
+async function loadActivities() {
+
+    const container =
+        document.getElementById(
+            "activityList"
+        );
+
+
+    try {
+
+        const {
+            data,
+            error
+        } =
+        await supabaseClient
+            .from("site_contents")
+            .select("*")
+            .eq(
+                "content_type",
+                "activity"
+            )
+            .order(
+                "content_date",
+                {
+                    ascending: false,
+                    nullsFirst: false
+                }
+            )
+            .order(
+                "slot",
+                {
+                    ascending: true
+                }
+            );
+
+
+        if (error) {
+            throw error;
+        }
+
+
+        const rows =
+            data || [];
+
+
+        const groups =
+            new Map();
+
+
+        rows.forEach(
+            row => {
+
+                if (
+                    !row.content_group_id
+                ) {
+                    return;
+                }
+
+
+                if (
+                    !groups.has(
+                        row.content_group_id
+                    )
+                ) {
+
+                    groups.set(
+                        row.content_group_id,
+                        []
+                    );
+
+                }
+
+
+                groups
+                    .get(
+                        row.content_group_id
+                    )
+                    .push(row);
+
+            }
+        );
+
+
+        container.innerHTML = "";
+
+
+        if (
+            groups.size === 0
+        ) {
+
+            container.innerHTML =
+                `<div class="empty">
+                    現在、活動実績はありません。
+                </div>`;
+
+            return;
+
+        }
+
+
+        groups.forEach(
+            items => {
+
+                const first =
+                    items[0];
+
+
+                const card =
+                    document.createElement(
+                        "article"
+                    );
+
+                card.className =
+                    "activity-card";
+
+
+                const title =
+                    document.createElement(
+                        "h2"
+                    );
+
+                title.className =
+                    "activity-title";
+
+                title.textContent =
+                    first.title ||
+                    "活動実績";
+
+
+                card.appendChild(
+                    title
+                );
+
+
+                if (
+                    first.content_date
+                ) {
+
+                    const date =
+                        document.createElement(
+                            "div"
+                        );
+
+                    date.className =
+                        "activity-date";
+
+                    date.textContent =
+                        formatDate(
+                            first.content_date
+                        );
+
+
+                    card.appendChild(
+                        date
+                    );
+
+                }
+
+
+                if (
+                    first.description
+                ) {
+
+                    const description =
+                        document.createElement(
+                            "div"
+                        );
+
+                    description.className =
+                        "activity-description";
+
+                    description.textContent =
+                        first.description;
+
+
+                    card.appendChild(
+                        description
+                    );
+
+                }
+
+
+                const gallery =
+                    document.createElement(
+                        "div"
+                    );
+
+                gallery.className =
+                    "activity-gallery";
+
+
+                items
+                    .filter(
+                        item =>
+                            item.image_url
+                    )
+                    .sort(
+                        (
+                            a,
+                            b
+                        ) =>
+                            Number(a.slot) -
+                            Number(b.slot)
+                    )
+                    .forEach(
+                        item => {
+
+                            const img =
+                                document.createElement(
+                                    "img"
+                                );
+
+                            img.src =
+                                item.image_url;
+
+                            img.alt =
+                                first.title ||
+                                "活動実績";
+
+                            img.className =
+                                "activity-image";
+
+
+                            gallery.appendChild(
+                                img
+                            );
+
+                        }
+                    );
+
+
+                card.appendChild(
+                    gallery
+                );
+
+
+                container.appendChild(
+                    card
+                );
+
+            }
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            error
+        );
+
+
+        container.innerHTML =
+            `<div class="empty">
+                活動実績を読み込めませんでした。
+            </div>`;
+
+    }
+
+}
+
+
+function formatDate(
+    dateString
+) {
+
+    const date =
+        new Date(
+            `${dateString}T00:00:00`
+        );
+
+
+    if (
+        Number.isNaN(
+            date.getTime()
+        )
+    ) {
+
+        return dateString;
+
+    }
+
+
+    return (
+        `${date.getFullYear()}年` +
+        `${date.getMonth() + 1}月` +
+        `${date.getDate()}日`
+    );
+
+}
+
+
+loadActivities();
+
+</script>
+
+
+</body>
 
 </html>
