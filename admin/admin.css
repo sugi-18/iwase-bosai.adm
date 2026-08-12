@@ -10,6 +10,7 @@
 body {
     margin: 0;
     padding: 0;
+
     font-family:
         -apple-system,
         BlinkMacSystemFont,
@@ -18,6 +19,7 @@ body {
         "Hiragino Sans",
         Meiryo,
         sans-serif;
+
     background: #f4f6f8;
     color: #333;
     line-height: 1.6;
@@ -28,20 +30,35 @@ body {
 ================================================== */
 
 button,
-input {
+input,
+select,
+textarea {
     font-family: inherit;
 }
 
 button {
+    appearance: none;
+    -webkit-appearance: none;
+
     display: inline-flex;
     align-items: center;
     justify-content: center;
+
+    box-sizing: border-box;
+
     visibility: visible;
     opacity: 1;
+
     text-indent: 0;
+    text-transform: none;
+    letter-spacing: normal;
+
     line-height: 1.4;
     white-space: nowrap;
+
     overflow: visible;
+
+    cursor: pointer;
 }
 
 .hidden {
@@ -67,6 +84,7 @@ button {
     display: flex;
     align-items: center;
     justify-content: center;
+
     min-height: 100vh;
     padding: 20px;
 }
@@ -74,37 +92,54 @@ button {
 .login-box {
     width: 100%;
     max-width: 430px;
+
     background: #fff;
+
     padding: 35px 30px;
+
     border-radius: 14px;
-    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.08);
+
+    box-shadow:
+        0 5px 25px
+        rgba(0, 0, 0, 0.08);
 }
 
 .login-box h1 {
     margin: 0 0 10px;
+
     text-align: center;
+
     font-size: 26px;
 }
 
 .login-description {
     margin: 0 0 30px;
+
     text-align: center;
+
     color: #777;
 }
 
 .login-box label {
     display: block;
+
     margin: 15px 0 7px;
+
     font-weight: bold;
     font-size: 14px;
 }
 
 .login-box input {
     width: 100%;
+
     padding: 13px 14px;
+
     border: 1px solid #ccc;
+
     border-radius: 8px;
+
     font-size: 16px;
+
     outline: none;
 }
 
@@ -118,39 +153,68 @@ button {
 
 .admin-header {
     display: flex;
+
     justify-content: space-between;
     align-items: center;
+
     gap: 20px;
+
     padding: 18px 30px;
+
     background: #1976d2;
+
     color: #fff;
 }
 
 .admin-header h1 {
     margin: 0;
+
     font-size: 24px;
 }
 
 .admin-header p {
     margin: 2px 0 0;
+
     opacity: 0.9;
+
     font-size: 14px;
 }
 
+/* ==================================================
+   ログアウト
+================================================== */
+
 .logout-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border: none;
-    background: rgba(255, 255, 255, 0.15);
-    color: #fff;
-    padding: 10px 18px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: bold;
-    line-height: 1.4;
+    display: inline-flex !important;
+
+    align-items: center !important;
+    justify-content: center !important;
+
+    width: auto;
+
     min-height: 42px;
+
+    border: none;
+
+    background: rgba(255, 255, 255, 0.15);
+
+    color: #fff !important;
+
+    padding: 10px 18px;
+
+    border-radius: 8px;
+
+    cursor: pointer;
+
+    font-size: 14px !important;
+    font-weight: bold;
+
+    line-height: 1.4 !important;
+
+    text-indent: 0 !important;
+
+    visibility: visible !important;
+    opacity: 1 !important;
 }
 
 .logout-button:hover {
@@ -164,7 +228,9 @@ button {
 .admin-container {
     width: 100%;
     max-width: 1200px;
+
     margin: 0 auto;
+
     padding: 25px 20px 50px;
 }
 
@@ -175,6 +241,7 @@ button {
 .admin-section h2 {
     margin-top: 0;
     margin-bottom: 8px;
+
     font-size: 23px;
 }
 
@@ -184,15 +251,20 @@ button {
 
 .dashboard-title {
     display: flex;
+
     justify-content: space-between;
     align-items: center;
+
     gap: 15px;
+
     margin-bottom: 20px;
 }
 
 .dashboard-title p {
     margin: 0;
+
     color: #777;
+
     font-size: 14px;
 }
 
@@ -202,33 +274,48 @@ button {
 
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+
+    grid-template-columns:
+        repeat(4, 1fr);
+
     gap: 16px;
+
     margin-bottom: 16px;
 }
 
 .stat-card {
     background: #fff;
+
     border-radius: 12px;
+
     padding: 20px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+
+    box-shadow:
+        0 2px 10px
+        rgba(0, 0, 0, 0.05);
 }
 
 .stat-label {
     display: block;
+
     margin-bottom: 8px;
+
     color: #777;
+
     font-size: 13px;
 }
 
 .stat-card strong {
     font-size: 31px;
+
     font-weight: 700;
 }
 
 .stat-card > div {
     display: flex;
+
     align-items: baseline;
+
     gap: 5px;
 }
 
@@ -242,9 +329,13 @@ button {
 
 .popular-training-name {
     display: block;
+
     max-width: 100%;
+
     overflow: hidden;
+
     text-overflow: ellipsis;
+
     white-space: nowrap;
 }
 
@@ -254,32 +345,45 @@ button {
 
 .dashboard-card {
     background: #fff;
+
     border-radius: 12px;
+
     padding: 22px;
+
     margin-bottom: 18px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+
+    box-shadow:
+        0 2px 10px
+        rgba(0, 0, 0, 0.05);
 }
 
 .dashboard-card h3 {
     margin: 0 0 5px;
+
     font-size: 18px;
 }
 
 .card-description {
     margin: 0 0 15px;
+
     color: #777;
+
     font-size: 13px;
 }
 
 .card-title-row {
     display: flex;
+
     justify-content: space-between;
+
     margin-bottom: 15px;
 }
 
 .card-title-row p {
     margin: 0;
+
     color: #777;
+
     font-size: 13px;
 }
 
@@ -289,7 +393,9 @@ button {
 
 .chart-container {
     position: relative;
+
     width: 100%;
+
     height: 330px;
 }
 
@@ -304,7 +410,10 @@ button {
 
 .dashboard-two-column {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+
+    grid-template-columns:
+        repeat(2, 1fr);
+
     gap: 18px;
 }
 
@@ -318,36 +427,53 @@ button {
 
 .ranking-item {
     display: flex;
+
     align-items: center;
+
     gap: 12px;
+
     padding: 12px 0;
+
     border-bottom: none;
 }
 
 .ranking-number {
     width: 30px;
     height: 30px;
+
     display: flex;
+
     align-items: center;
     justify-content: center;
+
     flex-shrink: 0;
+
     background: #f0f3f6;
+
     border-radius: 50%;
+
     font-weight: bold;
+
     font-size: 13px;
 }
 
 .ranking-name {
     flex: 1;
+
     min-width: 0;
+
     overflow: hidden;
+
     text-overflow: ellipsis;
+
     white-space: nowrap;
+
     font-weight: bold;
 }
 
 .ranking-value {
     font-weight: bold;
+
     white-space: nowrap;
 }
 
@@ -357,13 +483,17 @@ button {
 
 .recent-item {
     padding: 11px 0;
+
     border-bottom: none;
+
     font-size: 14px;
 }
 
 .empty-message {
     padding: 25px;
+
     text-align: center;
+
     color: #777;
 }
 
@@ -373,40 +503,77 @@ button {
 
 .admin-nav {
     display: flex;
+
     gap: 8px;
+
     margin-bottom: 25px;
+
     background: #fff;
+
     padding: 8px;
+
     border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+
+    box-shadow:
+        0 2px 8px
+        rgba(0, 0, 0, 0.04);
 }
+
+/*
+   重要：
+   管理画面の切り替えボタン
+*/
 
 .nav-button {
     flex: 1;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 44px;
-    border: none;
-    background: #f0f3f6;
-    padding: 13px 15px;
-    border-radius: 7px;
+
+    display: flex !important;
+
+    align-items: center !important;
+    justify-content: center !important;
+
+    min-height: 46px;
+
+    border: none !important;
+
+    background: #f0f3f6 !important;
+
+    color: #555 !important;
+
+    padding: 13px 15px !important;
+
+    border-radius: 7px !important;
+
     cursor: pointer;
-    font-size: 15px;
+
+    font-size: 15px !important;
+
     font-weight: 500;
-    color: #555;
-    line-height: 1.4;
-    text-align: center;
-    white-space: nowrap;
+
+    line-height: 1.4 !important;
+
+    text-align: center !important;
+
+    text-indent: 0 !important;
+
+    white-space: nowrap !important;
+
+    visibility: visible !important;
+
+    opacity: 1 !important;
 }
 
 .nav-button:hover {
-    background: #e3e8ed;
+    background: #e3e8ed !important;
+
+    color: #333 !important;
 }
 
 .nav-button.active {
-    background: #1976d2;
-    color: #fff;
+    background: #1976d2 !important;
+
+    color: #fff !important;
+
     font-weight: bold;
 }
 
@@ -416,134 +583,262 @@ button {
 
 .section-header {
     display: flex;
+
     justify-content: space-between;
     align-items: center;
+
     gap: 15px;
+
     margin-bottom: 18px;
 }
 
 .section-header p {
     margin: 0;
+
     color: #777;
+
     font-size: 14px;
 }
 
 /* ==================================================
-   ボタン
+   共通ボタン
 ================================================== */
 
 .primary-button,
 .secondary-button,
 .action-button,
-.view-button,
 .edit-button,
-.delete-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    visibility: visible;
-    opacity: 1;
-    text-indent: 0;
-    line-height: 1.4;
-    text-align: center;
-    white-space: nowrap;
-    cursor: pointer;
-    font-family: inherit;
+.delete-button,
+.view-button,
+.back-button {
+    display: inline-flex !important;
+
+    align-items: center !important;
+    justify-content: center !important;
+
+    box-sizing: border-box;
+
+    visibility: visible !important;
+
+    opacity: 1 !important;
+
+    text-indent: 0 !important;
+
+    text-transform: none !important;
+
+    letter-spacing: normal !important;
+
+    white-space: nowrap !important;
+
+    overflow: visible !important;
+
+    line-height: 1.4 !important;
 }
 
-/* メインボタン */
+/* ==================================================
+   メインボタン
+================================================== */
 
 .primary-button {
-    border: none;
-    background: #1976d2;
-    color: #fff;
-    padding: 11px 20px;
+    border: none !important;
+
+    background: #1976d2 !important;
+
+    color: #fff !important;
+
+    padding: 11px 20px !important;
+
     border-radius: 8px;
-    font-size: 14px;
+
+    cursor: pointer;
+
+    font-size: 14px !important;
+
     font-weight: bold;
+
     min-height: 42px;
 }
 
 .primary-button:hover {
-    background: #1565c0;
+    background: #1565c0 !important;
+
+    color: #fff !important;
 }
 
-/* サブボタン */
+/* ==================================================
+   サブボタン
+================================================== */
 
 .secondary-button {
-    border: none;
-    background: #e9edf1;
-    color: #444;
-    padding: 10px 17px;
+    border: none !important;
+
+    background: #e9edf1 !important;
+
+    color: #444 !important;
+
+    padding: 10px 17px !important;
+
     border-radius: 8px;
-    font-size: 14px;
+
+    cursor: pointer;
+
+    font-size: 14px !important;
+
     font-weight: 500;
+
     min-height: 42px;
 }
 
 .secondary-button:hover {
-    background: #dce2e7;
+    background: #dce2e7 !important;
+
+    color: #333 !important;
 }
 
-/* 操作ボタン */
+/* ==================================================
+   操作ボタン
+================================================== */
 
 .action-button {
-    border: none;
-    padding: 7px 12px;
+    border: none !important;
+
+    padding: 7px 12px !important;
+
     border-radius: 6px;
-    font-size: 13px;
+
+    cursor: pointer;
+
+    font-size: 13px !important;
+
     font-weight: 500;
+
     margin: 2px;
-    min-height: 34px;
+
+    min-height: 36px;
 }
 
-/* 編集 */
+/* ==================================================
+   編集
+================================================== */
 
 .edit-button {
-    background: #e3f2fd;
-    color: #1565c0;
+    background: #e3f2fd !important;
+
+    color: #1565c0 !important;
 }
 
 .edit-button:hover {
-    background: #d1e9fb;
+    background: #d1e9fb !important;
+
+    color: #1565c0 !important;
 }
 
-/* 削除 */
+/* ==================================================
+   削除
+================================================== */
 
 .delete-button {
-    background: #ffebee;
-    color: #c62828;
+    background: #ffebee !important;
+
+    color: #c62828 !important;
 }
 
 .delete-button:hover {
-    background: #ffcdd2;
+    background: #ffcdd2 !important;
+
+    color: #c62828 !important;
 }
 
-/* 表示 */
+/* ==================================================
+   表示・参加者を見る
+================================================== */
 
 .view-button {
-    background: #e8f5e9;
-    color: #2e7d32;
+    background: #e8f5e9 !important;
+
+    color: #2e7d32 !important;
 }
 
 .view-button:hover {
-    background: #d7ecd9;
+    background: #d7ecd9 !important;
+
+    color: #2e7d32 !important;
 }
 
-/* ボタン内の要素 */
+/* ==================================================
+   戻るボタン
+================================================== */
+
+.back-button {
+    border: none !important;
+
+    background: #e9edf1 !important;
+
+    color: #444 !important;
+
+    padding: 10px 17px !important;
+
+    min-height: 42px;
+
+    border-radius: 8px;
+
+    cursor: pointer;
+
+    font-size: 14px !important;
+
+    font-weight: 500;
+}
+
+.back-button:hover {
+    background: #dce2e7 !important;
+
+    color: #333 !important;
+}
+
+/* ==================================================
+   ボタン内部の文字
+================================================== */
+
+/*
+   JavaScriptで生成されるボタンにも対応
+*/
 
 button span,
 button strong,
-button small {
-    color: inherit;
-    font-size: inherit;
-    line-height: inherit;
+button small,
+button div {
+    color: inherit !important;
+
+    font-family: inherit !important;
+
+    font-size: inherit !important;
+
+    line-height: inherit !important;
+
+    text-indent: 0 !important;
+
+    visibility: visible !important;
+
+    opacity: 1 !important;
 }
 
-/* 無効ボタン */
+/*
+   ボタンのテキストノードそのものは
+   CSSで消さない
+*/
+
+button::before,
+button::after {
+    visibility: visible;
+}
+
+/* ==================================================
+   無効ボタン
+================================================== */
 
 button:disabled {
-    opacity: 0.55;
+    opacity: 0.55 !important;
+
     cursor: not-allowed;
 }
 
@@ -553,15 +848,23 @@ button:disabled {
 
 .table-wrapper {
     width: 100%;
+
     overflow-x: auto;
+
     background: #fff;
+
     border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+
+    box-shadow:
+        0 2px 10px
+        rgba(0, 0, 0, 0.05);
 }
 
 table {
     width: 100%;
+
     border-collapse: collapse;
+
     min-width: 650px;
 }
 
@@ -572,13 +875,17 @@ thead {
 th,
 td {
     padding: 13px 14px;
+
     border-bottom: 1px solid #eee;
+
     text-align: left;
+
     vertical-align: middle;
 }
 
 th {
     font-size: 13px;
+
     color: #666;
 }
 
@@ -592,13 +899,21 @@ tbody tr {
 
 .participant-count {
     display: inline-block;
+
     min-width: 55px;
+
     padding: 4px 9px;
+
     background: #e3f2fd;
+
     color: #1565c0;
+
     border-radius: 20px;
+
     text-align: center;
+
     font-weight: bold;
+
     font-size: 13px;
 }
 
@@ -608,25 +923,39 @@ tbody tr {
 
 .modal {
     position: fixed;
+
     z-index: 1000;
+
     top: 0;
     left: 0;
+
     width: 100%;
     height: 100%;
+
     display: flex;
+
     align-items: center;
     justify-content: center;
+
     padding: 20px;
-    background: rgba(0, 0, 0, 0.45);
+
+    background:
+        rgba(0, 0, 0, 0.45);
 }
 
 .modal-content {
     width: 100%;
+
     max-width: 500px;
+
     max-height: 90vh;
+
     overflow-y: auto;
+
     background: #fff;
+
     padding: 28px;
+
     border-radius: 14px;
 }
 
@@ -640,23 +969,33 @@ tbody tr {
 
 .modal-content label {
     display: block;
+
     margin: 14px 0 6px;
+
     font-size: 14px;
+
     font-weight: bold;
 }
 
 .modal-content input {
     width: 100%;
+
     padding: 12px;
+
     border: 1px solid #ccc;
+
     border-radius: 7px;
+
     font-size: 15px;
 }
 
 .modal-buttons {
     display: flex;
+
     justify-content: flex-end;
+
     gap: 10px;
+
     margin-top: 25px;
 }
 
@@ -666,24 +1005,34 @@ tbody tr {
 
 .history-summary {
     margin-bottom: 15px;
+
     padding: 13px 15px;
+
     background: #f5f7f9;
+
     border-radius: 8px;
+
     font-weight: bold;
 }
 
 .history-list {
     border: 1px solid #eee;
+
     border-radius: 8px;
+
     overflow: hidden;
 }
 
 .history-item {
     display: flex;
+
     justify-content: space-between;
     align-items: center;
+
     gap: 15px;
+
     padding: 13px 15px;
+
     border-bottom: none;
 }
 
@@ -697,6 +1046,7 @@ tbody tr {
 
 .history-date {
     color: #777;
+
     font-size: 13px;
 }
 
@@ -707,13 +1057,14 @@ tbody tr {
 @media (max-width: 800px) {
 
     .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns:
+            repeat(2, 1fr);
     }
 
     .dashboard-two-column {
-        grid-template-columns: 1fr;
+        grid-template-columns:
+            1fr;
     }
-
 }
 
 /* ==================================================
@@ -731,11 +1082,15 @@ tbody tr {
     }
 
     .admin-container {
-        padding: 18px 12px 40px;
+        padding:
+            18px
+            12px
+            40px;
     }
 
     .dashboard-title {
         align-items: stretch;
+
         flex-direction: column;
     }
 
@@ -744,7 +1099,8 @@ tbody tr {
     }
 
     .stats-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns:
+            1fr;
     }
 
     .chart-container {
@@ -757,11 +1113,13 @@ tbody tr {
 
     .nav-button {
         width: 100%;
-        min-height: 44px;
+
+        min-height: 46px;
     }
 
     .section-header {
         align-items: stretch;
+
         flex-direction: column;
     }
 
@@ -771,7 +1129,9 @@ tbody tr {
 
     .modal {
         padding: 10px;
+
         align-items: flex-start;
+
         padding-top: 30px;
     }
 
@@ -785,21 +1145,25 @@ tbody tr {
 
     .modal-buttons button {
         width: 100%;
+
         min-height: 44px;
     }
 
     .history-item {
         align-items: flex-start;
+
         flex-direction: column;
+
         gap: 5px;
     }
 
-    /* スマホでも操作ボタンの文字を確実に表示 */
     .action-button {
         min-height: 38px;
-        padding: 8px 12px;
-    }
 
+        padding:
+            8px
+            12px !important;
+    }
 }
 
 /* ==================================================
@@ -810,6 +1174,7 @@ tbody tr {
 
     .admin-header {
         flex-direction: column;
+
         align-items: stretch;
     }
 
@@ -818,12 +1183,99 @@ tbody tr {
     }
 
     .login-box {
-        padding: 25px 20px;
+        padding:
+            25px
+            20px;
     }
 
     .action-button {
-        font-size: 12px;
-        padding: 7px 9px;
-    }
+        font-size: 12px !important;
 
+        padding:
+            7px
+            9px !important;
+    }
+}
+
+/* ==================================================
+   最終ボタン文字表示保証
+================================================== */
+
+/*
+   他のCSSやブラウザ標準スタイルによって
+   ボタン文字が消えることを防止
+*/
+
+button,
+button:hover,
+button:focus,
+button:active {
+    text-indent: 0 !important;
+
+    visibility: visible !important;
+
+    opacity: 1 !important;
+}
+
+.nav-button,
+.nav-button:hover,
+.nav-button:focus,
+.nav-button:active {
+    color: #555 !important;
+}
+
+.nav-button.active,
+.nav-button.active:hover,
+.nav-button.active:focus,
+.nav-button.active:active {
+    color: #fff !important;
+}
+
+.primary-button,
+.primary-button:hover,
+.primary-button:focus,
+.primary-button:active {
+    color: #fff !important;
+}
+
+.secondary-button,
+.secondary-button:hover,
+.secondary-button:focus,
+.secondary-button:active {
+    color: #444 !important;
+}
+
+.edit-button,
+.edit-button:hover,
+.edit-button:focus,
+.edit-button:active {
+    color: #1565c0 !important;
+}
+
+.delete-button,
+.delete-button:hover,
+.delete-button:focus,
+.delete-button:active {
+    color: #c62828 !important;
+}
+
+.view-button,
+.view-button:hover,
+.view-button:focus,
+.view-button:active {
+    color: #2e7d32 !important;
+}
+
+.back-button,
+.back-button:hover,
+.back-button:focus,
+.back-button:active {
+    color: #444 !important;
+}
+
+.logout-button,
+.logout-button:hover,
+.logout-button:focus,
+.logout-button:active {
+    color: #fff !important;
 }
