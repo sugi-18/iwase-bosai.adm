@@ -5080,7 +5080,7 @@ function escapeHtml(
 
             const url =
                 new URL(
-                    "../training/training.html",
+                    "../stamp/training.html",
                     window.location.href
                 );
 
