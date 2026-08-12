@@ -2870,3 +2870,112 @@ opacity: 1 !important;
     }
 
 }
+
+/* ==================================================
+   訓練参加者管理
+================================================== */
+
+.training-participant-add,
+.training-participant-current {
+    margin-top: 20px;
+}
+
+.training-participant-add h3,
+.training-participant-current h3 {
+    margin-bottom: 12px;
+}
+
+
+.participant-select-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    max-height: 300px;
+    overflow-y: auto;
+
+    padding: 12px;
+
+    border: 1px solid #ddd;
+    border-radius: 10px;
+
+    background: #fafafa;
+
+    margin-bottom: 12px;
+}
+
+
+.participant-select-item {
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+
+    padding: 10px;
+
+    background: #fff;
+
+    border-radius: 8px;
+
+    border: 1px solid #eee;
+}
+
+
+.participant-select-item input {
+    width: 20px;
+    height: 20px;
+}
+
+
+.participant-select-name {
+    font-weight: 600;
+}
+
+
+.participant-select-id {
+    font-size: 12px;
+    color: #777;
+}
+
+
+.training-participant-current {
+    border-top: 1px solid #ddd;
+
+    padding-top: 20px;
+}
+
+
+.training-participant-current .history-list {
+    display: flex;
+    flex-direction: column;
+
+    gap: 8px;
+}
+
+
+.training-participant-current .history-item {
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 12px;
+
+    padding: 12px;
+
+    border: 1px solid #ddd;
+    border-radius: 8px;
+
+    background: #fff;
+}
+
+
+@media (max-width: 600px) {
+
+    .training-participant-current .history-item {
+        flex-direction: column;
+
+        align-items: stretch;
+    }
+
+}
