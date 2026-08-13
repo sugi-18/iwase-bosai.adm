@@ -2580,7 +2580,24 @@ async function saveTraining() {
 
     }
 
+const {
+    data: sessionData,
+    error: sessionError
+} =
+    await adminSupabaseClient.auth.getSession();
 
+if (
+    sessionError ||
+    !sessionData?.session
+) {
+    alert(
+        "管理者ログインのセッションを確認できませんでした。\n\n" +
+        "一度ログアウトして、もう一度ログインしてください。"
+    );
+
+    return;
+}
+   
     try {
 
         let result;
