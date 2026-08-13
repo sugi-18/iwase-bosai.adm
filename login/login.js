@@ -9,8 +9,10 @@
 // =====================================
 // ログイン有効時間
 //
-// UI上のログイン状態を24時間保持
-// Supabase Authのセッション自体は保持する
+// アプリ上のログイン状態を24時間保持
+//
+// ※Supabase Authのセッションは
+//   24時間で削除しません。
 // =====================================
 
 const LOGIN_LIMIT =
@@ -28,39 +30,6 @@ window.addEventListener(
 
 
 // =====================================
-// Supabaseクライアント確認
-// =====================================
-
-function getSupabaseClient() {
-
-    if (
-        typeof supabase === "undefined"
-    ) {
-
-        throw new Error(
-            "Supabaseライブラリが読み込まれていません。"
-        );
-
-    }
-
-
-    if (
-        typeof window.supabaseClient === "undefined"
-    ) {
-
-        throw new Error(
-            "Supabaseクライアントが初期化されていません。"
-        );
-
-    }
-
-
-    return window.supabaseClient;
-
-}
-
-
-// =====================================
 // 既にログイン済みか確認
 // =====================================
 
@@ -75,7 +44,7 @@ async function checkLogin() {
 
 
         // ---------------------------------
-        // localStorageにログイン情報がない
+        // ログイン情報なし
         // ---------------------------------
 
         if (!loginData) {
@@ -102,17 +71,14 @@ async function checkLogin() {
             now - data.time < LOGIN_LIMIT
         ) {
 
+
             // Supabaseセッション確認
-
-            const client =
-                getSupabaseClient();
-
 
             const {
                 data: sessionData,
                 error
             } =
-                await client.auth.getSession();
+                await supabaseClient.auth.getSession();
 
 
             if (
@@ -130,8 +96,7 @@ async function checkLogin() {
 
 
             // ---------------------------------
-            // セッションがなければ
-            // localStorageを削除
+            // セッションが存在しない
             // ---------------------------------
 
             localStorage.removeItem(
@@ -162,6 +127,7 @@ async function checkLogin() {
             error
         );
 
+
         localStorage.removeItem(
             "iwaseLogin"
         );
@@ -183,7 +149,7 @@ async function login() {
         );
 
 
-    const error =
+    const errorElement =
         document.getElementById(
             "error-message"
         );
@@ -192,7 +158,7 @@ async function login() {
     try {
 
         // ---------------------------------
-        // ボタンを無効化
+        // ボタン無効化
         // ---------------------------------
 
         button.disabled = true;
@@ -200,27 +166,18 @@ async function login() {
         button.textContent =
             "認証中...";
 
-
-        error.textContent = "";
-
-
-        // ---------------------------------
-        // Supabaseクライアント
-        // ---------------------------------
-
-        const client =
-            getSupabaseClient();
+        errorElement.textContent = "";
 
 
         // ---------------------------------
-        // すでにセッションがあるか確認
+        // 既存セッション確認
         // ---------------------------------
 
         const {
             data: currentSession,
             error: sessionError
         } =
-            await client.auth.getSession();
+            await supabaseClient.auth.getSession();
 
 
         if (sessionError) {
@@ -231,7 +188,7 @@ async function login() {
 
 
         // ---------------------------------
-        // 既存セッションがある場合
+        // すでにログイン済み
         // ---------------------------------
 
         if (
@@ -239,10 +196,23 @@ async function login() {
             currentSession.session
         ) {
 
+            console.log(
+                "既存のSupabaseセッションを使用します。"
+            );
+
+
+            console.log(
+                "UID:",
+                currentSession.session.user.id
+            );
+
+
             saveLoginState();
+
 
             location.href =
                 "../index.html";
+
 
             return;
 
@@ -257,7 +227,7 @@ async function login() {
             data,
             error: authError
         } =
-            await client.auth.signInAnonymously();
+            await supabaseClient.auth.signInAnonymously();
 
 
         if (authError) {
@@ -280,7 +250,7 @@ async function login() {
 
 
         // ---------------------------------
-        // UID確認
+        // Anonymous Auth UID
         // ---------------------------------
 
         console.log(
@@ -289,8 +259,14 @@ async function login() {
         );
 
 
+        console.log(
+            "Anonymous Auth:",
+            data.user.is_anonymous
+        );
+
+
         // ---------------------------------
-        // ログイン状態保存
+        // ローカルログイン状態保存
         // ---------------------------------
 
         saveLoginState();
@@ -303,8 +279,8 @@ async function login() {
         location.href =
             "../index.html";
 
-
     }
+
 
     catch (error) {
 
@@ -314,7 +290,7 @@ async function login() {
         );
 
 
-        error.textContent =
+        errorElement.textContent =
             "利用開始に失敗しました。しばらくしてからもう一度お試しください。";
 
 
