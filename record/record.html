@@ -24,16 +24,35 @@
 <style>
 
 /* ==================================================
-   活動実績
+   活動実績ページ
+================================================== */
+
+.activity-page {
+
+    width: 100%;
+
+    margin: 0;
+
+    padding: 0;
+
+    box-sizing: border-box;
+
+}
+
+
+/* ==================================================
+   活動実績メイン
 ================================================== */
 
 .activity {
 
+    display: block;
+
     width: 100%;
+
     max-width: 900px;
 
-    margin-left: auto;
-    margin-right: auto;
+    margin: 0 auto;
 
     padding: 30px 20px 50px;
 
@@ -50,9 +69,19 @@
 
 .activity h1 {
 
+    width: 100%;
+
     margin: 0 0 35px;
 
+    padding: 0;
+
     font-size: 32px;
+
+    line-height: 1.4;
+
+    text-align: center;
+
+    box-sizing: border-box;
 
 }
 
@@ -67,7 +96,17 @@
 
     flex-direction: column;
 
+    width: 100%;
+
+    max-width: 100%;
+
+    margin: 0;
+
+    padding: 0;
+
     gap: 35px;
+
+    box-sizing: border-box;
 
 }
 
@@ -78,11 +117,17 @@
 
 .activity-card {
 
+    display: block;
+
     width: 100%;
 
-    background: #ffffff;
+    max-width: 100%;
+
+    margin: 0;
 
     padding: 25px;
+
+    background: #ffffff;
 
     border-radius: 15px;
 
@@ -94,9 +139,8 @@
 
     box-sizing: border-box;
 
-    max-width: 100%;
-
 }
+
 
 /* ==================================================
    活動タイトル
@@ -104,13 +148,19 @@
 
 .activity-title {
 
+    width: 100%;
+
     margin: 0 0 8px;
+
+    padding: 0;
 
     font-size: 24px;
 
     line-height: 1.5;
 
-    color: #333;
+    color: #333333;
+
+    box-sizing: border-box;
 
 }
 
@@ -121,11 +171,17 @@
 
 .activity-date {
 
+    width: 100%;
+
     margin: 0 0 18px;
 
-    color: #777;
+    padding: 0;
+
+    color: #777777;
 
     font-size: 14px;
+
+    box-sizing: border-box;
 
 }
 
@@ -136,17 +192,27 @@
 
 .activity-description {
 
+    width: 100%;
+
     margin: 0 0 22px;
+
+    padding: 0;
 
     line-height: 1.8;
 
     white-space: pre-wrap;
 
+    overflow-wrap: break-word;
+
+    word-break: break-word;
+
+    box-sizing: border-box;
+
 }
 
 
 /* ==================================================
-   写真
+   写真ギャラリー
 ================================================== */
 
 .activity-gallery {
@@ -155,10 +221,24 @@
 
     flex-direction: column;
 
+    width: 100%;
+
+    max-width: 100%;
+
+    margin: 0;
+
+    padding: 0;
+
     gap: 20px;
+
+    box-sizing: border-box;
 
 }
 
+
+/* ==================================================
+   活動写真
+================================================== */
 
 .activity-image {
 
@@ -172,11 +252,15 @@
 
     margin: 0 auto;
 
+    padding: 0;
+
     border-radius: 12px;
 
     box-shadow:
         0 3px 10px
         rgba(0, 0, 0, 0.15);
+
+    box-sizing: border-box;
 
 }
 
@@ -187,11 +271,17 @@
 
 .loading {
 
+    width: 100%;
+
+    margin: 0;
+
     padding: 35px 20px;
 
     text-align: center;
 
-    color: #777;
+    color: #777777;
+
+    box-sizing: border-box;
 
 }
 
@@ -202,15 +292,21 @@
 
 .empty {
 
+    width: 100%;
+
+    margin: 0;
+
     padding: 35px 20px;
 
     text-align: center;
 
-    color: #777;
+    color: #777777;
 
     background: #eeeeee;
 
     border-radius: 10px;
+
+    box-sizing: border-box;
 
 }
 
@@ -220,6 +316,10 @@
 ================================================== */
 
 .error {
+
+    width: 100%;
+
+    margin: 0;
 
     padding: 25px 20px;
 
@@ -233,7 +333,11 @@
 
     line-height: 1.7;
 
+    overflow-wrap: break-word;
+
     word-break: break-word;
+
+    box-sizing: border-box;
 
 }
 
@@ -270,6 +374,8 @@
         background-color 0.2s ease,
         transform 0.15s ease;
 
+    box-sizing: border-box;
+
 }
 
 
@@ -291,12 +397,27 @@
     .activity {
 
         width: 100%;
-        max-width: 900px;
 
-        margin-left: auto;
-        margin-right: auto;
+        max-width: 100%;
+
+        margin: 0 auto;
 
         padding: 25px 15px 40px;
+
+        box-sizing: border-box;
+
+    }
+
+
+    .activity h1 {
+
+        width: 100%;
+
+        margin: 0 0 25px;
+
+        font-size: 25px;
+
+        text-align: center;
 
         box-sizing: border-box;
 
@@ -306,18 +427,16 @@
     .activity-list {
 
         width: 100%;
+
         max-width: 100%;
 
+        margin: 0;
+
+        padding: 0;
+
+        gap: 25px;
+
         box-sizing: border-box;
-
-    }
-
-
-    .activity h1 {
-
-        font-size: 25px;
-
-        margin-bottom: 25px;
 
     }
 
@@ -325,7 +444,10 @@
     .activity-card {
 
         width: 100%;
+
         max-width: 100%;
+
+        margin: 0;
 
         padding: 18px;
 
@@ -338,18 +460,25 @@
 
     .activity-title {
 
+        width: 100%;
+
         font-size: 21px;
+
+        line-height: 1.5;
 
     }
 
 
     .activity-description {
 
+        width: 100%;
+
         font-size: 15px;
 
         line-height: 1.8;
 
         overflow-wrap: break-word;
+
         word-break: break-word;
 
     }
@@ -358,7 +487,12 @@
     .activity-gallery {
 
         width: 100%;
+
         max-width: 100%;
+
+        margin: 0;
+
+        padding: 0;
 
         gap: 15px;
 
@@ -377,6 +511,8 @@
 
         height: auto;
 
+        margin: 0;
+
         box-sizing: border-box;
 
         border-radius: 9px;
@@ -390,6 +526,8 @@
 
         max-width: 300px;
 
+        margin: 30px auto 0;
+
         padding: 14px 20px;
 
         font-size: 16px;
@@ -400,44 +538,66 @@
 
 }
 
-    <!-- ==================================================
-         タイトル
-    ================================================== -->
-
-    <h1>
-        📷 活動実績
-    </h1>
+</style>
 
 
-    <!-- ==================================================
-         活動一覧
-    ================================================== -->
+</head>
 
-    <div
-        id="activityList"
-        class="activity-list"
-    >
 
-        <div class="loading">
-            読み込み中...
-        </div>
+<body>
 
+
+<!-- ==================================================
+     活動実績ページ
+================================================== -->
+
+<main class="activity-page">
+
+
+<section class="activity">
+
+
+<!-- ==================================================
+     タイトル
+================================================== -->
+
+<h1>
+    📷 活動実績
+</h1>
+
+
+<!-- ==================================================
+     活動一覧
+================================================== -->
+
+<div
+    id="activityList"
+    class="activity-list"
+>
+
+    <div class="loading">
+        読み込み中...
     </div>
 
+</div>
 
-    <!-- ==================================================
-         戻る
-    ================================================== -->
 
-    <a
-        href="../index.html"
-        class="back-button"
-    >
-        トップページへ戻る
-    </a>
+<!-- ==================================================
+     戻るボタン
+================================================== -->
+
+<a
+    href="../index.html"
+    class="back-button"
+>
+    トップページへ戻る
+</a>
 
 
 </section>
+
+
+</main>
 
 
 <!-- ==================================================
@@ -485,6 +645,10 @@ async function loadActivities() {
 
     if (!container) {
 
+        console.error(
+            "activityList が見つかりません。"
+        );
+
         return;
 
     }
@@ -499,10 +663,9 @@ async function loadActivities() {
 
     try {
 
-        /*
-           現在の管理者画面は
-           activitiesテーブルに保存する仕様
-        */
+        /* ------------------------------------------
+           activitiesテーブル取得
+        ------------------------------------------ */
 
         const {
             data,
@@ -526,18 +689,10 @@ async function loadActivities() {
                 `
             )
 
-            /*
-               公開中だけ表示
-            */
-
             .eq(
                 "is_published",
                 true
             )
-
-            /*
-               表示順
-            */
 
             .order(
                 "display_order",
@@ -546,11 +701,6 @@ async function loadActivities() {
                     nullsFirst: false
                 }
             )
-
-            /*
-               同じ表示順の場合は
-               新しい活動を上にする
-            */
 
             .order(
                 "activity_date",
@@ -577,8 +727,13 @@ async function loadActivities() {
         }
 
 
-        container.innerHTML =
-            "";
+        console.log(
+            "活動実績取得成功:",
+            data
+        );
+
+
+        container.innerHTML = "";
 
 
         /* ------------------------------------------
@@ -828,9 +983,9 @@ function createActivityCard(
     );
 
 
-    /*
+    /* ------------------------------------------
        写真がある場合だけ追加
-    */
+    ------------------------------------------ */
 
     if (
         imageUrls.length > 0
