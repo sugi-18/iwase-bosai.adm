@@ -511,7 +511,10 @@ async function syncWithSupabase() {
 
 
 // ==================================================
-// 管理者登録済み訓練一覧
+// 参加した訓練一覧
+//
+// 管理者が登録しただけの訓練は表示しない。
+// participations に存在する training_id のみ表示する。
 // ==================================================
 
 async function loadTrainingList() {
@@ -523,9 +526,7 @@ async function loadTrainingList() {
 
 
     if (!container) {
-
         return;
-
     }
 
 
@@ -540,55 +541,184 @@ async function loadTrainingList() {
 
 
     container.innerHTML =
-        "<p>訓練情報を読み込んでいます……</p>";
+        "<p>参加した訓練を読み込んでいます……</p>";
 
 
     try {
 
-        const {
-            data,
-            error
-        } =
-            await stampSupabaseClient
-                .from("trainings")
-                .select("*")
-                .order(
-                    "training_date",
-                    {
-                        ascending:
-                            false
-                    }
-                );
+        // ==================================================
+        // 現在の利用者
+        // ==================================================
+
+        const saved =
+            localStorage.getItem(
+                STORAGE_KEY
+            );
 
 
-        if (error) {
-
-            throw error;
-
-        }
-
-
-        const trainings =
-            data || [];
-
-
-        container.innerHTML =
-            "";
-
-
-        if (
-            trainings.length === 0
-        ) {
+        if (!saved) {
 
             container.innerHTML =
-                "<p>現在登録されている訓練・講座はありません。</p>";
+                "<p>参加した訓練はありません。</p>";
 
             return;
 
         }
 
 
-        trainings.forEach(
+        const userData =
+            JSON.parse(saved);
+
+
+        if (
+            !userData ||
+            !userData.id
+        ) {
+
+            container.innerHTML =
+                "<p>参加した訓練はありません。</p>";
+
+            return;
+
+        }
+
+
+        const participantId =
+            String(
+                userData.id
+            ).trim();
+
+
+        // ==================================================
+        // 参加記録を取得
+        // ==================================================
+
+        const {
+            data:
+                participationRows,
+            error:
+                participationError
+        } =
+            await stampSupabaseClient
+                .from(
+                    "participations"
+                )
+                .select(
+                    "training_id"
+                )
+                .eq(
+                    "participant_id",
+                    participantId
+                );
+
+
+        if (
+            participationError
+        ) {
+
+            throw participationError;
+
+        }
+
+
+        const participations =
+            participationRows || [];
+
+
+        // ==================================================
+        // 参加記録がない場合
+        // ==================================================
+
+        if (
+            participations.length === 0
+        ) {
+
+            container.innerHTML =
+                "<p>参加した訓練はありません。</p>";
+
+            return;
+
+        }
+
+
+        // ==================================================
+        // 訓練情報取得
+        // ==================================================
+
+        const {
+            data:
+                trainingRows,
+            error:
+                trainingError
+        } =
+            await stampSupabaseClient
+                .from(
+                    "trainings"
+                )
+                .select("*");
+
+
+        if (
+            trainingError
+        ) {
+
+            throw trainingError;
+
+        }
+
+
+        const trainings =
+            trainingRows || [];
+
+
+        // ==================================================
+        // 参加した訓練だけ抽出
+        // ==================================================
+
+        const participatedTrainings =
+            participations
+                .map(
+                    participation => {
+
+                        return trainings.find(
+                            training =>
+                                String(
+                                    training.training_id
+                                ) ===
+                                String(
+                                    participation.training_id
+                                )
+                        );
+
+                    }
+                )
+                .filter(
+                    training =>
+                        !!training
+                );
+
+
+        // ==================================================
+        // 表示
+        // ==================================================
+
+        container.innerHTML =
+            "";
+
+
+        if (
+            participatedTrainings.length === 0
+        ) {
+
+            container.innerHTML =
+                "<p>参加した訓練はありません。</p>";
+
+            return;
+
+        }
+
+
+        participatedTrainings.forEach(
             training => {
 
                 const item =
@@ -629,6 +759,7 @@ async function loadTrainingList() {
                     title
                 );
 
+
                 item.appendChild(
                     date
                 );
@@ -645,18 +776,17 @@ async function loadTrainingList() {
     } catch (error) {
 
         console.error(
-            "訓練一覧取得エラー:",
+            "参加訓練一覧取得エラー:",
             error
         );
 
 
         container.innerHTML =
-            "<p>訓練情報を取得できませんでした。</p>";
+            "<p>参加した訓練を取得できませんでした。</p>";
 
     }
 
 }
-
 
 // ==================================================
 // 日付表示
