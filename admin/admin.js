@@ -1344,20 +1344,19 @@ async function loadParticipants() {
         </tr>`;
 
 
-    const {
-        data,
-        error
-    } =
-        await adminSupabaseClient
-            .from("participants")
-            .select("*")
-   .select("*")
-.order(
-    "created_at",
-    {
-        ascending: false
-    }
-);
+   const {
+    data,
+    error
+} =
+    await adminSupabaseClient
+        .from("participants")
+        .select("*")
+        .order(
+            "created_at",
+            {
+                ascending: false
+            }
+        );
 
         console.log(
             "===== PARTICIPANTS RESULT ====="
