@@ -2,8 +2,19 @@
 // 岩瀬自治会 防災アプリ
 // 防災訓練 QR参加登録
 //
-// 安定版
-// PC・スマホ・iPad対応
+// training.js 完成版
+//
+// 対応
+// ・PC
+// ・スマートフォン
+// ・iPad
+// ・Supabase
+// ・training_id方式
+// ・旧event + date方式
+// ・participants保存
+// ・participations保存
+// ・二重参加登録防止
+// ・localStorageスタンプ更新
 // ==================================================
 
 "use strict";
@@ -21,6 +32,11 @@ const TRAINING_SUPABASE_PUBLISHABLE_KEY =
 
 let trainingSupabaseClient = null;
 
+
+// ==================================================
+// localStorage
+// ==================================================
+
 const STORAGE_KEY =
     "iwaseStamp";
 
@@ -33,7 +49,27 @@ window.addEventListener(
     "DOMContentLoaded",
     async function () {
 
-        initializeTrainingSupabase();
+        console.log(
+            "training.js 初期化開始"
+        );
+
+        const initialized =
+            initializeTrainingSupabase();
+
+        if (!initialized) {
+
+            showResult(
+                "サーバーに接続できません。\n\n" +
+                "通信状態を確認してください。"
+            );
+
+            disableRegisterButton(
+                "接続できません"
+            );
+
+            return;
+
+        }
 
         await initializeTrainingPage();
 
@@ -44,7 +80,8 @@ window.addEventListener(
 // ==================================================
 // Supabase初期化
 //
-// 共通クライアントが存在する場合は使用。
+// supabase.js に共通クライアントがある場合は
+// それを使用。
 // なければtraining.js内で生成。
 // ==================================================
 
@@ -52,9 +89,9 @@ function initializeTrainingSupabase() {
 
     try {
 
-        // --------------------------------------------------
-        // supabase.jsの共通クライアントを使用
-        // --------------------------------------------------
+        // ==================================================
+        // 共通Supabaseクライアント
+        // ==================================================
 
         if (
             typeof supabaseClient !==
@@ -74,9 +111,9 @@ function initializeTrainingSupabase() {
         }
 
 
-        // --------------------------------------------------
-        // 共通クライアントがない場合
-        // --------------------------------------------------
+        // ==================================================
+        // Supabaseライブラリ確認
+        // ==================================================
 
         if (
             typeof window.supabase ===
@@ -89,6 +126,10 @@ function initializeTrainingSupabase() {
 
         }
 
+
+        // ==================================================
+        // training.js専用クライアント
+        // ==================================================
 
         trainingSupabaseClient =
             window.supabase.createClient(
@@ -132,12 +173,12 @@ async function initializeTrainingPage() {
 
     const params =
         new URLSearchParams(
-            location.search
+            window.location.search
         );
 
 
     // ==================================================
-    // training_id
+    // 新方式
     // ==================================================
 
     const trainingId =
@@ -169,35 +210,13 @@ async function initializeTrainingPage() {
             event,
             date,
             url:
-                location.href
+                window.location.href
         }
     );
 
 
     // ==================================================
-    // Supabase確認
-    // ==================================================
-
-    if (!trainingSupabaseClient) {
-
-        showResult(
-            "サーバーに接続できません。\n\n" +
-            "通信状態を確認してください。"
-        );
-
-
-        disableRegisterButton(
-            "接続できません"
-        );
-
-
-        return;
-
-    }
-
-
-    // ==================================================
-    // 訓練取得
+    // 訓練情報取得
     // ==================================================
 
     let training = null;
@@ -221,11 +240,31 @@ async function initializeTrainingPage() {
                 date
             );
 
+    } else {
+
+        console.error(
+            "QRパラメータがありません。"
+        );
+
+
+        showResult(
+            "訓練情報を確認できませんでした。\n\n" +
+            "QRコードをもう一度読み込んでください。"
+        );
+
+
+        disableRegisterButton(
+            "参加登録できません"
+        );
+
+
+        return;
+
     }
 
 
     // ==================================================
-    // 訓練表示
+    // 訓練情報表示
     // ==================================================
 
     displayTraining(
@@ -247,10 +286,36 @@ async function initializeTrainingPage() {
 
     if (!addButton) {
 
+        console.error(
+            "#add-training が見つかりません。"
+        );
+
         return;
 
     }
 
+
+    // ==================================================
+    // 二重イベント登録防止
+    // ==================================================
+
+    if (
+        addButton.dataset.trainingListener ===
+        "true"
+    ) {
+
+        return;
+
+    }
+
+
+    addButton.dataset.trainingListener =
+        "true";
+
+
+    // ==================================================
+    // 参加登録
+    // ==================================================
 
     addButton.addEventListener(
         "click",
@@ -288,6 +353,19 @@ async function getTrainingById(
 
     try {
 
+        const normalizedTrainingId =
+            String(
+                trainingId
+            ).trim();
+
+
+        if (!normalizedTrainingId) {
+
+            return null;
+
+        }
+
+
         const {
             data,
             error
@@ -301,9 +379,7 @@ async function getTrainingById(
                 )
                 .eq(
                     "training_id",
-                    String(
-                        trainingId
-                    ).trim()
+                    normalizedTrainingId
                 )
                 .maybeSingle();
 
@@ -319,7 +395,7 @@ async function getTrainingById(
 
             console.error(
                 "指定された訓練が見つかりません:",
-                trainingId
+                normalizedTrainingId
             );
 
 
@@ -336,6 +412,12 @@ async function getTrainingById(
             return null;
 
         }
+
+
+        console.log(
+            "訓練取得成功:",
+            data
+        );
 
 
         return data;
@@ -421,7 +503,39 @@ async function getTrainingByEventAndDate(
         }
 
 
-        return data || null;
+        if (!data) {
+
+            console.error(
+                "旧方式の訓練が見つかりません:",
+                {
+                    event,
+                    date
+                }
+            );
+
+
+            showResult(
+                "この訓練は管理者画面に登録されていません。"
+            );
+
+
+            disableRegisterButton(
+                "参加登録できません"
+            );
+
+
+            return null;
+
+        }
+
+
+        console.log(
+            "旧方式訓練取得成功:",
+            data
+        );
+
+
+        return data;
 
 
     } catch (error) {
@@ -475,13 +589,29 @@ function displayTraining(
         );
 
 
+    // ==================================================
+    // 訓練あり
+    // ==================================================
+
     if (training) {
+
+        const title =
+            training.title ||
+            fallbackEvent ||
+            "防災訓練";
+
+
+        const trainingDate =
+            training.training_date ||
+            training.date ||
+            fallbackDate ||
+            "";
+
 
         if (eventName) {
 
             eventName.textContent =
-                training.title ||
-                "防災訓練";
+                title;
 
         }
 
@@ -490,17 +620,29 @@ function displayTraining(
 
             eventDate.textContent =
                 formatDate(
-                    training.training_date ||
-                    training.date
+                    trainingDate
                 );
 
         }
+
+
+        console.log(
+            "訓練表示:",
+            {
+                title,
+                trainingDate
+            }
+        );
 
 
         return;
 
     }
 
+
+    // ==================================================
+    // 訓練なし
+    // ==================================================
 
     if (eventName) {
 
@@ -639,11 +781,21 @@ async function registerParticipation(
     }
 
 
+    // ==================================================
+    // 利用者情報確認
+    // ==================================================
+
     if (
         !participant ||
         !participant.id ||
         !participant.name
     ) {
+
+        console.error(
+            "利用者情報不正:",
+            participant
+        );
+
 
         alert(
             "利用者情報を確認できませんでした。"
@@ -674,6 +826,10 @@ async function registerParticipation(
     }
 
 
+    // ==================================================
+    // ボタン無効化
+    // ==================================================
+
     if (addButton) {
 
         addButton.disabled =
@@ -690,9 +846,23 @@ async function registerParticipation(
         // ==================================================
         // ① participantsへ保存
         //
-        // selectを付けない。
-        // RLSによる戻り値取得問題を回避。
+        // select()を付けない。
+        //
+        // RLS環境でINSERT後のSELECTが失敗する
+        // 問題を避ける。
         // ==================================================
+
+        const participantId =
+            String(
+                participant.id
+            ).trim();
+
+
+        const participantName =
+            String(
+                participant.name
+            ).trim();
+
 
         const {
             error:
@@ -705,12 +875,10 @@ async function registerParticipation(
                 .upsert(
                     {
                         participant_id:
-                            String(
-                                participant.id
-                            ),
+                            participantId,
 
                         name:
-                            participant.name
+                            participantName
                     },
                     {
                         onConflict:
@@ -734,12 +902,16 @@ async function registerParticipation(
 
         console.log(
             "participants保存完了:",
-            participant.id
+            {
+                participantId,
+                name:
+                    participantName
+            }
         );
 
 
         // ==================================================
-        // ② 既存参加確認
+        // ② 参加済み確認
         // ==================================================
 
         const {
@@ -757,9 +929,7 @@ async function registerParticipation(
                 )
                 .eq(
                     "participant_id",
-                    String(
-                        participant.id
-                    )
+                    participantId
                 )
                 .eq(
                     "training_id",
@@ -789,9 +959,19 @@ async function registerParticipation(
             existingParticipation
         ) {
 
-            // ----------------------------------------------
-            // localStorageだけ最新化
-            // ----------------------------------------------
+            console.log(
+                "すでに参加登録済み:",
+                {
+                    participantId,
+                    trainingId:
+                        actualTrainingId
+                }
+            );
+
+
+            // ------------------------------------------------
+            // localStorageを最新化
+            // ------------------------------------------------
 
             updateLocalStamp(
                 participant,
@@ -823,7 +1003,7 @@ async function registerParticipation(
         // ==================================================
         // ③ participationsへ登録
         //
-        // selectを付けない。
+        // select()を付けない。
         // ==================================================
 
         const {
@@ -837,9 +1017,7 @@ async function registerParticipation(
                 .insert(
                     {
                         participant_id:
-                            String(
-                                participant.id
-                            ),
+                            participantId,
 
                         training_id:
                             actualTrainingId
@@ -863,9 +1041,7 @@ async function registerParticipation(
         console.log(
             "participations保存完了:",
             {
-                participantId:
-                    participant.id,
-
+                participantId,
                 trainingId:
                     actualTrainingId
             }
@@ -905,9 +1081,7 @@ async function registerParticipation(
         console.log(
             "参加登録完了:",
             {
-                participantId:
-                    participant.id,
-
+                participantId,
                 trainingId:
                     actualTrainingId
             }
@@ -975,6 +1149,10 @@ function updateLocalStamp(
     fallbackDate
 ) {
 
+    // ==================================================
+    // stamps配列確認
+    // ==================================================
+
     if (
         !Array.isArray(
             participant.stamps
@@ -986,6 +1164,10 @@ function updateLocalStamp(
 
     }
 
+
+    // ==================================================
+    // 訓練情報
+    // ==================================================
 
     const trainingDate =
         training.training_date ||
@@ -1000,17 +1182,30 @@ function updateLocalStamp(
         "防災訓練";
 
 
+    // ==================================================
+    // 既存スタンプ確認
+    // ==================================================
+
     const alreadyLocal =
         participant.stamps.some(
-            stamp =>
-                String(
-                    stamp.training_id
-                ) ===
-                String(
-                    trainingId
-                )
+            function (stamp) {
+
+                return (
+                    String(
+                        stamp.training_id
+                    ) ===
+                    String(
+                        trainingId
+                    )
+                );
+
+            }
         );
 
+
+    // ==================================================
+    // 新規スタンプ
+    // ==================================================
 
     if (!alreadyLocal) {
 
@@ -1041,11 +1236,28 @@ function updateLocalStamp(
 
         });
 
+
+        console.log(
+            "新しいスタンプを追加:",
+            {
+                trainingId,
+                trainingDate,
+                trainingTitle
+            }
+        );
+
+    } else {
+
+        console.log(
+            "localStorageには既に登録済み:",
+            trainingId
+        );
+
     }
 
 
     // ==================================================
-    // 保存
+    // localStorage保存
     // ==================================================
 
     localStorage.setItem(
@@ -1087,6 +1299,7 @@ function showResult(
 
 
     console.log(
+        "training.js:",
         message
     );
 
@@ -1139,30 +1352,61 @@ function formatDate(
     }
 
 
-    const parts =
+    const stringValue =
         String(
             value
-        ).split("-");
+        );
+
+
+    // ==================================================
+    // YYYY-MM-DD
+    // ==================================================
+
+    const parts =
+        stringValue.split("-");
 
 
     if (
         parts.length === 3
     ) {
 
+        const year =
+            parts[0];
+
+
+        const month =
+            Number(
+                parts[1]
+            );
+
+
+        const day =
+            Number(
+                parts[2]
+            );
+
+
         return (
-            parts[0] +
+            year +
             "年" +
-            Number(parts[1]) +
+            month +
             "月" +
-            Number(parts[2]) +
+            day +
             "日"
         );
 
     }
 
 
-    return String(
-        value
-    );
+    return stringValue;
 
 }
+
+
+// ==================================================
+// デバッグ用
+// ==================================================
+
+console.log(
+    "training.js 読み込み完了"
+);
