@@ -223,45 +223,41 @@ async function registerUser() {
 
     try {
 
-        // ==================================================
-        // Supabase participantsへ登録
-        //
-        // selectは使用しない
-        // ==================================================
+// ==================================================
+// Supabase participantsへ新規登録
+//
+// 一般利用者はログインしていないため
+// INSERTのみ実行する。
+// ==================================================
 
-        const {
-            error:
-                participantError
-        } =
-            await stampSupabaseClient
-                .from(
-                    "participants"
-                )
-                .upsert(
-                    {
-                        participant_id:
-                            data.id,
+const {
+    error:
+        participantError
+} =
+    await stampSupabaseClient
+        .from(
+            "participants"
+        )
+        .insert(
+            {
+                participant_id:
+                    data.id,
 
-                        name:
-                            data.name
-                    },
-                    {
-                        onConflict:
-                            "participant_id"
-                    }
-                );
+                name:
+                    data.name
+            }
+        );
 
 
-        // ==================================================
-        // Supabase登録エラー確認
-        // ==================================================
+// ==================================================
+// Supabase登録エラー確認
+// ==================================================
 
-        if (participantError) {
+if (participantError) {
 
-            throw participantError;
+    throw participantError;
 
-        }
-
+}
 
         // ==================================================
         // Supabase登録確認
