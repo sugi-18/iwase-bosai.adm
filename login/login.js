@@ -1,17 +1,10 @@
 // =====================================
 // 岩瀬自治会 防災アプリ
-// Anonymous Auth ログイン処理
+// 会員アクセスコード認証
+// ＋ Anonymous Auth
 // =====================================
 
 "use strict";
-
-
-// =====================================
-// ログイン有効時間
-// =====================================
-
-const LOGIN_LIMIT =
-    24 * 60 * 60 * 1000;
 
 
 // =====================================
@@ -25,95 +18,39 @@ window.addEventListener(
 
 
 // =====================================
-// 既にログイン済みか確認
+// 既存セッション確認
 // =====================================
 
 async function checkLogin() {
 
     try {
 
-        const loginData =
-            localStorage.getItem(
-                "iwaseLogin"
-            );
+        const {
+            data,
+            error
+        } =
+        await supabaseClient.auth.getSession();
 
-
-        // ログイン情報がなければ終了
-
-        if (!loginData) {
-
-            return;
-
-        }
-
-
-        const data =
-            JSON.parse(loginData);
-
-
-        const now =
-            new Date().getTime();
-
-
-        // 24時間以内か確認
 
         if (
-            data.login === true &&
-            now - data.time < LOGIN_LIMIT
+            !error &&
+            data &&
+            data.session
         ) {
 
-
-            // Supabaseセッション確認
-
-            const {
-                data: sessionData,
-                error
-            } =
-                await supabaseClient.auth.getSession();
-
-
-            if (
-                !error &&
-                sessionData &&
-                sessionData.session
-            ) {
-
-                console.log(
-                    "既存のSupabaseセッションを確認しました。"
-                );
-
-
-                console.log(
-                    "UID:",
-                    sessionData.session.user.id
-                );
-
-
-                location.href =
-                    "../index.html";
-
-
-                return;
-
-            }
-
-
-            // セッションがない場合
-
-            localStorage.removeItem(
-                "iwaseLogin"
+            console.log(
+                "既存のSupabaseセッションを確認しました。"
             );
 
-        }
 
-
-        else {
-
-            // 24時間経過
-
-            localStorage.removeItem(
-                "iwaseLogin"
+            console.log(
+                "UID:",
+                data.session.user.id
             );
+
+
+            location.href =
+                "../index.html";
 
         }
 
@@ -122,13 +59,8 @@ async function checkLogin() {
     catch (error) {
 
         console.error(
-            "ログイン状態確認エラー:",
+            "セッション確認エラー:",
             error
-        );
-
-
-        localStorage.removeItem(
-            "iwaseLogin"
         );
 
     }
@@ -137,10 +69,16 @@ async function checkLogin() {
 
 
 // =====================================
-// Anonymous Auth ログイン
+// ログイン
 // =====================================
 
 async function login() {
+
+    const input =
+        document.getElementById(
+            "access-code"
+        );
+
 
     const button =
         document.getElementById(
@@ -154,135 +92,152 @@ async function login() {
         );
 
 
-    try {
+    const code =
+        input.value.trim();
 
-        // ---------------------------------
-        // ボタン無効化
-        // ---------------------------------
+
+    // ==================================
+    // 入力チェック
+    // ==================================
+
+    if (!code) {
+
+        errorElement.textContent =
+            "アクセスコードを入力してください。";
+
+        return;
+
+    }
+
+
+    try {
 
         button.disabled = true;
 
         button.textContent =
-            "認証中...";
-
+            "確認中...";
 
         errorElement.textContent = "";
 
 
-        // ---------------------------------
-        // 既存セッション確認
-        // ---------------------------------
+        // ==================================
+        // Edge Functionでコード確認
+        // ==================================
 
         const {
-            data: currentSession,
-            error: sessionError
+            data,
+            error
         } =
-            await supabaseClient.auth.getSession();
+        await supabaseClient.functions.invoke(
+            "verify-access-code",
+            {
+                body: {
+                    code: code
+                }
+            }
+        );
 
 
-        if (sessionError) {
+        // ==================================
+        // Functionエラー
+        // ==================================
 
-            throw sessionError;
+        if (error) {
+
+            console.error(
+                "アクセスコード認証エラー:",
+                error
+            );
+
+            throw new Error(
+                "アクセスコードの確認に失敗しました。"
+            );
 
         }
 
 
-        // ---------------------------------
-        // 既存セッションがある場合
-        // ---------------------------------
+        // ==================================
+        // コード不正
+        // ==================================
 
         if (
-            currentSession &&
-            currentSession.session
+            !data ||
+            data.success !== true
         ) {
 
-            console.log(
-                "既存のSupabaseセッションを使用します。"
-            );
+            errorElement.textContent =
+                data?.message ||
+                "アクセスコードが正しくありません。";
 
+            button.disabled = false;
 
-            console.log(
-                "UID:",
-                currentSession.session.user.id
-            );
-
-
-            saveLoginState();
-
-
-            location.href =
-                "../index.html";
-
+            button.textContent =
+                "利用開始";
 
             return;
 
         }
 
 
-        // ---------------------------------
+        // ==================================
         // Anonymous Auth
-        // ---------------------------------
+        // ==================================
+
+        button.textContent =
+            "利用開始中...";
+
 
         const {
-            data,
+            data: authData,
             error: authError
         } =
-            await supabaseClient.auth.signInAnonymously();
+        await supabaseClient.auth
+            .signInAnonymously();
 
 
         if (authError) {
+
+            console.error(
+                "Anonymous Auth error:",
+                authError
+            );
 
             throw authError;
 
         }
 
 
-        // ---------------------------------
-        // ユーザー確認
-        // ---------------------------------
-
         if (
-            !data ||
-            !data.user
+            !authData ||
+            !authData.user
         ) {
 
             throw new Error(
-                "匿名ユーザーの作成に失敗しました。"
+                "Anonymous Authに失敗しました。"
             );
 
         }
 
 
-        // ---------------------------------
-        // Anonymous Auth UID
-        // ---------------------------------
+        // ==================================
+        // UID確認
+        // ==================================
 
         console.log(
             "Anonymous Auth UID:",
-            data.user.id
+            authData.user.id
         );
 
-
-        // ---------------------------------
-        // Anonymousユーザー確認
-        // ---------------------------------
 
         console.log(
-            "Anonymous Auth:",
-            data.user.is_anonymous
+            "Anonymous:",
+            authData.user.is_anonymous
         );
 
 
-        // ---------------------------------
-        // ログイン状態保存
-        // ---------------------------------
-
-        saveLoginState();
-
-
-        // ---------------------------------
-        // トップページへ
-        // ---------------------------------
+        // ==================================
+        // トップページ
+        // ==================================
 
         location.href =
             "../index.html";
@@ -293,13 +248,14 @@ async function login() {
     catch (error) {
 
         console.error(
-            "Anonymous Auth ログインエラー:",
+            "ログインエラー:",
             error
         );
 
 
         errorElement.textContent =
-            "利用開始に失敗しました。しばらくしてからもう一度お試しください。";
+            error.message ||
+            "ログインに失敗しました。";
 
 
         button.disabled = false;
@@ -308,32 +264,5 @@ async function login() {
             "利用開始";
 
     }
-
-}
-
-
-// =====================================
-// ログイン状態保存
-// =====================================
-
-function saveLoginState() {
-
-    const loginData = {
-
-        login: true,
-
-        time:
-            new Date().getTime()
-
-    };
-
-
-    localStorage.setItem(
-
-        "iwaseLogin",
-
-        JSON.stringify(loginData)
-
-    );
 
 }
