@@ -1075,33 +1075,202 @@ function displayHistory(
 
 // ==================================================
 // データ削除
+//
+// ・Supabaseの参加記録削除
+// ・Supabaseの参加者情報削除
+// ・端末のスタンプカード削除
+// ・ログイン情報削除
+// ・ログイン画面へ戻る
 // ==================================================
 
-function clearData() {
+async function clearData() {
 
     const result =
         confirm(
-            "この端末に保存されているスタンプカード情報を削除しますか？\n\nSupabase上の参加記録は削除されません。"
+            "登録したデータとログイン情報をすべて削除しますか？\n\n" +
+            "削除すると、最初のログイン画面からやり直せます。"
         );
 
-
     if (!result) {
-
         return;
+    }
+
+
+    // ==================================================
+    // 現在の参加者情報を取得
+    // ==================================================
+
+    let userData = null;
+
+    const saved =
+        localStorage.getItem(
+            STORAGE_KEY
+        );
+
+    if (saved) {
+
+        try {
+
+            userData =
+                JSON.parse(saved);
+
+        } catch (error) {
+
+            console.error(
+                "利用者データ解析エラー:",
+                error
+            );
+
+        }
 
     }
 
 
+    // ==================================================
+    // Supabaseのデータ削除
+    // ==================================================
+
+    if (
+        stampSupabaseClient &&
+        userData &&
+        userData.id
+    ) {
+
+        try {
+
+            const participantId =
+                String(
+                    userData.id
+                ).trim();
+
+
+            // ------------------------------------------
+            // ① 参加記録を削除
+            // ------------------------------------------
+
+            const {
+                error:
+                    participationDeleteError
+            } =
+                await stampSupabaseClient
+                    .from(
+                        "participations"
+                    )
+                    .delete()
+                    .eq(
+                        "participant_id",
+                        participantId
+                    );
+
+
+            if (
+                participationDeleteError
+            ) {
+
+                console.error(
+                    "参加記録削除エラー:",
+                    participationDeleteError
+                );
+
+                throw participationDeleteError;
+
+            }
+
+
+            // ------------------------------------------
+            // ② 参加者情報を削除
+            // ------------------------------------------
+
+            const {
+                error:
+                    participantDeleteError
+            } =
+                await stampSupabaseClient
+                    .from(
+                        "participants"
+                    )
+                    .delete()
+                    .eq(
+                        "participant_id",
+                        participantId
+                    );
+
+
+            if (
+                participantDeleteError
+            ) {
+
+                console.error(
+                    "参加者情報削除エラー:",
+                    participantDeleteError
+                );
+
+                throw participantDeleteError;
+
+            }
+
+
+        } catch (error) {
+
+            console.error(
+                "Supabaseデータ削除エラー:",
+                error
+            );
+
+            alert(
+                "Supabase上のデータ削除に失敗しました。\n\n" +
+                (
+                    error.message ||
+                    "不明なエラー"
+                ) +
+                "\n\n" +
+                "ログイン情報は削除せず処理を中止しました。"
+            );
+
+            return;
+
+        }
+
+    }
+
+
+    // ==================================================
+    // 端末内データ削除
+    // ==================================================
+
+    // スタンプカード
     localStorage.removeItem(
         STORAGE_KEY
     );
 
 
-    alert(
-        "スタンプカード情報を削除しました。"
+    // 防災アプリログイン情報
+    localStorage.removeItem(
+        "iwaseLogin"
     );
 
 
-    location.reload();
+    // 旧ログイン方式
+    localStorage.removeItem(
+        "role"
+    );
+
+
+    // ==================================================
+    // 完了
+    // ==================================================
+
+    alert(
+        "データとログイン情報を削除しました。\n\n" +
+        "ログイン画面に戻ります。"
+    );
+
+
+    // ==================================================
+    // ログイン画面へ
+    // ==================================================
+
+    location.href =
+        "../login/login.html";
 
 }
