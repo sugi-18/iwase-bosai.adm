@@ -539,71 +539,26 @@ function setupNavigation() {
 
 async function loadAllData() {
 
-    console.log("===== loadAllData START =====");
-
-    console.log("1. loadParticipants 開始");
-
     try {
-        await loadParticipants();
-        console.log("1. loadParticipants 完了");
+
+        await Promise.all([
+            loadParticipants(),
+            loadTrainings(),
+            loadParticipations(),
+            loadDashboard(),
+            loadParticipantAnalysis()
+        ]);
+
     } catch (error) {
+
         console.error(
-            "1. loadParticipants ERROR:",
+            "Load all data error:",
             error
         );
+
     }
 
-
-    console.log("2. loadTrainings 開始");
-
-    try {
-        await loadTrainings();
-        console.log("2. loadTrainings 完了");
-    } catch (error) {
-        console.error(
-            "2. loadTrainings ERROR:",
-            error
-        );
-    }
-
-
-    console.log("3. loadParticipations 開始");
-
-    try {
-        await loadParticipations();
-        console.log("3. loadParticipations 完了");
-    } catch (error) {
-        console.error(
-            "3. loadParticipations ERROR:",
-            error
-        );
-    }
-
-
-    console.log("4. loadDashboard 開始");
-
-    try {
-        await loadDashboard();
-        console.log("4. loadDashboard 完了");
-    } catch (error) {
-        console.error(
-            "4. loadDashboard ERROR:",
-            error
-        );
-    }
-
-
-    console.log("5. loadParticipantAnalysis 開始");
-
-    try {
-        await loadParticipantAnalysis();
-        console.log("5. loadParticipantAnalysis 完了");
-    } catch (error) {
-        console.error(
-            "5. loadParticipantAnalysis ERROR:",
-            error
-        );
-    }
+}
 
 
     console.log("===== loadAllData END =====");
@@ -1420,31 +1375,32 @@ async function loadParticipants() {
         await adminSupabaseClient
             .from("participants")
             .select("*")
-       console.log(
-    "===== PARTICIPANTS RESULT ====="
+   .select("*")
+.order(
+    "created_at",
+    {
+        ascending: false
+    }
 );
 
-console.log(
-    "participants data:",
-    data
-);
+        console.log(
+            "===== PARTICIPANTS RESULT ====="
+        );
 
-console.log(
-    "participants count:",
-    data?.length
-);
+        console.log(
+            "participants data:",
+            data
+        );
 
-console.log(
-    "participants error:",
-    error
-);
-            .order(
-                "created_at",
-                {
-                    ascending: false
-                }
-            );
+        console.log(
+            "participants count:",
+            data?.length
+        );
 
+        console.log(
+            "participants error:",
+            error
+        );
 
     if (error) {
 
