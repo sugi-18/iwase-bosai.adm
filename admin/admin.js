@@ -210,6 +210,9 @@ async function checkAuth() {
             data.session
         ) {
 
+console.log("ADMIN SESSION USER:", data.session?.user);
+console.log("ADMIN UID:", data.session?.user?.id);
+
             showAdminScreen();
 
             await loadAllData();
