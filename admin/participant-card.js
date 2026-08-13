@@ -2,6 +2,7 @@
    岩瀬自治会 防災アプリ
    参加者カルテ
    Step 1 強化版
+   training_date 対応版
    ================================================== */
 
 (function () {
@@ -202,7 +203,7 @@ function setupParticipantCardEvents() {
 
 
 /* ==================================================
-   既存参加者一覧のボタン
+   既存参加者一覧のボタン監視
 ================================================== */
 
 function setupParticipantCardButtonObserver() {
@@ -242,7 +243,8 @@ function setupParticipantCardButtonObserver() {
 
 
 /* ==================================================
-   参加履歴ボタン → 参加者カルテ
+   参加履歴ボタン
+   → 参加者カルテ
 ================================================== */
 
 function replaceParticipantHistoryButtons() {
@@ -315,7 +317,7 @@ async function openParticipantCard(
     try {
 
         /* ==================================================
-           参加者
+           参加者取得
         ================================================== */
 
         const {
@@ -351,7 +353,7 @@ async function openParticipantCard(
 
 
         /* ==================================================
-           参加履歴
+           参加履歴取得
         ================================================== */
 
         const {
@@ -379,9 +381,10 @@ async function openParticipantCard(
 
 
         /* ==================================================
-           訓練情報
-           
-           trainig_date が正式なカラム
+           訓練情報取得
+
+           正式な実施日カラム：
+           training_date
         ================================================== */
 
         const {
@@ -403,22 +406,26 @@ async function openParticipantCard(
 
 
         /* ==================================================
-           参加履歴と訓練を結合
+           参加履歴と訓練情報を結合
         ================================================== */
 
         const detailedHistory =
             history.map(
                 item => {
 
+                    const participationTrainingId =
+                        normalizeId(
+                            item.training_id
+                        );
+
+
                     const training =
                         trainingList.find(
                             training =>
-                                String(
+                                normalizeId(
                                     training.training_id
-                                ).trim() ===
-                                String(
-                                    item.training_id
-                                ).trim()
+                                ) ===
+                                participationTrainingId
                         );
 
 
@@ -428,10 +435,13 @@ async function openParticipantCard(
 
                         training,
 
+                        /*
+                         * registered_at は絶対に
+                         * 実施日の代用にしない
+                         */
                         eventDate:
                             getTrainingDate(
-                                training,
-                                item.registered_at
+                                training
                             )
 
                     };
@@ -461,12 +471,18 @@ async function openParticipantCard(
 
 
         /* ==================================================
-           集計
+           総参加回数
         ================================================== */
 
         const count =
             detailedHistory.length;
 
+
+        /* ==================================================
+           2026年度参加回数
+
+           training_date 基準
+        ================================================== */
 
         const fiscalYearHistory =
             detailedHistory.filter(
@@ -482,12 +498,18 @@ async function openParticipantCard(
             fiscalYearHistory.length;
 
 
+        /* ==================================================
+           参加種類
+        ================================================== */
+
         const uniqueTrainingIds =
             new Set(
                 detailedHistory
                     .map(
                         item =>
-                            item.training_id
+                            normalizeId(
+                                item.training_id
+                            )
                     )
                     .filter(Boolean)
             );
@@ -498,11 +520,23 @@ async function openParticipantCard(
 
 
         /* ==================================================
-           初回・最終
-        ================================================== */
+           初回・最終参加
+        ==================================================
+
+           eventDate = training_date
+        */
+
+        const validHistory =
+            detailedHistory.filter(
+                item =>
+                    !!parseDateValue(
+                        item.eventDate
+                    )
+            );
+
 
         const chronologicalHistory =
-            [...detailedHistory].sort(
+            [...validHistory].sort(
                 (a, b) => {
 
                     return (
@@ -557,7 +591,7 @@ async function openParticipantCard(
 
 
         /* ==================================================
-           マイスター
+           防災マイスター
         ================================================== */
 
         const certified =
@@ -593,7 +627,9 @@ async function openParticipantCard(
             <div class="participant-card">
 
 
-                <!-- 基本情報 -->
+                <!-- ==========================================
+                     基本情報
+                =========================================== -->
 
                 <div class="participant-card-profile">
 
@@ -644,7 +680,9 @@ async function openParticipantCard(
                 </div>
 
 
-                <!-- 統計 -->
+                <!-- ==========================================
+                     統計
+                =========================================== -->
 
                 <div class="participant-card-stat-grid">
 
@@ -722,7 +760,9 @@ async function openParticipantCard(
                 </div>
 
 
-                <!-- 初回・最終 -->
+                <!-- ==========================================
+                     初回・最終・登録日
+                =========================================== -->
 
                 <div class="participant-card-info">
 
@@ -787,7 +827,9 @@ async function openParticipantCard(
                 </div>
 
 
-                <!-- 年度 -->
+                <!-- ==========================================
+                     2026年度
+                =========================================== -->
 
                 <div class="participant-card-progress">
 
@@ -828,7 +870,9 @@ async function openParticipantCard(
                 </div>
 
 
-                <!-- マイスター -->
+                <!-- ==========================================
+                     防災マイスター
+                =========================================== -->
 
                 <div class="participant-card-progress">
 
@@ -886,7 +930,9 @@ async function openParticipantCard(
                 </div>
 
 
-                <!-- 参加履歴 -->
+                <!-- ==========================================
+                     参加履歴
+                =========================================== -->
 
                 <div class="participant-card-history">
 
@@ -954,6 +1000,22 @@ async function openParticipantCard(
                                                         "";
 
 
+                                                    const trainingDate =
+                                                        item.eventDate
+                                                            ? formatDate(
+                                                                item.eventDate
+                                                            )
+                                                            : "-";
+
+
+                                                    const registeredDate =
+                                                        item.registered_at
+                                                            ? formatDate(
+                                                                item.registered_at
+                                                            )
+                                                            : "-";
+
+
                                                     return `
 
                                                         <div
@@ -977,9 +1039,7 @@ async function openParticipantCard(
                                                                 <span>
                                                                     実施日：
                                                                     ${escapeHtml(
-                                                                        formatDate(
-                                                                            item.eventDate
-                                                                        )
+                                                                        trainingDate
                                                                     )}
                                                                 </span>
 
@@ -1001,9 +1061,7 @@ async function openParticipantCard(
                                                                 <span>
                                                                     参加登録日：
                                                                     ${escapeHtml(
-                                                                        formatDate(
-                                                                            item.registered_at
-                                                                        )
+                                                                        registeredDate
                                                                     )}
                                                                 </span>
 
@@ -1049,7 +1107,7 @@ async function openParticipantCard(
 
 
         /* ==================================================
-           削除
+           削除イベント
         ================================================== */
 
         content
@@ -1119,11 +1177,17 @@ async function openParticipantCard(
                                 );
 
 
+                                /*
+                                 * カルテ再読み込み
+                                 */
                                 await openParticipantCard(
                                     databaseId
                                 );
 
 
+                                /*
+                                 * 参加者一覧も更新
+                                 */
                                 if (
                                     typeof loadAllData ===
                                     "function"
@@ -1190,33 +1254,39 @@ async function openParticipantCard(
 
 
 /* ==================================================
-   訓練実施日
+   訓練実施日取得
+
+   正式カラム：
+   training_date
+
+   重要：
+   registered_at は実施日の代用にしない
 ================================================== */
 
 function getTrainingDate(
-    training,
-    fallbackDate
+    training
 ) {
 
     if (!training) {
-        return fallbackDate || null;
+        return null;
     }
 
 
     /*
-     * 正式なカラム
+     * 正式な訓練実施日
      */
     if (
-        training.trainig_date
+        training.training_date
     ) {
 
-        return training.trainig_date;
+        return training.training_date;
 
     }
 
 
     /*
-     * 予備
+     * 旧 date カラムへの
+     * 予備対応
      */
     if (
         training.date
@@ -1227,7 +1297,37 @@ function getTrainingDate(
     }
 
 
-    return fallbackDate || null;
+    /*
+     * 訓練実施日が存在しない場合
+     *
+     * registered_at は使用しない
+     */
+    return null;
+
+}
+
+
+/* ==================================================
+   ID正規化
+================================================== */
+
+function normalizeId(
+    value
+) {
+
+    if (
+        value === null ||
+        value === undefined
+    ) {
+
+        return "";
+
+    }
+
+
+    return String(
+        value
+    ).trim();
 
 }
 
@@ -1342,8 +1442,10 @@ function parseDateValue(
 
     /*
      * YYYY-MM-DD
+     *
+     * UTC解釈を避けるため
+     * ローカル日付として生成
      */
-
     if (
         /^\d{4}-\d{2}-\d{2}$/.test(
             text
@@ -1377,6 +1479,9 @@ function parseDateValue(
     }
 
 
+    /*
+     * ISO日時など
+     */
     const parsed =
         new Date(text);
 
