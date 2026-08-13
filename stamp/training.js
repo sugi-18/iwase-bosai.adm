@@ -2,7 +2,7 @@
 // 岩瀬自治会 防災アプリ
 // 防災訓練 QR参加登録
 //
-// 管理者訓練マスター連携版
+// iPad対応・登録確認強化版
 // ==================================================
 
 "use strict";
@@ -75,12 +75,22 @@ function initializeTrainingSupabase() {
         );
 
 
+        return true;
+
+
     } catch (error) {
 
         console.error(
             "Supabase初期化エラー:",
             error
         );
+
+
+        trainingSupabaseClient =
+            null;
+
+
+        return false;
 
     }
 
@@ -99,10 +109,9 @@ async function initializeTrainingPage() {
         );
 
 
-    // ------------------------------------------
-    // 新方式
-    // 管理者が発行したtraining_id
-    // ------------------------------------------
+    // ==================================================
+    // training_id
+    // ==================================================
 
     const trainingId =
         params.get(
@@ -110,10 +119,9 @@ async function initializeTrainingPage() {
         );
 
 
-    // ------------------------------------------
+    // ==================================================
     // 旧方式
-    // event/date
-    // ------------------------------------------
+    // ==================================================
 
     const event =
         params.get(
@@ -127,17 +135,48 @@ async function initializeTrainingPage() {
         );
 
 
-    // ------------------------------------------
-    // 管理者訓練を取得
-    // ------------------------------------------
+    // ==================================================
+    // パラメータ確認
+    // ==================================================
+
+    console.log(
+        "QRパラメータ:",
+        {
+            trainingId,
+            event,
+            date,
+            url:
+                location.href
+        }
+    );
+
+
+    if (!trainingSupabaseClient) {
+
+        showResult(
+            "サーバーに接続できません。\n通信状態を確認してください。"
+        );
+
+
+        disableRegisterButton(
+            "接続できません"
+        );
+
+
+        return;
+
+    }
+
+
+    // ==================================================
+    // 訓練取得
+    // ==================================================
 
     let training =
         null;
 
 
-    if (
-        trainingId
-    ) {
+    if (trainingId) {
 
         training =
             await getTrainingById(
@@ -158,9 +197,9 @@ async function initializeTrainingPage() {
     }
 
 
-    // ------------------------------------------
-    // 訓練情報表示
-    // ------------------------------------------
+    // ==================================================
+    // 訓練表示
+    // ==================================================
 
     displayTraining(
         training,
@@ -169,9 +208,9 @@ async function initializeTrainingPage() {
     );
 
 
-    // ------------------------------------------
+    // ==================================================
     // 登録ボタン
-    // ------------------------------------------
+    // ==================================================
 
     const addButton =
         document.getElementById(
@@ -227,11 +266,15 @@ async function getTrainingById(
             error
         } =
             await trainingSupabaseClient
-                .from("trainings")
+                .from(
+                    "trainings"
+                )
                 .select("*")
                 .eq(
                     "training_id",
-                    trainingId
+                    String(
+                        trainingId
+                    ).trim()
                 )
                 .maybeSingle();
 
@@ -243,7 +286,19 @@ async function getTrainingById(
         }
 
 
-        return data || null;
+        if (!data) {
+
+            console.error(
+                "指定された訓練が見つかりません:",
+                trainingId
+            );
+
+            return null;
+
+        }
+
+
+        return data;
 
 
     } catch (error) {
@@ -252,6 +307,16 @@ async function getTrainingById(
             "訓練取得エラー:",
             error
         );
+
+
+        showResult(
+            "訓練情報を取得できませんでした。\n\n" +
+            (
+                error.message ||
+                "通信エラー"
+            )
+        );
+
 
         return null;
 
@@ -287,7 +352,9 @@ async function getTrainingByEventAndDate(
             error
         } =
             await trainingSupabaseClient
-                .from("trainings")
+                .from(
+                    "trainings"
+                )
                 .select("*")
                 .eq(
                     "title",
@@ -316,6 +383,16 @@ async function getTrainingByEventAndDate(
             "旧方式訓練検索エラー:",
             error
         );
+
+
+        showResult(
+            "訓練情報を取得できませんでした。\n\n" +
+            (
+                error.message ||
+                "通信エラー"
+            )
+        );
+
 
         return null;
 
@@ -373,10 +450,6 @@ function displayTraining(
     }
 
 
-    // ------------------------------------------
-    // 訓練が存在しない場合
-    // ------------------------------------------
-
     if (eventName) {
 
         eventName.textContent =
@@ -395,35 +468,14 @@ function displayTraining(
     }
 
 
-    const addButton =
-        document.getElementById(
-            "add-training"
-        );
+    disableRegisterButton(
+        "参加登録できません"
+    );
 
 
-    if (addButton) {
-
-        addButton.disabled =
-            true;
-
-        addButton.textContent =
-            "参加登録できません";
-
-    }
-
-
-    const result =
-        document.getElementById(
-            "result"
-        );
-
-
-    if (result) {
-
-        result.textContent =
-            "この訓練は管理者画面に登録されていません。";
-
-    }
+    showResult(
+        "この訓練は管理者画面に登録されていません。"
+    );
 
 }
 
@@ -451,50 +503,49 @@ async function registerParticipation(
         );
 
 
-    // ------------------------------------------
+    // ==================================================
     // 訓練確認
-    // ------------------------------------------
+    // ==================================================
 
     if (!training) {
 
-        if (result) {
+        showResult(
+            "この訓練は管理者画面に登録されていません。"
+        );
 
-            result.textContent =
-                "この訓練は管理者画面に登録されていません。";
-
-        }
 
         return;
 
     }
 
 
-    // ------------------------------------------
+    // ==================================================
     // training_id確定
-    // ------------------------------------------
+    // ==================================================
 
     const actualTrainingId =
-        training.training_id ||
-        trainingId;
+        String(
+            training.training_id ||
+            trainingId ||
+            ""
+        ).trim();
 
 
     if (!actualTrainingId) {
 
-        if (result) {
+        showResult(
+            "訓練IDを確認できませんでした。"
+        );
 
-            result.textContent =
-                "訓練IDを確認できませんでした。";
-
-        }
 
         return;
 
     }
 
 
-    // ------------------------------------------
+    // ==================================================
     // 利用者情報
-    // ------------------------------------------
+    // ==================================================
 
     const saved =
         localStorage.getItem(
@@ -507,6 +558,7 @@ async function registerParticipation(
         alert(
             "先にスタンプカード登録をしてください。"
         );
+
 
         return;
 
@@ -526,12 +578,15 @@ async function registerParticipation(
     } catch (error) {
 
         console.error(
+            "利用者情報解析エラー:",
             error
         );
+
 
         alert(
             "利用者情報を読み込めませんでした。"
         );
+
 
         return;
 
@@ -539,6 +594,7 @@ async function registerParticipation(
 
 
     if (
+        !participant ||
         !participant.id ||
         !participant.name
     ) {
@@ -547,22 +603,25 @@ async function registerParticipation(
             "利用者情報を確認できませんでした。"
         );
 
+
         return;
 
     }
 
 
-    // ------------------------------------------
+    // ==================================================
     // Supabase確認
-    // ------------------------------------------
+    // ==================================================
 
     if (
         !trainingSupabaseClient
     ) {
 
         alert(
-            "Supabaseに接続できません。"
+            "Supabaseに接続できません。\n\n" +
+            "通信状態を確認してください。"
         );
+
 
         return;
 
@@ -582,15 +641,20 @@ async function registerParticipation(
 
     try {
 
-        // ==========================================
-        // ① participants
-        // ==========================================
+        // ==================================================
+        // ① participants確認
+        // ==================================================
 
         const {
-            error: participantError
+            data:
+                participantRows,
+            error:
+                participantError
         } =
             await trainingSupabaseClient
-                .from("participants")
+                .from(
+                    "participants"
+                )
                 .upsert(
                     {
                         participant_id:
@@ -601,7 +665,10 @@ async function registerParticipation(
                     },
                     {
                         onConflict:
-                            "participant_id"
+                            "participant_id",
+
+                        select:
+                            "participant_id,name"
                     }
                 );
 
@@ -613,16 +680,32 @@ async function registerParticipation(
         }
 
 
-        // ==========================================
+        if (
+            !participantRows ||
+            participantRows.length === 0
+        ) {
+
+            throw new Error(
+                "参加者情報の保存結果を確認できませんでした。"
+            );
+
+        }
+
+
+        // ==================================================
         // ② 既存参加確認
-        // ==========================================
+        // ==================================================
 
         const {
-            data: existingParticipation,
-            error: checkError
+            data:
+                existingParticipation,
+            error:
+                checkError
         } =
             await trainingSupabaseClient
-                .from("participations")
+                .from(
+                    "participations"
+                )
                 .select(
                     "id"
                 )
@@ -644,14 +727,23 @@ async function registerParticipation(
         }
 
 
+        // ==================================================
+        // すでに参加済み
+        // ==================================================
+
         if (
             existingParticipation
         ) {
 
-            if (result) {
+            showResult(
+                "この訓練はすでに参加登録されています。"
+            );
 
-                result.textContent =
-                    "この訓練はすでに参加登録されています。";
+
+            if (addButton) {
+
+                addButton.textContent =
+                    "登録済み";
 
             }
 
@@ -661,17 +753,20 @@ async function registerParticipation(
         }
 
 
-        // ==========================================
-        // ③ participationsのみINSERT
-        //
-        // ★ trainingsにはINSERTしない
-        // ==========================================
+        // ==================================================
+        // ③ participations INSERT
+        // ==================================================
 
         const {
-            error: participationError
+            data:
+                participationRows,
+            error:
+                participationError
         } =
             await trainingSupabaseClient
-                .from("participations")
+                .from(
+                    "participations"
+                )
                 .insert(
                     {
                         participant_id:
@@ -680,6 +775,9 @@ async function registerParticipation(
                         training_id:
                             actualTrainingId
                     }
+                )
+                .select(
+                    "id,participant_id,training_id"
                 );
 
 
@@ -690,9 +788,25 @@ async function registerParticipation(
         }
 
 
-        // ==========================================
+        // ==================================================
+        // INSERT結果確認
+        // ==================================================
+
+        if (
+            !participationRows ||
+            participationRows.length === 0
+        ) {
+
+            throw new Error(
+                "参加登録の保存結果を確認できませんでした。"
+            );
+
+        }
+
+
+        // ==================================================
         // ④ localStorage更新
-        // ==========================================
+        // ==================================================
 
         if (
             !Array.isArray(
@@ -759,6 +873,10 @@ async function registerParticipation(
         }
 
 
+        // ==================================================
+        // localStorage保存
+        // ==================================================
+
         localStorage.setItem(
             STORAGE_KEY,
             JSON.stringify(
@@ -767,16 +885,32 @@ async function registerParticipation(
         );
 
 
-        // ==========================================
-        // 完了
-        // ==========================================
+        // ==================================================
+        // 保存確認
+        // ==================================================
 
-        if (result) {
+        const verifySaved =
+            localStorage.getItem(
+                STORAGE_KEY
+            );
 
-            result.textContent =
-                "✅ 参加登録が完了しました！";
+
+        if (!verifySaved) {
+
+            throw new Error(
+                "端末への参加履歴保存を確認できませんでした。"
+            );
 
         }
+
+
+        // ==================================================
+        // 完了
+        // ==================================================
+
+        showResult(
+            "✅ 参加登録が完了しました！"
+        );
 
 
         if (addButton) {
@@ -787,6 +921,21 @@ async function registerParticipation(
         }
 
 
+        console.log(
+            "参加登録完了:",
+            {
+                participantId:
+                    participant.id,
+
+                trainingId:
+                    actualTrainingId,
+
+                participation:
+                    participationRows[0]
+            }
+        );
+
+
     } catch (error) {
 
         console.error(
@@ -795,12 +944,30 @@ async function registerParticipation(
         );
 
 
-        if (result) {
+        let message =
+            "参加登録に失敗しました。";
 
-            result.textContent =
-                "参加登録に失敗しました。";
+
+        if (
+            error &&
+            error.message
+        ) {
+
+            message +=
+                "\n\n" +
+                error.message;
 
         }
+
+
+        message +=
+            "\n\n" +
+            "通信状態を確認して、もう一度お試しください。";
+
+
+        showResult(
+            message
+        );
 
 
         if (addButton) {
@@ -814,6 +981,66 @@ async function registerParticipation(
         }
 
     }
+
+}
+
+
+// ==================================================
+// 結果表示
+// ==================================================
+
+function showResult(
+    message
+) {
+
+    const result =
+        document.getElementById(
+            "result"
+        );
+
+
+    if (result) {
+
+        result.textContent =
+            message;
+
+    }
+
+
+    console.log(
+        message
+    );
+
+}
+
+
+// ==================================================
+// 登録ボタン無効化
+// ==================================================
+
+function disableRegisterButton(
+    text
+) {
+
+    const addButton =
+        document.getElementById(
+            "add-training"
+        );
+
+
+    if (!addButton) {
+
+        return;
+
+    }
+
+
+    addButton.disabled =
+        true;
+
+
+    addButton.textContent =
+        text;
 
 }
 
