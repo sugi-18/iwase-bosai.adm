@@ -9,59 +9,38 @@
 "use strict";
 
 /* ==================================================
-   Supabase設定
+   Supabase
+   共通クライアントを使用
 ================================================== */
-
-const ADMIN_SUPABASE_URL =
-    "https://zumbqukrojdpgfpfekjr.supabase.co";
-
-const ADMIN_SUPABASE_PUBLISHABLE_KEY =
-    "sb_publishable_8YXsMHOxLr7MOTEYShUM3w_LsZvR3Qn";
-
 
 let adminSupabaseClient = null;
-
-let monthlyChart = null;
-
-let participantDistributionChart = null;
-
-
-/* ==================================================
-   Supabase初期化
-================================================== */
 
 try {
 
     if (
-        typeof window.supabase ===
-        "undefined"
+        typeof supabaseClient === "undefined" ||
+        !supabaseClient
     ) {
-
         throw new Error(
-            "Supabase JavaScriptライブラリが読み込まれていません。"
+            "共通Supabaseクライアントが初期化されていません。"
         );
-
     }
 
-
     adminSupabaseClient =
-        window.supabase.createClient(
-            ADMIN_SUPABASE_URL,
-            ADMIN_SUPABASE_PUBLISHABLE_KEY
-        );
-
+        supabaseClient;
 
     console.log(
-        "Admin Supabase client initialized."
+        "Admin Supabase client: shared client"
     );
 
 } catch (error) {
 
     console.error(
-        "Supabase initialization error:",
+        "Admin Supabase initialization error:",
         error
     );
 
+    adminSupabaseClient = null;
 }
 
 
