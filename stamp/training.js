@@ -2,7 +2,8 @@
 // 岩瀬自治会 防災アプリ
 // 防災訓練 QR参加登録
 //
-// iPad対応・登録確認強化版
+// 安定版
+// PC・スマホ・iPad対応
 // ==================================================
 
 "use strict";
@@ -18,10 +19,7 @@ const TRAINING_SUPABASE_URL =
 const TRAINING_SUPABASE_PUBLISHABLE_KEY =
     "sb_publishable_8YXsMHOxLr7MOTEYShUM3w_LsZvR3Qn";
 
-
-let trainingSupabaseClient =
-    null;
-
+let trainingSupabaseClient = null;
 
 const STORAGE_KEY =
     "iwaseStamp";
@@ -45,11 +43,40 @@ window.addEventListener(
 
 // ==================================================
 // Supabase初期化
+//
+// 共通クライアントが存在する場合は使用。
+// なければtraining.js内で生成。
 // ==================================================
 
 function initializeTrainingSupabase() {
 
     try {
+
+        // --------------------------------------------------
+        // supabase.jsの共通クライアントを使用
+        // --------------------------------------------------
+
+        if (
+            typeof supabaseClient !==
+            "undefined" &&
+            supabaseClient
+        ) {
+
+            trainingSupabaseClient =
+                supabaseClient;
+
+            console.log(
+                "Training Supabase client initialized using shared client."
+            );
+
+            return true;
+
+        }
+
+
+        // --------------------------------------------------
+        // 共通クライアントがない場合
+        // --------------------------------------------------
 
         if (
             typeof window.supabase ===
@@ -135,10 +162,6 @@ async function initializeTrainingPage() {
         );
 
 
-    // ==================================================
-    // パラメータ確認
-    // ==================================================
-
     console.log(
         "QRパラメータ:",
         {
@@ -151,10 +174,15 @@ async function initializeTrainingPage() {
     );
 
 
+    // ==================================================
+    // Supabase確認
+    // ==================================================
+
     if (!trainingSupabaseClient) {
 
         showResult(
-            "サーバーに接続できません。\n通信状態を確認してください。"
+            "サーバーに接続できません。\n\n" +
+            "通信状態を確認してください。"
         );
 
 
@@ -172,8 +200,7 @@ async function initializeTrainingPage() {
     // 訓練取得
     // ==================================================
 
-    let training =
-        null;
+    let training = null;
 
 
     if (trainingId) {
@@ -269,7 +296,9 @@ async function getTrainingById(
                 .from(
                     "trainings"
                 )
-                .select("*")
+                .select(
+                    "*"
+                )
                 .eq(
                     "training_id",
                     String(
@@ -293,6 +322,17 @@ async function getTrainingById(
                 trainingId
             );
 
+
+            showResult(
+                "指定された訓練が見つかりません。"
+            );
+
+
+            disableRegisterButton(
+                "参加登録できません"
+            );
+
+
             return null;
 
         }
@@ -315,6 +355,11 @@ async function getTrainingById(
                 error.message ||
                 "通信エラー"
             )
+        );
+
+
+        disableRegisterButton(
+            "参加登録できません"
         );
 
 
@@ -355,7 +400,9 @@ async function getTrainingByEventAndDate(
                 .from(
                     "trainings"
                 )
-                .select("*")
+                .select(
+                    "*"
+                )
                 .eq(
                     "title",
                     event
@@ -391,6 +438,11 @@ async function getTrainingByEventAndDate(
                 error.message ||
                 "通信エラー"
             )
+        );
+
+
+        disableRegisterButton(
+            "参加登録できません"
         );
 
 
@@ -491,12 +543,6 @@ async function registerParticipation(
     fallbackDate
 ) {
 
-    const result =
-        document.getElementById(
-            "result"
-        );
-
-
     const addButton =
         document.getElementById(
             "add-training"
@@ -544,7 +590,7 @@ async function registerParticipation(
 
 
     // ==================================================
-    // 利用者情報
+    // 利用者情報取得
     // ==================================================
 
     const saved =
@@ -642,12 +688,13 @@ async function registerParticipation(
     try {
 
         // ==================================================
-        // ① participants確認
+        // ① participantsへ保存
+        //
+        // selectを付けない。
+        // RLSによる戻り値取得問題を回避。
         // ==================================================
 
         const {
-            data:
-                participantRows,
             error:
                 participantError
         } =
@@ -658,38 +705,37 @@ async function registerParticipation(
                 .upsert(
                     {
                         participant_id:
-                            participant.id,
+                            String(
+                                participant.id
+                            ),
 
                         name:
                             participant.name
                     },
                     {
                         onConflict:
-                            "participant_id",
-
-                        select:
-                            "participant_id,name"
+                            "participant_id"
                     }
                 );
 
 
         if (participantError) {
 
+            console.error(
+                "participants保存エラー:",
+                participantError
+            );
+
+
             throw participantError;
 
         }
 
 
-        if (
-            !participantRows ||
-            participantRows.length === 0
-        ) {
-
-            throw new Error(
-                "参加者情報の保存結果を確認できませんでした。"
-            );
-
-        }
+        console.log(
+            "participants保存完了:",
+            participant.id
+        );
 
 
         // ==================================================
@@ -711,7 +757,9 @@ async function registerParticipation(
                 )
                 .eq(
                     "participant_id",
-                    participant.id
+                    String(
+                        participant.id
+                    )
                 )
                 .eq(
                     "training_id",
@@ -721,6 +769,12 @@ async function registerParticipation(
 
 
         if (checkError) {
+
+            console.error(
+                "参加確認エラー:",
+                checkError
+            );
+
 
             throw checkError;
 
@@ -734,6 +788,19 @@ async function registerParticipation(
         if (
             existingParticipation
         ) {
+
+            // ----------------------------------------------
+            // localStorageだけ最新化
+            // ----------------------------------------------
+
+            updateLocalStamp(
+                participant,
+                training,
+                actualTrainingId,
+                fallbackEvent,
+                fallbackDate
+            );
+
 
             showResult(
                 "この訓練はすでに参加登録されています。"
@@ -754,12 +821,12 @@ async function registerParticipation(
 
 
         // ==================================================
-        // ③ participations INSERT
+        // ③ participationsへ登録
+        //
+        // selectを付けない。
         // ==================================================
 
         const {
-            data:
-                participationRows,
             error:
                 participationError
         } =
@@ -770,138 +837,52 @@ async function registerParticipation(
                 .insert(
                     {
                         participant_id:
-                            participant.id,
+                            String(
+                                participant.id
+                            ),
 
                         training_id:
                             actualTrainingId
                     }
-                )
-                .select(
-                    "id,participant_id,training_id"
                 );
 
 
         if (participationError) {
+
+            console.error(
+                "participations保存エラー:",
+                participationError
+            );
+
 
             throw participationError;
 
         }
 
 
-        // ==================================================
-        // INSERT結果確認
-        // ==================================================
+        console.log(
+            "participations保存完了:",
+            {
+                participantId:
+                    participant.id,
 
-        if (
-            !participationRows ||
-            participationRows.length === 0
-        ) {
-
-            throw new Error(
-                "参加登録の保存結果を確認できませんでした。"
-            );
-
-        }
+                trainingId:
+                    actualTrainingId
+            }
+        );
 
 
         // ==================================================
         // ④ localStorage更新
         // ==================================================
 
-        if (
-            !Array.isArray(
-                participant.stamps
-            )
-        ) {
-
-            participant.stamps =
-                [];
-
-        }
-
-
-        const trainingDate =
-            training.training_date ||
-            training.date ||
-            fallbackDate ||
-            "";
-
-
-        const trainingTitle =
-            training.title ||
-            fallbackEvent ||
-            "防災訓練";
-
-
-        const alreadyLocal =
-            participant.stamps.some(
-                stamp =>
-                    String(
-                        stamp.training_id
-                    ) ===
-                    String(
-                        actualTrainingId
-                    )
-            );
-
-
-        if (!alreadyLocal) {
-
-            if (
-                participant.stamps.length >=
-                10
-            ) {
-
-                participant.stamps.shift();
-
-            }
-
-
-            participant.stamps.push({
-
-                training_id:
-                    actualTrainingId,
-
-                date:
-                    trainingDate,
-
-                event:
-                    trainingTitle
-
-            });
-
-        }
-
-
-        // ==================================================
-        // localStorage保存
-        // ==================================================
-
-        localStorage.setItem(
-            STORAGE_KEY,
-            JSON.stringify(
-                participant
-            )
+        updateLocalStamp(
+            participant,
+            training,
+            actualTrainingId,
+            fallbackEvent,
+            fallbackDate
         );
-
-
-        // ==================================================
-        // 保存確認
-        // ==================================================
-
-        const verifySaved =
-            localStorage.getItem(
-                STORAGE_KEY
-            );
-
-
-        if (!verifySaved) {
-
-            throw new Error(
-                "端末への参加履歴保存を確認できませんでした。"
-            );
-
-        }
 
 
         // ==================================================
@@ -928,10 +909,7 @@ async function registerParticipation(
                     participant.id,
 
                 trainingId:
-                    actualTrainingId,
-
-                participation:
-                    participationRows[0]
+                    actualTrainingId
             }
         );
 
@@ -981,6 +959,107 @@ async function registerParticipation(
         }
 
     }
+
+}
+
+
+// ==================================================
+// localStorageのスタンプ更新
+// ==================================================
+
+function updateLocalStamp(
+    participant,
+    training,
+    trainingId,
+    fallbackEvent,
+    fallbackDate
+) {
+
+    if (
+        !Array.isArray(
+            participant.stamps
+        )
+    ) {
+
+        participant.stamps =
+            [];
+
+    }
+
+
+    const trainingDate =
+        training.training_date ||
+        training.date ||
+        fallbackDate ||
+        "";
+
+
+    const trainingTitle =
+        training.title ||
+        fallbackEvent ||
+        "防災訓練";
+
+
+    const alreadyLocal =
+        participant.stamps.some(
+            stamp =>
+                String(
+                    stamp.training_id
+                ) ===
+                String(
+                    trainingId
+                )
+        );
+
+
+    if (!alreadyLocal) {
+
+        // --------------------------------------------------
+        // 最大10個
+        // --------------------------------------------------
+
+        if (
+            participant.stamps.length >=
+            10
+        ) {
+
+            participant.stamps.shift();
+
+        }
+
+
+        participant.stamps.push({
+
+            training_id:
+                trainingId,
+
+            date:
+                trainingDate,
+
+            event:
+                trainingTitle
+
+        });
+
+    }
+
+
+    // ==================================================
+    // 保存
+    // ==================================================
+
+    localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(
+            participant
+        )
+    );
+
+
+    console.log(
+        "localStorage参加履歴更新:",
+        participant
+    );
 
 }
 
@@ -1061,7 +1140,9 @@ function formatDate(
 
 
     const parts =
-        String(value).split("-");
+        String(
+            value
+        ).split("-");
 
 
     if (
@@ -1080,6 +1161,8 @@ function formatDate(
     }
 
 
-    return String(value);
+    return String(
+        value
+    );
 
 }
