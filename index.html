@@ -1,121 +1,137 @@
 <!DOCTYPE html>
 <html lang="ja">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<script src="./announcements.js"></script>
-    
 <head>
 
 <meta charset="UTF-8">
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
 
-<title>岩瀬自治会 防災アプリ</title>
+<title>
+    岩瀬自治会 防災アプリ
+</title>
 
-<link rel="stylesheet" href="style.css">
+
+<!-- ==================================================
+     Supabase
+================================================== -->
+
+<script
+    src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+></script>
+
+
+<script
+    src="./stamp/supabase.js"
+></script>
+
+
+<!-- ==================================================
+     お知らせ
+================================================== -->
+
+<script
+    src="./announcements.js"
+></script>
+
+
+<!-- ==================================================
+     認証確認
+================================================== -->
 
 <script>
 
-// =====================================
-// 岩瀬自治会 防災アプリ
-// 共通パスワード認証確認
-// 有効期限：24時間
-// =====================================
+(async function(){
+
+    try {
+
+        const {
+            data,
+            error
+        } =
+        await supabaseClient.auth.getSession();
 
 
-const LOGIN_LIMIT =
-24 * 60 * 60 * 1000;
+        /*
+        ==================================================
+        Supabaseセッションがない場合
+        ==================================================
+        */
+
+        if (
+            error ||
+            !data ||
+            !data.session
+        ) {
+
+            location.href =
+                "./login/login.html";
+
+            return;
+
+        }
 
 
+        /*
+        ==================================================
+        認証成功
+        ==================================================
+        */
 
-const loginData =
-localStorage.getItem("iwaseLogin");
-
-
-
-if(!loginData){
-
-
-    location.href =
-    "login/login.html";
+        console.log(
+            "認証確認OK"
+        );
 
 
-}
-else{
+        console.log(
+            "ユーザーUID:",
+            data.session.user.id
+        );
 
 
-    const data =
-    JSON.parse(loginData);
-
-
-
-    const now =
-    new Date().getTime();
-
-
-
-    if(
-
-        data.login !== true ||
-
-        now - data.time >= LOGIN_LIMIT
-
-    ){
-
-
-        localStorage.removeItem("iwaseLogin");
-
-
-        location.href =
-        "login/login.html";
+        console.log(
+            "Anonymous:",
+            data.session.user.is_anonymous
+        );
 
 
     }
+    catch(error) {
+
+        console.error(
+            "認証確認エラー:",
+            error
+        );
 
 
-}
+        location.href =
+            "./login/login.html";
+
+    }
+
+})();
 
 </script>
+
+
+<!-- ==================================================
+     CSS
+================================================== -->
+
+<link
+    rel="stylesheet"
+    href="style.css"
+>
+
 
 </head>
 
+
 <body>
 
-<script>
-
-// ログイン確認
-
-const loginData =
-localStorage.getItem("iwaseLogin");
-
-if(!loginData){
-
-location.href="login/login.html";
-
-}
-
-</script>
-
-<header class="title-area">
-
-<div class="title-main">
-
-<img src="./images/bosai-iwapon.png"
-class="character"
-alt="防災キャラクター">
-
-<h1>
-岩瀬自治会<br>
-防災アプリ
-</h1>
-
-</div>
-
-<p>
-岩瀬自治会の防災活動を支援するためのWebアプリ
-</p>
-
-</header>
 
 <!-- ==================================================
      自治会からのお知らせ・緊急情報
@@ -130,6 +146,7 @@ alt="防災キャラクター">
         📢 自治会からのお知らせ・緊急情報
     </h2>
 
+
     <div
         id="announcementList"
         class="announcement-list"
@@ -142,189 +159,338 @@ alt="防災キャラクター">
     </div>
 
 </section>
-    
+
+
+<!-- ==================================================
+     ヘッダー
+================================================== -->
+
+<header class="title-area">
+
+
+    <div class="title-main">
+
+
+        <img
+            src="./images/bosai-iwapon.png"
+            class="character"
+            alt="防災キャラクター"
+        >
+
+
+        <h1>
+
+            岩瀬自治会<br>
+            防災アプリ
+
+        </h1>
+
+
+    </div>
+
+
+    <p>
+
+        岩瀬自治会の防災活動を支援するためのWebアプリ
+
+    </p>
+
+
+</header>
+
+
+<!-- ==================================================
+     メイン
+================================================== -->
+
 <main>
 
-<!-- 水害 -->
 
-<div class="card">
+    <!-- ==================================================
+         水害マイタイムライン
+    ================================================== -->
 
-<h2>🌧 水害マイタイムライン</h2>
+    <div class="card">
 
-<p>
-台風・大雨に備えた<br>
-マイタイムライン作成
-</p>
 
-<a href="./water-timeline/">
+        <h2>
+            🌧 水害マイタイムライン
+        </h2>
 
-開始する
 
-</a>
+        <p>
 
-</div>
+            台風・大雨に備えた<br>
+            マイタイムライン作成
 
-<!-- 地震 -->
+        </p>
 
-<div class="card">
 
-<h2>🏠 地震マイタイムライン</h2>
+        <a href="./water-timeline/">
 
-<p>
-地震発生時の行動を整理する<br>
-マイタイムライン作成
-</p>
+            開始する
 
-<a href="./earthquake-timeline/">
+        </a>
 
-開始する
 
-</a>
+    </div>
 
-</div>
 
-<!-- 防災チェックリスト -->
+    <!-- ==================================================
+         地震マイタイムライン
+    ================================================== -->
 
-<div class="card">
+    <div class="card">
 
-<h2>✅ 防災力診断</h2>
 
-<p>
-災害への備えを確認し、<br>
-防災力を診断します
-</p>
+        <h2>
+            🏠 地震マイタイムライン
+        </h2>
 
-<a href="./checklist/">
 
-診断する
+        <p>
 
-</a>
+            地震発生時の行動を整理する<br>
+            マイタイムライン作成
 
-</div>
+        </p>
 
-<!-- 岩瀬防災マップ -->
 
-<div class="card">
+        <a href="./earthquake-timeline/">
 
-<h2>🗺 岩瀬防災マップ</h2>
+            開始する
 
-<p>
-地域の避難場所や危険箇所、防災関連設備を確認
-</p>
+        </a>
 
-<a href="https://www.google.com/maps/d/u/0/edit?hl=ja&mid=1LzzFPXh2YT1kgTya6REbD_YAigNAh4A&ll=35.78450755194393%2C139.90686938816555&z=16"
-target="_blank">
 
-地図を見る
+    </div>
 
-</a>
 
-</div>
+    <!-- ==================================================
+         防災チェックリスト
+    ================================================== -->
 
-<!-- リンク集 -->
+    <div class="card">
 
-<div class="card">
 
-<h2>💻 リンク集</h2>
+        <h2>
+            ✅ 防災力診断
+        </h2>
 
-<p>
-行政情報・岩瀬自治会関連ページ
-</p>
 
-<a href="./links.html">
+        <p>
 
-リンク集を見る
+            災害への備えを確認し、<br>
+            防災力を診断します
 
-</a>
+        </p>
 
-</div>
 
-<!-- 防災訓練 -->
+        <a href="./checklist/">
 
-<section class="training-section">
+            診断する
 
-<h2>
-🚒 岩瀬防災訓練
-</h2>
+        </a>
 
-<div class="training-menu">
 
-<a href="./next-training/next-training.html"
-class="training-card">
+    </div>
 
-  
-<h3>
-📅 次回訓練
-</h3>
 
-<p>
-次回防災訓練のお知らせ
-</p>
+    <!-- ==================================================
+         岩瀬防災マップ
+    ================================================== -->
 
-</a>
+    <div class="card">
 
-<a href="./annual_schedule/annual_schedule.html"
-class="training-card">
 
-<h3>
-🗓 年間計画
-</h3>
+        <h2>
+            🗺 岩瀬防災マップ
+        </h2>
 
-<p>
-年間の防災活動予定
-</p>
 
-</a>
+        <p>
 
-<a href="./record/record.html"
-class="training-card">
+            地域の避難場所や危険箇所、防災関連設備を確認
 
-<h3>
-📷 活動実績
-</h3>
+        </p>
 
-<p>
-過去の訓練内容や写真を確認
-</p>
 
-</a>
+        <a
+            href="https://www.google.com/maps/d/u/0/edit?hl=ja&mid=1LzzFPXh2YT1kgTya6REbD_YAigNAh4A&ll=35.78450755194393%2C139.90686938816555&z=16"
+            target="_blank"
+            rel="noopener noreferrer"
+        >
 
-<a href="./stamp/stamp.html"
-class="training-card">
+            地図を見る
 
-<h3>
-⭐ いわぽん防災マイスター
-</h3>
+        </a>
 
-<p>
-スタンプを集めて防災マイスターを目指しましょう！
-</p>
 
-</a>
+    </div>
 
-</div>
 
-</section>
+    <!-- ==================================================
+         リンク集
+    ================================================== -->
 
-<!-- ロゴ -->
+    <div class="card">
 
-<section class="logo-area">
 
-<img src="./images/iwase-logo.png"
-class="logo"
-alt="岩瀬自治会ロゴ">
+        <h2>
+            💻 リンク集
+        </h2>
 
-</section>
+
+        <p>
+
+            行政情報・岩瀬自治会関連ページ
+
+        </p>
+
+
+        <a href="./links.html">
+
+            リンク集を見る
+
+        </a>
+
+
+    </div>
+
+
+    <!-- ==================================================
+         防災訓練
+    ================================================== -->
+
+    <section class="training-section">
+
+
+        <h2>
+            🚒 岩瀬防災訓練
+        </h2>
+
+
+        <div class="training-menu">
+
+
+            <!-- 次回訓練 -->
+
+            <a
+                href="./next-training/next-training.html"
+                class="training-card"
+            >
+
+                <h3>
+                    📅 次回訓練
+                </h3>
+
+
+                <p>
+                    次回防災訓練のお知らせ
+                </p>
+
+            </a>
+
+
+            <!-- 年間計画 -->
+
+            <a
+                href="./annual_schedule/annual_schedule.html"
+                class="training-card"
+            >
+
+                <h3>
+                    🗓 年間計画
+                </h3>
+
+
+                <p>
+                    年間の防災活動予定
+                </p>
+
+            </a>
+
+
+            <!-- 活動実績 -->
+
+            <a
+                href="./record/record.html"
+                class="training-card"
+            >
+
+                <h3>
+                    📷 活動実績
+                </h3>
+
+
+                <p>
+                    過去の訓練内容や写真を確認
+                </p>
+
+            </a>
+
+
+            <!-- 防災マイスター -->
+
+            <a
+                href="./stamp/stamp.html"
+                class="training-card"
+            >
+
+                <h3>
+                    ⭐ いわぽん防災マイスター
+                </h3>
+
+
+                <p>
+                    スタンプを集めて防災マイスターを目指しましょう！
+                </p>
+
+            </a>
+
+
+        </div>
+
+
+    </section>
+
+
+    <!-- ==================================================
+         ロゴ
+    ================================================== -->
+
+    <section class="logo-area">
+
+
+        <img
+            src="./images/iwase-logo.png"
+            class="logo"
+            alt="岩瀬自治会ロゴ"
+        >
+
+
+    </section>
+
 
 </main>
 
+
+<!-- ==================================================
+     フッター
+================================================== -->
+
 <footer>
 
-<p>
-©TakayaSugiyama
-</p>
+
+    <p>
+
+        ©TakayaSugiyama
+
+    </p>
+
 
 </footer>
+
 
 </body>
 
