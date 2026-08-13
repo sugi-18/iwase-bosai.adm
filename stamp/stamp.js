@@ -185,10 +185,9 @@ function initializeSupabase() {
 //
 // Supabase participantsへ新規登録
 //
-// 一般利用者はログインしていないため、
+// 一般利用者はSupabase Authにログインしない。
 // INSERTのみ実行する。
-//
-// 管理者Authセッションは使用しない。
+// INSERT後のSELECTは行わない。
 // ==================================================
 
 async function registerUser() {
@@ -288,12 +287,14 @@ async function registerUser() {
         // ==================================================
         // participantsへ新規登録
         //
-        // upsertは使用しない。
+        // 重要:
+        // .select()は付けない。
+        //
+        // 現在のRLSではanonによるINSERTは許可されているが、
+        // SELECTは許可されていないため。
         // ==================================================
 
         const {
-            data:
-                participantRows,
             error:
                 participantError
         } =
@@ -309,9 +310,6 @@ async function registerUser() {
                         name:
                             data.name
                     }
-                )
-                .select(
-                    "participant_id,name"
                 );
 
 
@@ -327,25 +325,43 @@ async function registerUser() {
             );
 
 
+            console.error(
+                "Supabase error message:",
+                participantError.message
+            );
+
+
+            console.error(
+                "Supabase error code:",
+                participantError.code
+            );
+
+
+            console.error(
+                "Supabase error details:",
+                participantError.details
+            );
+
+
+            console.error(
+                "Supabase error hint:",
+                participantError.hint
+            );
+
+
             throw participantError;
 
         }
 
 
         // ==================================================
-        // 登録結果確認
+        // Supabase INSERT成功
         // ==================================================
 
-        if (
-            !participantRows ||
-            participantRows.length === 0
-        ) {
-
-            throw new Error(
-                "Supabaseへの利用者登録結果を確認できませんでした。"
-            );
-
-        }
+        console.log(
+            "participants INSERT 成功:",
+            data.id
+        );
 
 
         // ==================================================
@@ -389,12 +405,6 @@ async function registerUser() {
         console.log(
             "利用者登録完了:",
             data
-        );
-
-
-        console.log(
-            "Supabase登録結果:",
-            participantRows
         );
 
 
@@ -470,7 +480,6 @@ async function registerUser() {
     }
 
 }
-
 
 // ==================================================
 // 保存データ読み込み
