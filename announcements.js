@@ -24,11 +24,10 @@ let announcementClient = null;
 
 /* ==================================================
    NEW表示期間
-   7日以内のお知らせをNEWとする
+   公開から24時間以内のお知らせをNEWとする
 ================================================== */
 
-const ANNOUNCEMENT_NEW_DAYS = 7;
-
+const ANNOUNCEMENT_NEW_HOURS = 24;
 
 /* ==================================================
    初期化
@@ -651,6 +650,7 @@ function closeAnnouncementDetail() {
 
 /* ==================================================
    NEW判定
+   公開から24時間以内ならNEWを表示
 ================================================== */
 
 function isAnnouncementNew(
@@ -690,24 +690,22 @@ function isAnnouncementNew(
         publishedDate.getTime();
 
 
-    const days =
+    const hours =
         diff /
         (
             1000 *
             60 *
-            60 *
-            24
+            60
         );
 
 
     return (
-        days >= 0 &&
-        days <=
-        ANNOUNCEMENT_NEW_DAYS
+        hours >= 0 &&
+        hours <=
+        ANNOUNCEMENT_NEW_HOURS
     );
 
 }
-
 
 /* ==================================================
    本文プレビュー
