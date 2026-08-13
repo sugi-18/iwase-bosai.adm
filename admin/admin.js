@@ -1420,6 +1420,24 @@ async function loadParticipants() {
         await adminSupabaseClient
             .from("participants")
             .select("*")
+       console.log(
+    "===== PARTICIPANTS RESULT ====="
+);
+
+console.log(
+    "participants data:",
+    data
+);
+
+console.log(
+    "participants count:",
+    data?.length
+);
+
+console.log(
+    "participants error:",
+    error
+);
             .order(
                 "created_at",
                 {
