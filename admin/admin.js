@@ -556,10 +556,7 @@ async function loadAllData() {
             error
         );
 
-    }
-
-}
-
+     }
 
     console.log("===== loadAllData END =====");
 
