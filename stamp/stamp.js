@@ -478,253 +478,183 @@ function loadCard() {
 async function syncWithSupabase() {
 
     if (!stampSupabaseClient) {
-
         return;
-
     }
-
 
     const saved =
-        localStorage.getItem(
-            STORAGE_KEY
-        );
-
+        localStorage.getItem(STORAGE_KEY);
 
     if (!saved) {
-
         return;
-
     }
-
 
     let userData;
 
-
     try {
-
-        userData =
-            JSON.parse(saved);
-
+        userData = JSON.parse(saved);
     } catch (error) {
-
         console.error(
             "利用者データ解析エラー:",
             error
         );
-
         return;
-
     }
 
-
-    if (
-        !userData ||
-        !userData.id
-    ) {
-
+    if (!userData || !userData.id) {
         return;
-
     }
 
+    const participantId =
+        String(userData.id).trim();
 
     try {
 
-        // ------------------------------------------
-        // participations
-        // ------------------------------------------
-
-        const {
-            data:
-                participationRows,
-            error:
-                participationError
-        } =
-            await stampSupabaseClient
-                .from("participations")
-                .select(
-                    "training_id"
-                )
-                .eq(
-                    "participant_id",
-                    userData.id
-                );
-
-
-        if (participationError) {
-
-            throw participationError;
-
-        }
-
-
-        const participations =
-            participationRows || [];
-
-
-        // ------------------------------------------
-        // trainings
-        // ------------------------------------------
-
-        const {
-            data:
-                trainingRows,
-            error:
-                trainingError
-        } =
-            await stampSupabaseClient
-                .from("trainings")
-                .select("*");
-
-
-        if (trainingError) {
-
-            throw trainingError;
-
-        }
-
-
-        const trainings =
-            trainingRows || [];
-
-
-        // ------------------------------------------
-        // 参加記録をスタンプに変換
-        // ------------------------------------------
-
-        const stamps = [];
-
-        const usedTrainingIds =
-            new Set();
-
-
-        participations.forEach(
-            participation => {
-
-                const trainingId =
-                    String(
-                        participation.training_id ??
-                        ""
-                    ).trim();
-
-
-                if (!trainingId) {
-
-                    return;
-
-                }
-
-
-                if (
-                    usedTrainingIds.has(
-                        trainingId
-                    )
-                ) {
-
-                    return;
-
-                }
-
-
-                const training =
-                    trainings.find(
-                        item =>
-                            String(
-                                item.training_id
-                            ) ===
-                            trainingId
-                    );
-
-
-                if (!training) {
-
-                    return;
-
-                }
-
-
-                usedTrainingIds.add(
-                    trainingId
-                );
-
-
-                const trainingDate =
-                    training.training_date ||
-                    training.date ||
-                    "";
-
-
-                const trainingTitle =
-                    training.title ||
-                    "防災訓練";
-
-
-                stamps.push({
-
-                    training_id:
-                        training.training_id,
-
-                    date:
-                        trainingDate,
-
-                    event:
-                        trainingTitle
-
-                });
-
-            }
+        console.log(
+            "Supabaseスタンプ同期開始:",
+            participantId
         );
 
+        const {
+            data,
+            error
+        } =
+            await stampSupabaseClient.rpc(
+                "get_participant_stamps",
+                {
+                    p_participant_id:
+                        participantId
+                }
+            );
 
-        // ------------------------------------------
-        // 日付順
-        // ------------------------------------------
+        if (error) {
+            console.error(
+                "スタンプ取得RPCエラー:",
+                error
+            );
+            throw error;
+        }
 
-        stamps.sort(
-            function (a, b) {
+        console.log(
+            "スタンプ取得RPC結果:",
+            data
+        );
+
+        if (!data) {
+            throw new Error(
+                "Supabaseからスタンプ情報を取得できませんでした。"
+            );
+        }
+
+        if (data.success !== true) {
+            throw new Error(
+                data.error ||
+                "unknown_error"
+            );
+        }
+
+        let stamps =
+            Array.isArray(data.stamps)
+                ? data.stamps
+                : [];
+
+        stamps =
+            stamps
+                .map(stamp => {
+
+                    if (!stamp) {
+                        return null;
+                    }
+
+                    const trainingId =
+                        String(
+                            stamp.training_id ||
+                            ""
+                        ).trim();
+
+                    if (!trainingId) {
+                        return null;
+                    }
+
+                    return {
+                        training_id:
+                            trainingId,
+
+                        date:
+                            stamp.date || "",
+
+                        event:
+                            stamp.event ||
+                            "防災訓練"
+                    };
+
+                })
+                .filter(
+                    stamp => !!stamp
+                );
+
+        const uniqueStamps = [];
+        const usedTrainingIds = new Set();
+
+        stamps.forEach(stamp => {
+
+            if (
+                usedTrainingIds.has(
+                    stamp.training_id
+                )
+            ) {
+                return;
+            }
+
+            usedTrainingIds.add(
+                stamp.training_id
+            );
+
+            uniqueStamps.push(stamp);
+
+        });
+
+        uniqueStamps.sort(
+            (a, b) => {
 
                 const dateA =
-                    String(
-                        a.date || ""
-                    );
+                    String(a.date || "");
 
                 const dateB =
-                    String(
-                        b.date || ""
-                    );
+                    String(b.date || "");
 
-                return (
-                    dateB.localeCompare(
-                        dateA
-                    )
+                return dateB.localeCompare(
+                    dateA
                 );
 
             }
         );
 
-
         userData.stamps =
-            stamps.slice(
+            uniqueStamps.slice(
                 0,
                 MAX_STAMP
             );
-
 
         localStorage.setItem(
             STORAGE_KEY,
             JSON.stringify(userData)
         );
 
-
-        displayCard(
-            userData
-        );
-
+        displayCard(userData);
 
         console.log(
             "Supabase同期完了:",
-            userData
-        );
+            {
+                participant_id:
+                    participantId,
 
+                stamp_count:
+                    userData.stamps.length,
+
+                stamps:
+                    userData.stamps
+            }
+        );
 
     } catch (error) {
 
@@ -733,13 +663,10 @@ async function syncWithSupabase() {
             error
         );
 
-        // 同期失敗時は
-        // 現在のlocalStorageを維持する
-
+        // 同期失敗時はlocalStorageを維持
     }
 
 }
-
 
 // ==================================================
 // 参加した訓練一覧
@@ -752,298 +679,95 @@ async function loadTrainingList() {
             "training-list"
         );
 
-
     if (!container) {
-
         return;
-
     }
 
+    const saved =
+        localStorage.getItem(
+            STORAGE_KEY
+        );
 
-    if (!stampSupabaseClient) {
+    if (!saved) {
 
         container.innerHTML =
-            "<p>訓練情報を読み込めませんでした。</p>";
+            "<p>参加した訓練はありません。</p>";
 
         return;
-
     }
 
-
-    container.innerHTML =
-        "<p>参加した訓練を読み込んでいます……</p>";
-
+    let userData;
 
     try {
 
-        const saved =
-            localStorage.getItem(
-                STORAGE_KEY
-            );
-
-
-        if (!saved) {
-
-            container.innerHTML =
-                "<p>参加した訓練はありません。</p>";
-
-            return;
-
-        }
-
-
-        const userData =
+        userData =
             JSON.parse(saved);
-
-
-        if (
-            !userData ||
-            !userData.id
-        ) {
-
-            container.innerHTML =
-                "<p>参加した訓練はありません。</p>";
-
-            return;
-
-        }
-
-
-        const participantId =
-            String(
-                userData.id
-            ).trim();
-
-
-        // ------------------------------------------
-        // participations
-        // ------------------------------------------
-
-        const {
-            data:
-                participationRows,
-            error:
-                participationError
-        } =
-            await stampSupabaseClient
-                .from("participations")
-                .select(
-                    "training_id"
-                )
-                .eq(
-                    "participant_id",
-                    participantId
-                );
-
-
-        if (participationError) {
-
-            throw participationError;
-
-        }
-
-
-        const participations =
-            participationRows || [];
-
-
-        if (
-            participations.length ===
-            0
-        ) {
-
-            container.innerHTML =
-                "<p>参加した訓練はありません。</p>";
-
-            return;
-
-        }
-
-
-        // ------------------------------------------
-        // trainings
-        // ------------------------------------------
-
-        const {
-            data:
-                trainingRows,
-            error:
-                trainingError
-        } =
-            await stampSupabaseClient
-                .from("trainings")
-                .select("*");
-
-
-        if (trainingError) {
-
-            throw trainingError;
-
-        }
-
-
-        const trainings =
-            trainingRows || [];
-
-
-        // ------------------------------------------
-        // 重複除去
-        // ------------------------------------------
-
-        const seen =
-            new Set();
-
-
-        const participatedTrainings =
-            participations
-                .map(
-                    participation => {
-
-                        const id =
-                            String(
-                                participation.training_id
-                            );
-
-                        if (
-                            seen.has(id)
-                        ) {
-
-                            return null;
-
-                        }
-
-                        seen.add(id);
-
-
-                        return trainings.find(
-                            training =>
-                                String(
-                                    training.training_id
-                                ) === id
-                        );
-
-                    }
-                )
-                .filter(
-                    training =>
-                        !!training
-                );
-
-
-        container.innerHTML =
-            "";
-
-
-        if (
-            participatedTrainings.length ===
-            0
-        ) {
-
-            container.innerHTML =
-                "<p>参加した訓練はありません。</p>";
-
-            return;
-
-        }
-
-
-        participatedTrainings.sort(
-            function (a, b) {
-
-                const dateA =
-                    String(
-                        a.training_date ||
-                        a.date ||
-                        ""
-                    );
-
-                const dateB =
-                    String(
-                        b.training_date ||
-                        b.date ||
-                        ""
-                    );
-
-                return (
-                    dateB.localeCompare(
-                        dateA
-                    )
-                );
-
-            }
-        );
-
-
-        participatedTrainings.forEach(
-            training => {
-
-                const item =
-                    document.createElement(
-                        "div"
-                    );
-
-
-                item.className =
-                    "training-item";
-
-
-                const title =
-                    document.createElement(
-                        "strong"
-                    );
-
-
-                title.textContent =
-                    training.title ||
-                    "防災訓練";
-
-
-                const date =
-                    document.createElement(
-                        "div"
-                    );
-
-
-                date.textContent =
-                    formatTrainingDate(
-                        training.training_date ||
-                        training.date
-                    );
-
-
-                item.appendChild(
-                    title
-                );
-
-
-                item.appendChild(
-                    date
-                );
-
-
-                container.appendChild(
-                    item
-                );
-
-            }
-        );
-
 
     } catch (error) {
 
         console.error(
-            "参加訓練一覧取得エラー:",
+            "訓練一覧データ解析エラー:",
             error
         );
 
-
         container.innerHTML =
-            "<p>参加した訓練を取得できませんでした。</p>";
+            "<p>参加した訓練を読み込めませんでした。</p>";
 
+        return;
     }
 
-}
+    const stamps =
+        Array.isArray(userData.stamps)
+            ? userData.stamps
+            : [];
 
+    if (stamps.length === 0) {
+
+        container.innerHTML =
+            "<p>参加した訓練はありません。</p>";
+
+        return;
+    }
+
+    container.innerHTML = "";
+
+    stamps.forEach(stamp => {
+
+        const item =
+            document.createElement(
+                "div"
+            );
+
+        item.className =
+            "training-item";
+
+        const title =
+            document.createElement(
+                "strong"
+            );
+
+        title.textContent =
+            stamp.event ||
+            "防災訓練";
+
+        const date =
+            document.createElement(
+                "div"
+            );
+
+        date.textContent =
+            formatTrainingDate(
+                stamp.date
+            );
+
+        item.appendChild(title);
+        item.appendChild(date);
+
+        container.appendChild(item);
+
+    });
+
+}
 
 // ==================================================
 // 日付表示
