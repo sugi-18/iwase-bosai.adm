@@ -580,7 +580,7 @@
 
 <!-- ==================================================
      Step 2
-     参加者分析
+     防災訓練 参加者分析ダッシュボード
 ================================================== -->
 
 <section
@@ -593,7 +593,7 @@
         <div>
 
             <h2>
-                参加者分析
+                防災訓練 参加者分析
             </h2>
 
             <p>
@@ -614,7 +614,9 @@
     </div>
 
 
-    <!-- 基本統計 -->
+    <!-- ==================================================
+         基本統計
+    ================================================== -->
 
     <div class="stats-grid dashboard-stats">
 
@@ -626,7 +628,9 @@
 
             <div>
 
-                <strong id="analysisTotalParticipants">
+                <strong
+                    id="analysisTotalParticipants"
+                >
                     0
                 </strong>
 
@@ -647,7 +651,9 @@
 
             <div>
 
-                <strong id="analysisActiveParticipants">
+                <strong
+                    id="analysisActiveParticipants"
+                >
                     0
                 </strong>
 
@@ -668,7 +674,9 @@
 
             <div>
 
-                <strong id="analysisInactiveParticipants">
+                <strong
+                    id="analysisInactiveParticipants"
+                >
                     0
                 </strong>
 
@@ -689,7 +697,9 @@
 
             <div>
 
-                <strong id="analysisParticipationRate">
+                <strong
+                    id="analysisParticipationRate"
+                >
                     0
                 </strong>
 
@@ -704,7 +714,9 @@
     </div>
 
 
-    <!-- 詳細統計 -->
+    <!-- ==================================================
+         詳細統計
+    ================================================== -->
 
     <div class="stats-grid secondary-stats">
 
@@ -716,7 +728,9 @@
 
             <div>
 
-                <strong id="analysisAverageParticipation">
+                <strong
+                    id="analysisAverageParticipation"
+                >
                     0
                 </strong>
 
@@ -737,7 +751,9 @@
 
             <div>
 
-                <strong id="analysisRepeatParticipants">
+                <strong
+                    id="analysisRepeatParticipants"
+                >
                     0
                 </strong>
 
@@ -758,7 +774,9 @@
 
             <div>
 
-                <strong id="analysisMasterParticipants">
+                <strong
+                    id="analysisMasterParticipants"
+                >
                     0
                 </strong>
 
@@ -779,7 +797,9 @@
 
             <div>
 
-                <strong id="analysisMasterRate">
+                <strong
+                    id="analysisMasterRate"
+                >
                     0
                 </strong>
 
@@ -794,7 +814,86 @@
     </div>
 
 
-    <!-- 参加回数分布 -->
+    <!-- ==================================================
+         2026年度
+    ================================================== -->
+
+    <div class="dashboard-card">
+
+        <div class="card-title-row">
+
+            <div>
+
+                <h3>
+                    2026年度の参加状況
+                </h3>
+
+                <p class="card-description">
+                    訓練実施日
+                    <strong>training_date</strong>
+                    を基準に集計
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="stats-grid secondary-stats">
+
+            <div class="stat-card small-stat">
+
+                <span class="stat-label">
+                    2026年度参加者
+                </span>
+
+                <div>
+
+                    <strong
+                        id="analysisFiscalYearParticipants"
+                    >
+                        0
+                    </strong>
+
+                    <span>
+                        人
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div class="stat-card small-stat">
+
+                <span class="stat-label">
+                    2026年度延べ参加
+                </span>
+
+                <div>
+
+                    <strong
+                        id="analysisFiscalYearParticipations"
+                    >
+                        0
+                    </strong>
+
+                    <span>
+                        回
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ==================================================
+         参加回数分布
+    ================================================== -->
 
     <div class="dashboard-card chart-card">
 
@@ -806,7 +905,7 @@
                     参加回数の分布
                 </h3>
 
-                <p>
+                <p class="card-description">
                     参加者が何回の訓練・講座に参加しているか
                 </p>
 
@@ -826,10 +925,48 @@
     </div>
 
 
-    <!-- ランキング・未参加者 -->
+    <!-- ==================================================
+         月別参加状況
+    ================================================== -->
+
+    <div class="dashboard-card chart-card">
+
+        <div class="card-title-row">
+
+            <div>
+
+                <h3>
+                    月別参加状況
+                </h3>
+
+                <p class="card-description">
+                    過去12か月の延べ参加回数
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="chart-container">
+
+            <canvas
+                id="participantMonthlyChart"
+            ></canvas>
+
+        </div>
+
+    </div>
+
+
+    <!-- ==================================================
+         ランキング・未参加者
+    ================================================== -->
 
     <div class="dashboard-two-column">
 
+
+        <!-- 参加回数ランキング -->
 
         <div class="dashboard-card">
 
@@ -851,6 +988,8 @@
 
         </div>
 
+
+        <!-- 未参加者 -->
 
         <div class="dashboard-card">
 
@@ -875,7 +1014,9 @@
     </div>
 
 
-    <!-- 参加者別分析 -->
+    <!-- ==================================================
+         参加者別分析
+    ================================================== -->
 
     <div class="dashboard-card">
 
@@ -887,7 +1028,7 @@
                     参加者別分析
                 </h3>
 
-                <p>
+                <p class="card-description">
                     各参加者の参加状況
                 </p>
 
@@ -944,6 +1085,42 @@
         </div>
 
     </div>
+
+
+    <!-- ==================================================
+         訓練・講座別参加状況
+    ================================================== -->
+
+    <div class="dashboard-card">
+
+        <div class="card-title-row">
+
+            <div>
+
+                <h3>
+                    訓練・講座別参加状況
+                </h3>
+
+                <p class="card-description">
+                    各訓練・講座に何人参加したかを確認できます。
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div
+            id="trainingAnalysisList"
+            class="ranking-list"
+        >
+
+            読み込み中...
+
+        </div>
+
+    </div>
+
 
 </section>
 
