@@ -115,9 +115,29 @@ function initializeSupabase() {
     } catch (error) {
 
         console.error(
-            "Supabase初期化エラー:",
-            error
-        );
+    "利用者登録エラー:",
+    error
+);
+
+console.error(
+    "Supabase error message:",
+    error?.message
+);
+
+console.error(
+    "Supabase error code:",
+    error?.code
+);
+
+console.error(
+    "Supabase error details:",
+    error?.details
+);
+
+console.error(
+    "Supabase error hint:",
+    error?.hint
+);
 
 
         stampSupabaseClient =
