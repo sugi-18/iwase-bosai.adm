@@ -423,14 +423,12 @@
             ================================================== */
 
             const {
-                data: trainings,
-                error: trainingError
-            } =
-                await adminSupabaseClient
-                    .from("trainings")
-                    .select(
-                        "id, training_id, title, date, location, description, trainig_date"
-                    );
+    data: trainings,
+    error: trainingError
+} =
+    await adminSupabaseClient
+        .from("trainings")
+        .select("*");
 
 
             if (trainingError) {
