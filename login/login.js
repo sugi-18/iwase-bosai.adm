@@ -8,11 +8,6 @@
 
 // =====================================
 // ログイン有効時間
-//
-// アプリ上のログイン状態を24時間保持
-//
-// ※Supabase Authのセッションは
-//   24時間で削除しません。
 // =====================================
 
 const LOGIN_LIMIT =
@@ -43,9 +38,7 @@ async function checkLogin() {
             );
 
 
-        // ---------------------------------
-        // ログイン情報なし
-        // ---------------------------------
+        // ログイン情報がなければ終了
 
         if (!loginData) {
 
@@ -62,9 +55,7 @@ async function checkLogin() {
             new Date().getTime();
 
 
-        // ---------------------------------
-        // 24時間以内
-        // ---------------------------------
+        // 24時間以内か確認
 
         if (
             data.login === true &&
@@ -87,17 +78,27 @@ async function checkLogin() {
                 sessionData.session
             ) {
 
+                console.log(
+                    "既存のSupabaseセッションを確認しました。"
+                );
+
+
+                console.log(
+                    "UID:",
+                    sessionData.session.user.id
+                );
+
+
                 location.href =
                     "../index.html";
+
 
                 return;
 
             }
 
 
-            // ---------------------------------
-            // セッションが存在しない
-            // ---------------------------------
+            // セッションがない場合
 
             localStorage.removeItem(
                 "iwaseLogin"
@@ -108,9 +109,7 @@ async function checkLogin() {
 
         else {
 
-            // ---------------------------------
             // 24時間経過
-            // ---------------------------------
 
             localStorage.removeItem(
                 "iwaseLogin"
@@ -166,6 +165,7 @@ async function login() {
         button.textContent =
             "認証中...";
 
+
         errorElement.textContent = "";
 
 
@@ -188,7 +188,7 @@ async function login() {
 
 
         // ---------------------------------
-        // すでにログイン済み
+        // 既存セッションがある場合
         // ---------------------------------
 
         if (
@@ -237,6 +237,10 @@ async function login() {
         }
 
 
+        // ---------------------------------
+        // ユーザー確認
+        // ---------------------------------
+
         if (
             !data ||
             !data.user
@@ -259,6 +263,10 @@ async function login() {
         );
 
 
+        // ---------------------------------
+        // Anonymousユーザー確認
+        // ---------------------------------
+
         console.log(
             "Anonymous Auth:",
             data.user.is_anonymous
@@ -266,14 +274,14 @@ async function login() {
 
 
         // ---------------------------------
-        // ローカルログイン状態保存
+        // ログイン状態保存
         // ---------------------------------
 
         saveLoginState();
 
 
         // ---------------------------------
-        // トップページ
+        // トップページへ
         // ---------------------------------
 
         location.href =
