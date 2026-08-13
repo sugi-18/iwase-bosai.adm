@@ -2,11 +2,18 @@
 // 岩瀬自治会 防災アプリ
 // いわぽん防災マイスター スタンプカード
 //
-// iPad対応・Supabase登録確認強化版
+// 完成版
 //
-// 一般利用者はSupabase Authにログインしない。
-// スタンプカード専用クライアントを使用し、
-// 管理者のAuthセッションを引き継がない。
+// ・iPhone / Android / PC / iPad 対応
+// ・Supabase Authを一般利用者には使用しない
+// ・スタンプカード専用Supabaseクライアント
+// ・参加者登録
+// ・参加履歴同期
+// ・訓練情報同期
+// ・QRコード表示
+// ・最大10スタンプ
+// ・5スタンプで認定
+// ・完全退会処理
 // ==================================================
 
 "use strict";
@@ -24,7 +31,7 @@ const CERTIFICATE_COUNT = 5;
 
 
 // ==================================================
-// Supabase設定
+// Supabase
 // ==================================================
 
 const STAMP_SUPABASE_URL =
@@ -46,12 +53,10 @@ window.addEventListener(
 
         initializeSupabase();
 
-
         const registerButton =
             document.getElementById(
                 "register-button"
             );
-
 
         if (registerButton) {
 
@@ -62,7 +67,6 @@ window.addEventListener(
 
         }
 
-
         loadCard();
 
     }
@@ -71,21 +75,11 @@ window.addEventListener(
 
 // ==================================================
 // Supabase初期化
-//
-// スタンプカード専用クライアントを作成する。
-//
-// 重要:
-// 共通supabaseClientは使用しない。
-// 管理者Authセッションを引き継がない。
 // ==================================================
 
 function initializeSupabase() {
 
     try {
-
-        // --------------------------------------------------
-        // Supabase JSライブラリ確認
-        // --------------------------------------------------
 
         if (
             typeof window.supabase ===
@@ -96,19 +90,12 @@ function initializeSupabase() {
                 "Supabase JSライブラリが読み込まれていません。"
             );
 
-
-            stampSupabaseClient =
-                null;
-
+            stampSupabaseClient = null;
 
             return false;
 
         }
 
-
-        // --------------------------------------------------
-        // スタンプカード専用クライアント
-        // --------------------------------------------------
 
         stampSupabaseClient =
             window.supabase.createClient(
@@ -116,6 +103,7 @@ function initializeSupabase() {
                 STAMP_SUPABASE_PUBLISHABLE_KEY,
                 {
                     auth: {
+
                         persistSession:
                             false,
 
@@ -124,6 +112,7 @@ function initializeSupabase() {
 
                         detectSessionInUrl:
                             false
+
                     }
                 }
             );
@@ -144,34 +133,7 @@ function initializeSupabase() {
             error
         );
 
-
-        console.error(
-            "Supabase error message:",
-            error?.message
-        );
-
-
-        console.error(
-            "Supabase error code:",
-            error?.code
-        );
-
-
-        console.error(
-            "Supabase error details:",
-            error?.details
-        );
-
-
-        console.error(
-            "Supabase error hint:",
-            error?.hint
-        );
-
-
-        stampSupabaseClient =
-            null;
-
+        stampSupabaseClient = null;
 
         return false;
 
@@ -181,13 +143,32 @@ function initializeSupabase() {
 
 
 // ==================================================
+// 利用者ID生成
+// ==================================================
+
+function createParticipantId() {
+
+    const timestamp =
+        Date.now();
+
+    const random =
+        Math.random()
+            .toString(36)
+            .substring(2, 8)
+            .toUpperCase();
+
+    return (
+        "IWASE-" +
+        timestamp +
+        "-" +
+        random
+    );
+
+}
+
+
+// ==================================================
 // 利用者登録
-//
-// Supabase participantsへ新規登録
-//
-// 一般利用者はSupabase Authにログインしない。
-// INSERTのみ実行する。
-// INSERT後のSELECTは行わない。
 // ==================================================
 
 async function registerUser() {
@@ -213,15 +194,13 @@ async function registerUser() {
         username.value.trim();
 
 
-    if (name === "") {
+    if (!name) {
 
         alert(
             "氏名を入力してください。"
         );
 
-
         username.focus();
-
 
         return;
 
@@ -234,7 +213,6 @@ async function registerUser() {
             "サーバーに接続できません。\n\n" +
             "通信状態を確認して、もう一度お試しください。"
         );
-
 
         return;
 
@@ -252,20 +230,14 @@ async function registerUser() {
         registerButton.disabled =
             true;
 
-
         registerButton.textContent =
             "登録中……";
 
     }
 
 
-    // ==================================================
-    // 利用者ID生成
-    // ==================================================
-
     const participantId =
-        "IWASE-" +
-        Date.now();
+        createParticipantId();
 
 
     const data = {
@@ -284,89 +256,43 @@ async function registerUser() {
 
     try {
 
-        // ==================================================
-        // participantsへ新規登録
+        // ------------------------------------------
+        // participants INSERT
         //
-        // 重要:
-        // .select()は付けない。
-        //
-        // 現在のRLSではanonによるINSERTは許可されているが、
-        // SELECTは許可されていないため。
-        // ==================================================
+        // SELECTは行わない
+        // ------------------------------------------
 
         const {
-            error:
-                participantError
+            error
         } =
             await stampSupabaseClient
-                .from(
-                    "participants"
-                )
-                .insert(
-                    {
-                        participant_id:
-                            data.id,
+                .from("participants")
+                .insert({
 
-                        name:
-                            data.name
-                    }
-                );
+                    participant_id:
+                        participantId,
+
+                    name:
+                        name
+
+                });
 
 
-        // ==================================================
-        // Supabase登録エラー
-        // ==================================================
-
-        if (participantError) {
+        if (error) {
 
             console.error(
                 "participants INSERT error:",
-                participantError
+                error
             );
 
-
-            console.error(
-                "Supabase error message:",
-                participantError.message
-            );
-
-
-            console.error(
-                "Supabase error code:",
-                participantError.code
-            );
-
-
-            console.error(
-                "Supabase error details:",
-                participantError.details
-            );
-
-
-            console.error(
-                "Supabase error hint:",
-                participantError.hint
-            );
-
-
-            throw participantError;
+            throw error;
 
         }
 
 
-        // ==================================================
-        // Supabase INSERT成功
-        // ==================================================
-
-        console.log(
-            "participants INSERT 成功:",
-            data.id
-        );
-
-
-        // ==================================================
-        // localStorage保存
-        // ==================================================
+        // ------------------------------------------
+        // localStorage
+        // ------------------------------------------
 
         localStorage.setItem(
             STORAGE_KEY,
@@ -374,17 +300,17 @@ async function registerUser() {
         );
 
 
-        // ==================================================
-        // localStorage保存確認
-        // ==================================================
+        // ------------------------------------------
+        // 保存確認
+        // ------------------------------------------
 
-        const verifySaved =
+        const verify =
             localStorage.getItem(
                 STORAGE_KEY
             );
 
 
-        if (!verifySaved) {
+        if (!verify) {
 
             throw new Error(
                 "端末への保存を確認できませんでした。"
@@ -393,9 +319,9 @@ async function registerUser() {
         }
 
 
-        // ==================================================
-        // 画面表示
-        // ==================================================
+        // ------------------------------------------
+        // 表示
+        // ------------------------------------------
 
         displayCard(
             data
@@ -404,7 +330,7 @@ async function registerUser() {
 
         console.log(
             "利用者登録完了:",
-            data
+            participantId
         );
 
 
@@ -416,38 +342,11 @@ async function registerUser() {
         );
 
 
-        console.error(
-            "Supabase error message:",
-            error?.message
-        );
-
-
-        console.error(
-            "Supabase error code:",
-            error?.code
-        );
-
-
-        console.error(
-            "Supabase error details:",
-            error?.details
-        );
-
-
-        console.error(
-            "Supabase error hint:",
-            error?.hint
-        );
-
-
         let message =
             "利用者登録に失敗しました。";
 
 
-        if (
-            error &&
-            error.message
-        ) {
+        if (error?.message) {
 
             message +=
                 "\n\n" +
@@ -471,7 +370,6 @@ async function registerUser() {
             registerButton.disabled =
                 false;
 
-
             registerButton.textContent =
                 "登録する";
 
@@ -481,8 +379,9 @@ async function registerUser() {
 
 }
 
+
 // ==================================================
-// 保存データ読み込み
+// localStorage読み込み
 // ==================================================
 
 function loadCard() {
@@ -508,19 +407,42 @@ function loadCard() {
 
         if (
             !data ||
-            !data.name ||
             !data.id ||
-            !Array.isArray(data.stamps)
+            !data.name
         ) {
 
             localStorage.removeItem(
                 STORAGE_KEY
             );
 
-
             return;
 
         }
+
+
+        if (
+            !Array.isArray(
+                data.stamps
+            )
+        ) {
+
+            data.stamps = [];
+
+        }
+
+
+        // 最大10件
+        data.stamps =
+            data.stamps.slice(
+                0,
+                MAX_STAMP
+            );
+
+
+        localStorage.setItem(
+            STORAGE_KEY,
+            JSON.stringify(data)
+        );
 
 
         displayCard(
@@ -528,6 +450,7 @@ function loadCard() {
         );
 
 
+        // バックグラウンド同期
         syncWithSupabase();
 
 
@@ -549,23 +472,12 @@ function loadCard() {
 
 
 // ==================================================
-// Supabaseと同期
-//
-// 重要:
-// participantsのupsertは行わない。
-//
-// participantsは利用者登録時にINSERT済み。
-// ここでは参加記録と訓練情報だけを取得する。
+// Supabase同期
 // ==================================================
 
 async function syncWithSupabase() {
 
     if (!stampSupabaseClient) {
-
-        console.error(
-            "Supabaseクライアントがありません。"
-        );
-
 
         return;
 
@@ -600,7 +512,6 @@ async function syncWithSupabase() {
             error
         );
 
-
         return;
 
     }
@@ -608,8 +519,7 @@ async function syncWithSupabase() {
 
     if (
         !userData ||
-        !userData.id ||
-        !userData.name
+        !userData.id
     ) {
 
         return;
@@ -619,77 +529,178 @@ async function syncWithSupabase() {
 
     try {
 
-        // ==================================================
-        // participantsは更新しない
-        // ==================================================
+        // ------------------------------------------
+        // participations
+        // ------------------------------------------
+
+        const {
+            data:
+                participationRows,
+            error:
+                participationError
+        } =
+            await stampSupabaseClient
+                .from("participations")
+                .select(
+                    "training_id"
+                )
+                .eq(
+                    "participant_id",
+                    userData.id
+                );
 
 
-// ==================================================
-// 参加履歴取得
-//
-// 直接 participations / trainings をSELECTしない。
-// Supabase RPCを使用する。
-// ==================================================
+        if (participationError) {
 
-const {
-    data: historyRows,
-    error: historyError
-} =
-    await stampSupabaseClient.rpc(
-        "get_participant_training_history",
-        {
-            p_participant_id:
-                String(userData.id).trim()
-        }
-    );
-
-if (historyError) {
-
-    console.error(
-        "参加履歴取得RPCエラー:",
-        historyError
-    );
-
-    throw historyError;
-}
-
-const history =
-    Array.isArray(historyRows)
-        ? historyRows
-        : [];
-
-// ==================================================
-// RPC結果をスタンプ形式へ変換
-// ==================================================
-
-const stamps =
-    history.map(
-        item => {
-
-            return {
-                training_id:
-                    item.training_id,
-
-                date:
-                    item.training_date ||
-                    "",
-
-                event:
-                    item.title ||
-                    "防災訓練",
-
-                registered_at:
-                    item.registered_at ||
-                    null
-            };
+            throw participationError;
 
         }
-    );
 
 
-        // ==================================================
-        // 最大10個
-        // ==================================================
+        const participations =
+            participationRows || [];
+
+
+        // ------------------------------------------
+        // trainings
+        // ------------------------------------------
+
+        const {
+            data:
+                trainingRows,
+            error:
+                trainingError
+        } =
+            await stampSupabaseClient
+                .from("trainings")
+                .select("*");
+
+
+        if (trainingError) {
+
+            throw trainingError;
+
+        }
+
+
+        const trainings =
+            trainingRows || [];
+
+
+        // ------------------------------------------
+        // 参加記録をスタンプに変換
+        // ------------------------------------------
+
+        const stamps = [];
+
+        const usedTrainingIds =
+            new Set();
+
+
+        participations.forEach(
+            participation => {
+
+                const trainingId =
+                    String(
+                        participation.training_id ??
+                        ""
+                    ).trim();
+
+
+                if (!trainingId) {
+
+                    return;
+
+                }
+
+
+                if (
+                    usedTrainingIds.has(
+                        trainingId
+                    )
+                ) {
+
+                    return;
+
+                }
+
+
+                const training =
+                    trainings.find(
+                        item =>
+                            String(
+                                item.training_id
+                            ) ===
+                            trainingId
+                    );
+
+
+                if (!training) {
+
+                    return;
+
+                }
+
+
+                usedTrainingIds.add(
+                    trainingId
+                );
+
+
+                const trainingDate =
+                    training.training_date ||
+                    training.date ||
+                    "";
+
+
+                const trainingTitle =
+                    training.title ||
+                    "防災訓練";
+
+
+                stamps.push({
+
+                    training_id:
+                        training.training_id,
+
+                    date:
+                        trainingDate,
+
+                    event:
+                        trainingTitle
+
+                });
+
+            }
+        );
+
+
+        // ------------------------------------------
+        // 日付順
+        // ------------------------------------------
+
+        stamps.sort(
+            function (a, b) {
+
+                const dateA =
+                    String(
+                        a.date || ""
+                    );
+
+                const dateB =
+                    String(
+                        b.date || ""
+                    );
+
+                return (
+                    dateB.localeCompare(
+                        dateA
+                    )
+                );
+
+            }
+        );
+
 
         userData.stamps =
             stamps.slice(
@@ -698,19 +709,11 @@ const stamps =
             );
 
 
-        // ==================================================
-        // localStorage更新
-        // ==================================================
-
         localStorage.setItem(
             STORAGE_KEY,
             JSON.stringify(userData)
         );
 
-
-        // ==================================================
-        // 画面更新
-        // ==================================================
 
         displayCard(
             userData
@@ -722,12 +725,16 @@ const stamps =
             userData
         );
 
+
     } catch (error) {
 
         console.error(
             "Supabase同期エラー:",
             error
         );
+
+        // 同期失敗時は
+        // 現在のlocalStorageを維持する
 
     }
 
@@ -736,9 +743,6 @@ const stamps =
 
 // ==================================================
 // 参加した訓練一覧
-//
-// 管理者が登録しただけの訓練は表示しない。
-// participationsに存在するtraining_idのみ表示。
 // ==================================================
 
 async function loadTrainingList() {
@@ -760,7 +764,6 @@ async function loadTrainingList() {
 
         container.innerHTML =
             "<p>訓練情報を読み込めませんでした。</p>";
-
 
         return;
 
@@ -784,7 +787,6 @@ async function loadTrainingList() {
             container.innerHTML =
                 "<p>参加した訓練はありません。</p>";
 
-
             return;
 
         }
@@ -802,7 +804,6 @@ async function loadTrainingList() {
             container.innerHTML =
                 "<p>参加した訓練はありません。</p>";
 
-
             return;
 
         }
@@ -814,9 +815,9 @@ async function loadTrainingList() {
             ).trim();
 
 
-        // ==================================================
-        // 参加記録
-        // ==================================================
+        // ------------------------------------------
+        // participations
+        // ------------------------------------------
 
         const {
             data:
@@ -825,9 +826,7 @@ async function loadTrainingList() {
                 participationError
         } =
             await stampSupabaseClient
-                .from(
-                    "participations"
-                )
+                .from("participations")
                 .select(
                     "training_id"
                 )
@@ -849,21 +848,21 @@ async function loadTrainingList() {
 
 
         if (
-            participations.length === 0
+            participations.length ===
+            0
         ) {
 
             container.innerHTML =
                 "<p>参加した訓練はありません。</p>";
-
 
             return;
 
         }
 
 
-        // ==================================================
-        // 訓練情報
-        // ==================================================
+        // ------------------------------------------
+        // trainings
+        // ------------------------------------------
 
         const {
             data:
@@ -872,9 +871,7 @@ async function loadTrainingList() {
                 trainingError
         } =
             await stampSupabaseClient
-                .from(
-                    "trainings"
-                )
+                .from("trainings")
                 .select("*");
 
 
@@ -889,23 +886,40 @@ async function loadTrainingList() {
             trainingRows || [];
 
 
-        // ==================================================
-        // 参加した訓練だけ抽出
-        // ==================================================
+        // ------------------------------------------
+        // 重複除去
+        // ------------------------------------------
+
+        const seen =
+            new Set();
+
 
         const participatedTrainings =
             participations
                 .map(
                     participation => {
 
+                        const id =
+                            String(
+                                participation.training_id
+                            );
+
+                        if (
+                            seen.has(id)
+                        ) {
+
+                            return null;
+
+                        }
+
+                        seen.add(id);
+
+
                         return trainings.find(
                             training =>
                                 String(
                                     training.training_id
-                                ) ===
-                                String(
-                                    participation.training_id
-                                )
+                                ) === id
                         );
 
                     }
@@ -921,16 +935,43 @@ async function loadTrainingList() {
 
 
         if (
-            participatedTrainings.length === 0
+            participatedTrainings.length ===
+            0
         ) {
 
             container.innerHTML =
                 "<p>参加した訓練はありません。</p>";
 
-
             return;
 
         }
+
+
+        participatedTrainings.sort(
+            function (a, b) {
+
+                const dateA =
+                    String(
+                        a.training_date ||
+                        a.date ||
+                        ""
+                    );
+
+                const dateB =
+                    String(
+                        b.training_date ||
+                        b.date ||
+                        ""
+                    );
+
+                return (
+                    dateB.localeCompare(
+                        dateA
+                    )
+                );
+
+            }
+        );
 
 
         participatedTrainings.forEach(
@@ -1028,7 +1069,8 @@ function formatTrainingDate(
 
 
     if (
-        parts.length === 3
+        parts.length ===
+        3
     ) {
 
         return (
@@ -1063,6 +1105,29 @@ function displayCard(
     }
 
 
+    if (
+        !Array.isArray(
+            data.stamps
+        )
+    ) {
+
+        data.stamps = [];
+
+    }
+
+
+    // 最大10件
+    data.stamps =
+        data.stamps.slice(
+            0,
+            MAX_STAMP
+        );
+
+
+    // ------------------------------------------
+    // 登録エリア
+    // ------------------------------------------
+
     const registerArea =
         document.getElementById(
             "register-area"
@@ -1091,6 +1156,10 @@ function displayCard(
     }
 
 
+    // ------------------------------------------
+    // 氏名
+    // ------------------------------------------
+
     const userName =
         document.getElementById(
             "user-name"
@@ -1106,9 +1175,9 @@ function displayCard(
     }
 
 
-    // ==================================================
-    // QR
-    // ==================================================
+    // ------------------------------------------
+    // QRコード
+    // ------------------------------------------
 
     const qrArea =
         document.getElementById(
@@ -1127,19 +1196,33 @@ function displayCard(
             "undefined"
         ) {
 
-            new QRCode(
-                qrArea,
-                {
-                    text:
-                        data.id,
+            try {
 
-                    width:
-                        180,
+                new QRCode(
+                    qrArea,
+                    {
+                        text:
+                            data.id,
 
-                    height:
-                        180
-                }
-            );
+                        width:
+                            180,
+
+                        height:
+                            180
+                    }
+                );
+
+            } catch (error) {
+
+                console.error(
+                    "QRコード生成エラー:",
+                    error
+                );
+
+                qrArea.textContent =
+                    "QRコードを表示できませんでした。";
+
+            }
 
         } else {
 
@@ -1151,9 +1234,9 @@ function displayCard(
     }
 
 
-    // ==================================================
+    // ------------------------------------------
     // ID
-    // ==================================================
+    // ------------------------------------------
 
     const userId =
         document.getElementById(
@@ -1170,9 +1253,9 @@ function displayCard(
     }
 
 
-    // ==================================================
+    // ------------------------------------------
     // スタンプ
-    // ==================================================
+    // ------------------------------------------
 
     const icons =
         document.getElementById(
@@ -1199,7 +1282,8 @@ function displayCard(
 
 
             span.textContent =
-                i < data.stamps.length
+                i <
+                data.stamps.length
                     ? "⭐"
                     : "☆";
 
@@ -1213,9 +1297,9 @@ function displayCard(
     }
 
 
-    // ==================================================
+    // ------------------------------------------
     // スタンプ数
-    // ==================================================
+    // ------------------------------------------
 
     const stampCount =
         document.getElementById(
@@ -1231,9 +1315,9 @@ function displayCard(
     }
 
 
-    // ==================================================
+    // ------------------------------------------
     // 認定判定
-    // ==================================================
+    // ------------------------------------------
 
     const message =
         document.getElementById(
@@ -1294,10 +1378,18 @@ function displayCard(
     }
 
 
+    // ------------------------------------------
+    // 履歴
+    // ------------------------------------------
+
     displayHistory(
         data
     );
 
+
+    // ------------------------------------------
+    // 訓練一覧
+    // ------------------------------------------
 
     loadTrainingList();
 
@@ -1305,7 +1397,7 @@ function displayCard(
 
 
 // ==================================================
-// 参加履歴表示
+// 参加履歴
 // ==================================================
 
 function displayHistory(
@@ -1331,7 +1423,8 @@ function displayHistory(
 
     if (
         !data.stamps ||
-        data.stamps.length === 0
+        data.stamps.length ===
+        0
     ) {
 
         const li =
@@ -1407,22 +1500,29 @@ function displayHistory(
 
 
 // ==================================================
-// データ削除
+// 完全退会
 //
 // 注意:
-// 現在のRLSではanonによるparticipants DELETEは
-// 許可されていないため、Supabase上のデータ削除は
-// 実行せず、端末内データのみ削除する。
 //
-// Supabase上の参加者削除は管理者画面から行う。
+// 現在のSupabase RLSでDELETEが許可されていない場合、
+// Supabase側の削除は失敗する。
+// その場合はlocalStorageを削除せず、
+// 「Supabase側の削除が必要」と明示する。
+//
+// DELETE順:
+// 1. participations
+// 2. participants
 // ==================================================
 
 async function clearData() {
 
     const result =
         confirm(
-            "この端末に保存されているスタンプカード情報を削除しますか？\n\n" +
-            "Supabase上の参加者情報は削除されません。"
+            "スタンプカードを完全に削除しますか？\n\n" +
+            "この操作を行うと、この端末の情報だけでなく、\n" +
+            "Supabaseに保存されている参加者情報と\n" +
+            "参加履歴も削除します。\n\n" +
+            "削除後は元に戻せません。"
         );
 
 
@@ -1433,32 +1533,227 @@ async function clearData() {
     }
 
 
-    // ==================================================
-    // 端末内データ削除
-    // ==================================================
+    if (!stampSupabaseClient) {
 
-    localStorage.removeItem(
-        STORAGE_KEY
-    );
+        alert(
+            "サーバーに接続できないため、退会処理を実行できません。\n\n" +
+            "通信状態を確認して、もう一度お試しください。"
+        );
 
+        return;
 
-    localStorage.removeItem(
-        "iwaseLogin"
-    );
+    }
 
 
-    localStorage.removeItem(
-        "role"
-    );
+    const saved =
+        localStorage.getItem(
+            STORAGE_KEY
+        );
 
 
-    alert(
-        "この端末のスタンプカード情報を削除しました。\n\n" +
-        "Supabase上の参加者情報は保持されています。"
-    );
+    if (!saved) {
+
+        // 端末データだけ残っていない場合
+        localStorage.removeItem(
+            STORAGE_KEY
+        );
+
+        localStorage.removeItem(
+            "iwaseLogin"
+        );
+
+        localStorage.removeItem(
+            "role"
+        );
+
+        location.href =
+            "../login/login.html";
+
+        return;
+
+    }
 
 
-    location.href =
-        "../login/login.html";
+    let userData;
+
+
+    try {
+
+        userData =
+            JSON.parse(saved);
+
+    } catch (error) {
+
+        console.error(
+            "退会データ解析エラー:",
+            error
+        );
+
+        alert(
+            "利用者データを確認できませんでした。"
+        );
+
+        return;
+
+    }
+
+
+    const participantId =
+        String(
+            userData.id || ""
+        ).trim();
+
+
+    if (!participantId) {
+
+        alert(
+            "利用者IDを確認できませんでした。"
+        );
+
+        return;
+
+    }
+
+
+    try {
+
+        // ------------------------------------------
+        // 参加履歴削除
+        // ------------------------------------------
+
+        const {
+            error:
+                participationDeleteError
+        } =
+            await stampSupabaseClient
+                .from("participations")
+                .delete()
+                .eq(
+                    "participant_id",
+                    participantId
+                );
+
+
+        if (
+            participationDeleteError
+        ) {
+
+            console.error(
+                "participations DELETE error:",
+                participationDeleteError
+            );
+
+            throw new Error(
+                "参加履歴を削除できませんでした。\n\n" +
+                participationDeleteError.message
+            );
+
+        }
+
+
+        // ------------------------------------------
+        // participants削除
+        // ------------------------------------------
+
+        const {
+            error:
+                participantDeleteError
+        } =
+            await stampSupabaseClient
+                .from("participants")
+                .delete()
+                .eq(
+                    "participant_id",
+                    participantId
+                );
+
+
+        if (
+            participantDeleteError
+        ) {
+
+            console.error(
+                "participants DELETE error:",
+                participantDeleteError
+            );
+
+            throw new Error(
+                "参加者情報を削除できませんでした。\n\n" +
+                participantDeleteError.message
+            );
+
+        }
+
+
+        // ------------------------------------------
+        // Supabase削除成功
+        // ------------------------------------------
+
+        localStorage.removeItem(
+            STORAGE_KEY
+        );
+
+
+        localStorage.removeItem(
+            "iwaseLogin"
+        );
+
+
+        localStorage.removeItem(
+            "role"
+        );
+
+
+        alert(
+            "退会処理が完了しました。\n\n" +
+            "参加者情報・参加履歴・端末内データを削除しました。"
+        );
+
+
+        location.href =
+            "../login/login.html";
+
+
+    } catch (error) {
+
+        console.error(
+            "完全退会エラー:",
+            error
+        );
+
+
+        alert(
+            "退会処理を完了できませんでした。\n\n" +
+            (
+                error?.message ||
+                "Supabaseの削除権限を確認してください。"
+            ) +
+            "\n\n" +
+            "端末内のデータは削除していません。"
+        );
+
+    }
 
 }
+
+
+// ==================================================
+// グローバル公開
+//
+// HTMLのonclickから呼び出している場合に対応
+// ==================================================
+
+window.clearData =
+    clearData;
+
+window.registerUser =
+    registerUser;
+
+window.loadCard =
+    loadCard;
+
+window.loadTrainingList =
+    loadTrainingList;
+
+window.syncWithSupabase =
+    syncWithSupabase;
