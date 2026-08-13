@@ -64,39 +64,52 @@ window.addEventListener(
 
 // ==================================================
 // Supabase初期化
+//
+// supabase.jsで作成した共通クライアントを使用する。
+// Supabaseクライアントを二重生成しない。
 // ==================================================
 
 function initializeSupabase() {
 
     try {
 
+        // --------------------------------------------------
+        // supabase.jsで作成済みのクライアントを使用
+        // --------------------------------------------------
+
         if (
-            typeof window.supabase ===
+            typeof supabaseClient !==
             "undefined"
         ) {
 
-            console.error(
-                "Supabaseライブラリが読み込まれていません。"
+            stampSupabaseClient =
+                supabaseClient;
+
+
+            console.log(
+                "Stamp Supabase client initialized using shared client."
             );
 
-            return false;
+
+            return true;
 
         }
 
 
-        stampSupabaseClient =
-            window.supabase.createClient(
-                STAMP_SUPABASE_URL,
-                STAMP_SUPABASE_PUBLISHABLE_KEY
-            );
+        // --------------------------------------------------
+        // 共通クライアントが存在しない場合
+        // --------------------------------------------------
 
-
-        console.log(
-            "Stamp Supabase client initialized."
+        console.error(
+            "共有Supabaseクライアントが見つかりません。"
         );
 
 
-        return true;
+        stampSupabaseClient =
+            null;
+
+
+        return false;
 
 
     } catch (error) {
@@ -106,15 +119,16 @@ function initializeSupabase() {
             error
         );
 
+
         stampSupabaseClient =
             null;
+
 
         return false;
 
     }
 
 }
-
 
 // ==================================================
 // 利用者登録
