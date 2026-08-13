@@ -502,49 +502,242 @@ async function syncWithSupabase() {
 
     try {
 
+// ==================================================
+// Supabaseと同期
+// ==================================================
+
+async function syncWithSupabase() {
+
+    if (!stampSupabaseClient) {
+
+        console.error(
+            "Supabaseクライアントがありません。"
+        );
+
+        return;
+
+    }
+
+
+    const saved =
+        localStorage.getItem(
+            STORAGE_KEY
+        );
+
+
+    if (!saved) {
+
+        return;
+
+    }
+
+
+    let userData;
+
+
+    try {
+
+        userData =
+            JSON.parse(saved);
+
+    } catch (error) {
+
+        console.error(
+            "利用者データ解析エラー:",
+            error
+        );
+
+        return;
+
+    }
+
+
+    if (
+        !userData ||
+        !userData.id ||
+        !userData.name
+    ) {
+
+        return;
+
+    }
+
+
+    try {
+
         // ==================================================
-        // participants確認・同期
+        // participantsはここでは更新しない
+        //
+        // 利用者登録時にINSERT済みなので、
+        // anonユーザーによるupsertは行わない。
+        // ==================================================
+
+
+        // ==================================================
+        // 現在の参加記録取得
         // ==================================================
 
         const {
             data:
-                participantRows,
+                participationRows,
             error:
-                participantError
+                participationError
         } =
             await stampSupabaseClient
                 .from(
-                    "participants"
+                    "participations"
                 )
-                .upsert(
-                    {
-                        participant_id:
-                            userData.id,
-
-                        name:
-                            userData.name
-                    },
-                    {
-                        onConflict:
-                            "participant_id",
-
-                        select:
-                            "participant_id,name"
-                    }
+                .select(
+                    "training_id"
+                )
+                .eq(
+                    "participant_id",
+                    userData.id
                 );
 
 
-        if (participantError) {
+        if (participationError) {
 
-            throw participantError;
+            throw participationError;
 
         }
 
 
-        if (
-            !participantRows ||
-            participantRows.length === 0
-        ) {
+        const participations =
+            participationRows || [];
+
+
+        // ==================================================
+        // 訓練マスター取得
+        // ==================================================
+
+        const {
+            data:
+                trainingRows,
+            error:
+                trainingError
+        } =
+            await stampSupabaseClient
+                .from(
+                    "trainings"
+                )
+                .select("*");
+
+
+        if (trainingError) {
+
+            throw trainingError;
+
+        }
+
+
+        const trainings =
+            trainingRows || [];
+
+
+        // ==================================================
+        // 参加記録をスタンプへ変換
+        // ==================================================
+
+        const stamps = [];
+
+
+        participations.forEach(
+            participation => {
+
+                const training =
+                    trainings.find(
+                        item =>
+                            String(
+                                item.training_id
+                            ) ===
+                            String(
+                                participation.training_id
+                            )
+                    );
+
+
+                if (!training) {
+
+                    return;
+
+                }
+
+
+                const trainingDate =
+                    training.training_date ||
+                    training.date ||
+                    "";
+
+
+                const trainingTitle =
+                    training.title ||
+                    "防災訓練";
+
+
+                stamps.push({
+
+                    training_id:
+                        training.training_id,
+
+                    date:
+                        trainingDate,
+
+                    event:
+                        trainingTitle
+
+                });
+
+            }
+        );
+
+
+        // ==================================================
+        // 最大10個
+        // ==================================================
+
+        userData.stamps =
+            stamps.slice(
+                0,
+                MAX_STAMP
+            );
+
+
+        // ==================================================
+        // localStorage更新
+        // ==================================================
+
+        localStorage.setItem(
+            STORAGE_KEY,
+            JSON.stringify(userData)
+        );
+
+
+        // ==================================================
+        // 画面更新
+        // ==================================================
+
+        displayCard(
+            userData
+        );
+
+
+        console.log(
+            "Supabase同期完了:",
+            userData
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Supabase同期エラー:",
+            error
+        );
+
+    }
+
+} {
 
             throw new Error(
                 "参加者情報の同期結果を確認できませんでした。"
