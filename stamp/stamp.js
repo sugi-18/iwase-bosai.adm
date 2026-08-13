@@ -211,11 +211,11 @@ async function registerUser() {
 
         // ==================================================
         // Supabase participantsへ登録
+        //
+        // selectは使用しない
         // ==================================================
 
         const {
-            data:
-                participantRows,
             error:
                 participantError
         } =
@@ -233,13 +233,14 @@ async function registerUser() {
                     },
                     {
                         onConflict:
-                            "participant_id",
-
-                        select:
-                            "participant_id,name"
+                            "participant_id"
                     }
                 );
 
+
+        // ==================================================
+        // Supabase登録エラー確認
+        // ==================================================
 
         if (participantError) {
 
@@ -249,16 +250,43 @@ async function registerUser() {
 
 
         // ==================================================
-        // 登録結果確認
+        // Supabase登録確認
+        //
+        // upsertの戻り値ではなく、
+        // 実際に保存されたデータを再取得する。
         // ==================================================
 
-        if (
-            !participantRows ||
-            participantRows.length === 0
-        ) {
+        const {
+            data:
+                verifyParticipant,
+            error:
+                verifyError
+        } =
+            await stampSupabaseClient
+                .from(
+                    "participants"
+                )
+                .select(
+                    "participant_id,name"
+                )
+                .eq(
+                    "participant_id",
+                    data.id
+                )
+                .maybeSingle();
+
+
+        if (verifyError) {
+
+            throw verifyError;
+
+        }
+
+
+        if (!verifyParticipant) {
 
             throw new Error(
-                "参加者情報の保存結果を確認できませんでした。"
+                "Supabaseへの利用者登録を確認できませんでした。"
             );
 
         }
@@ -275,7 +303,7 @@ async function registerUser() {
 
 
         // ==================================================
-        // 保存確認
+        // localStorage保存確認
         // ==================================================
 
         const verifySaved =
