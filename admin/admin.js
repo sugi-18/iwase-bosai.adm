@@ -213,9 +213,17 @@ async function checkAuth() {
 console.log("ADMIN SESSION USER:", data.session?.user);
 console.log("ADMIN UID:", data.session?.user?.id);
 
-            showAdminScreen();
+            console.log("ADMIN: showAdminScreen 開始");
 
-            await loadAllData();
+showAdminScreen();
+
+console.log("ADMIN: showAdminScreen 完了");
+
+console.log("ADMIN: loadAllData 開始");
+
+await loadAllData();
+
+console.log("ADMIN: loadAllData 完了");
 
         } else {
 
