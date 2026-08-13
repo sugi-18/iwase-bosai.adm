@@ -259,47 +259,6 @@ if (participantError) {
 
 }
 
-        // ==================================================
-        // Supabase登録確認
-        //
-        // upsertの戻り値ではなく、
-        // 実際に保存されたデータを再取得する。
-        // ==================================================
-
-        const {
-            data:
-                verifyParticipant,
-            error:
-                verifyError
-        } =
-            await stampSupabaseClient
-                .from(
-                    "participants"
-                )
-                .select(
-                    "participant_id,name"
-                )
-                .eq(
-                    "participant_id",
-                    data.id
-                )
-                .maybeSingle();
-
-
-        if (verifyError) {
-
-            throw verifyError;
-
-        }
-
-
-        if (!verifyParticipant) {
-
-            throw new Error(
-                "Supabaseへの利用者登録を確認できませんでした。"
-            );
-
-        }
 
 
         // ==================================================
