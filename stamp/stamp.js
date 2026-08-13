@@ -624,135 +624,67 @@ async function syncWithSupabase() {
         // ==================================================
 
 
-        // ==================================================
-        // 参加記録取得
-        // ==================================================
+// ==================================================
+// 参加履歴取得
+//
+// 直接 participations / trainings をSELECTしない。
+// Supabase RPCを使用する。
+// ==================================================
 
-        const {
-            data:
-                participationRows,
-            error:
-                participationError
-        } =
-            await stampSupabaseClient
-                .from(
-                    "participations"
-                )
-                .select(
-                    "training_id"
-                )
-                .eq(
-                    "participant_id",
-                    userData.id
-                );
+const {
+    data: historyRows,
+    error: historyError
+} =
+    await stampSupabaseClient.rpc(
+        "get_participant_training_history",
+        {
+            p_participant_id:
+                String(userData.id).trim()
+        }
+    );
 
+if (historyError) {
 
-        if (participationError) {
+    console.error(
+        "参加履歴取得RPCエラー:",
+        historyError
+    );
 
-            console.error(
-                "participations取得エラー:",
-                participationError
-            );
+    throw historyError;
+}
 
+const history =
+    Array.isArray(historyRows)
+        ? historyRows
+        : [];
 
-            throw participationError;
+// ==================================================
+// RPC結果をスタンプ形式へ変換
+// ==================================================
+
+const stamps =
+    history.map(
+        item => {
+
+            return {
+                training_id:
+                    item.training_id,
+
+                date:
+                    item.training_date ||
+                    "",
+
+                event:
+                    item.title ||
+                    "防災訓練",
+
+                registered_at:
+                    item.registered_at ||
+                    null
+            };
 
         }
-
-
-        const participations =
-            participationRows || [];
-
-
-        // ==================================================
-        // 訓練マスター取得
-        // ==================================================
-
-        const {
-            data:
-                trainingRows,
-            error:
-                trainingError
-        } =
-            await stampSupabaseClient
-                .from(
-                    "trainings"
-                )
-                .select("*");
-
-
-        if (trainingError) {
-
-            console.error(
-                "trainings取得エラー:",
-                trainingError
-            );
-
-
-            throw trainingError;
-
-        }
-
-
-        const trainings =
-            trainingRows || [];
-
-
-        // ==================================================
-        // 参加記録をスタンプへ変換
-        // ==================================================
-
-        const stamps = [];
-
-
-        participations.forEach(
-            participation => {
-
-                const training =
-                    trainings.find(
-                        item =>
-                            String(
-                                item.training_id
-                            ) ===
-                            String(
-                                participation.training_id
-                            )
-                    );
-
-
-                if (!training) {
-
-                    return;
-
-                }
-
-
-                const trainingDate =
-                    training.training_date ||
-                    training.date ||
-                    "";
-
-
-                const trainingTitle =
-                    training.title ||
-                    "防災訓練";
-
-
-                stamps.push({
-
-                    training_id:
-                        training.training_id,
-
-                    date:
-                        trainingDate,
-
-                    event:
-                        trainingTitle
-
-                });
-
-            }
-        );
+    );
 
 
         // ==================================================
