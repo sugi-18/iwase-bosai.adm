@@ -539,34 +539,76 @@ function setupNavigation() {
 
 async function loadAllData() {
 
+    console.log("===== loadAllData START =====");
+
+    console.log("1. loadParticipants 開始");
+
     try {
-
-        await Promise.all([
-
-            loadParticipants(),
-
-            loadTrainings(),
-
-            loadParticipations(),
-
-            loadDashboard(),
-
-            loadParticipantAnalysis()
-
-        ]);
-
+        await loadParticipants();
+        console.log("1. loadParticipants 完了");
     } catch (error) {
-
         console.error(
-            "Load all data error:",
+            "1. loadParticipants ERROR:",
             error
         );
-
     }
 
+
+    console.log("2. loadTrainings 開始");
+
+    try {
+        await loadTrainings();
+        console.log("2. loadTrainings 完了");
+    } catch (error) {
+        console.error(
+            "2. loadTrainings ERROR:",
+            error
+        );
+    }
+
+
+    console.log("3. loadParticipations 開始");
+
+    try {
+        await loadParticipations();
+        console.log("3. loadParticipations 完了");
+    } catch (error) {
+        console.error(
+            "3. loadParticipations ERROR:",
+            error
+        );
+    }
+
+
+    console.log("4. loadDashboard 開始");
+
+    try {
+        await loadDashboard();
+        console.log("4. loadDashboard 完了");
+    } catch (error) {
+        console.error(
+            "4. loadDashboard ERROR:",
+            error
+        );
+    }
+
+
+    console.log("5. loadParticipantAnalysis 開始");
+
+    try {
+        await loadParticipantAnalysis();
+        console.log("5. loadParticipantAnalysis 完了");
+    } catch (error) {
+        console.error(
+            "5. loadParticipantAnalysis ERROR:",
+            error
+        );
+    }
+
+
+    console.log("===== loadAllData END =====");
+
 }
-
-
 /* ==================================================
    ダッシュボード
 ================================================== */
