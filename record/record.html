@@ -92,8 +92,11 @@
 
     text-align: left;
 
-}
+    box-sizing: border-box;
 
+    max-width: 100%;
+
+}
 
 /* ==================================================
    活動タイトル
@@ -288,7 +291,6 @@
     .activity {
 
         width: 100%;
-
         max-width: 900px;
 
         margin-left: auto;
@@ -300,7 +302,16 @@
 
     }
 
-}
+
+    .activity-list {
+
+        width: 100%;
+        max-width: 100%;
+
+        box-sizing: border-box;
+
+    }
+
 
     .activity h1 {
 
@@ -313,9 +324,14 @@
 
     .activity-card {
 
+        width: 100%;
+        max-width: 100%;
+
         padding: 18px;
 
         border-radius: 12px;
+
+        box-sizing: border-box;
 
     }
 
@@ -333,17 +349,35 @@
 
         line-height: 1.8;
 
+        overflow-wrap: break-word;
+        word-break: break-word;
+
     }
 
 
     .activity-gallery {
 
+        width: 100%;
+        max-width: 100%;
+
         gap: 15px;
+
+        box-sizing: border-box;
 
     }
 
 
     .activity-image {
+
+        display: block;
+
+        width: 100%;
+
+        max-width: 100%;
+
+        height: auto;
+
+        box-sizing: border-box;
 
         border-radius: 9px;
 
@@ -360,20 +394,11 @@
 
         font-size: 16px;
 
+        box-sizing: border-box;
+
     }
 
 }
-
-</style>
-
-</head>
-
-
-<body>
-
-
-<section class="activity">
-
 
     <!-- ==================================================
          タイトル
