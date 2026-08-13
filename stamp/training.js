@@ -803,7 +803,6 @@ async function registerParticipation(
             "この訓練は管理者画面に登録されていません。"
         );
 
-
         return;
 
     }
@@ -828,7 +827,6 @@ async function registerParticipation(
             "訓練IDを確認できませんでした。"
         );
 
-
         return;
 
     }
@@ -836,8 +834,7 @@ async function registerParticipation(
 
     // ==================================================
     // 利用者情報取得
-    //
-    // stamp.jsと同じlocalStorageを使用
+    // stamp.jsと同じlocalStorage
     // ==================================================
 
     const saved =
@@ -851,7 +848,6 @@ async function registerParticipation(
         alert(
             "先にスタンプカード登録をしてください。"
         );
-
 
         return;
 
@@ -868,7 +864,6 @@ async function registerParticipation(
                 saved
             );
 
-
     } catch (error) {
 
         console.error(
@@ -876,11 +871,10 @@ async function registerParticipation(
             error
         );
 
-
         alert(
-            "利用者情報を読み込めませんでした。"
+            "利用者情報を読み込めませんでした。\n\n" +
+            "スタンプカードを再登録してください。"
         );
-
 
         return;
 
@@ -889,9 +883,6 @@ async function registerParticipation(
 
     // ==================================================
     // 利用者情報確認
-    //
-    // stamp.jsでは
-    // data.id = participant_id
     // ==================================================
 
     if (
@@ -905,12 +896,10 @@ async function registerParticipation(
             participant
         );
 
-
         alert(
             "利用者情報を確認できませんでした。\n\n" +
             "スタンプカードを再登録してください。"
         );
-
 
         return;
 
@@ -923,21 +912,11 @@ async function registerParticipation(
         );
 
 
-    const participantName =
-        normalizeValue(
-            participant.name
-        );
-
-
-    if (
-        !participantId ||
-        !participantName
-    ) {
+    if (!participantId) {
 
         alert(
-            "利用者情報を確認できませんでした。"
+            "利用者IDを確認できませんでした。"
         );
-
 
         return;
 
@@ -953,10 +932,9 @@ async function registerParticipation(
     ) {
 
         alert(
-            "Supabaseに接続できません。\n\n" +
+            "サーバーに接続できません。\n\n" +
             "通信状態を確認してください。"
         );
-
 
         return;
 
@@ -973,7 +951,7 @@ async function registerParticipation(
             true;
 
         addButton.textContent =
-            "登録中……";
+            "参加登録中……";
 
     }
 
@@ -981,200 +959,45 @@ async function registerParticipation(
     try {
 
         // ==================================================
-        // ① participants保存
+        // ここが今回の重要ポイント
         //
-        // stamp.jsの登録仕様と統一
+        // participantsへの直接INSERT/UPSERTはしない。
         //
-        // INSERT後にSELECTしない。
+        // SECURITY DEFINER関数を使用する。
         // ==================================================
 
         const {
-            error:
-                participantError
+            data,
+            error
         } =
             await trainingSupabaseClient
-                .from(
-                    "participants"
-                )
-                .upsert(
+                .rpc(
+                    "register_training_participation",
                     {
-                        participant_id:
+                        p_participant_id:
                             participantId,
 
-                        name:
-                            participantName
-                    },
-                    {
-                        onConflict:
-                            "participant_id"
-                    }
-                );
-
-
-        if (participantError) {
-
-            console.error(
-                "participants保存エラー:",
-                participantError
-            );
-
-
-            throw new Error(
-                "参加者情報の保存に失敗しました。\n\n" +
-                getErrorMessage(
-                    participantError
-                )
-            );
-
-        }
-
-
-        console.log(
-            "participants保存完了:",
-            {
-                participantId,
-                name:
-                    participantName
-            }
-        );
-
-
-        // ==================================================
-        // ② Supabase上の参加済み確認
-        //
-        // 同じ人が同じ訓練を複数回登録しない。
-        // ==================================================
-
-        const {
-            data:
-                existingParticipation,
-            error:
-                checkError
-        } =
-            await trainingSupabaseClient
-                .from(
-                    "participations"
-                )
-                .select(
-                    "id"
-                )
-                .eq(
-                    "participant_id",
-                    participantId
-                )
-                .eq(
-                    "training_id",
-                    actualTrainingId
-                )
-                .limit(
-                    1
-                )
-                .maybeSingle();
-
-
-        if (checkError) {
-
-            console.error(
-                "参加確認エラー:",
-                checkError
-            );
-
-
-            throw new Error(
-                "参加履歴を確認できませんでした。\n\n" +
-                getErrorMessage(
-                    checkError
-                )
-            );
-
-        }
-
-
-        // ==================================================
-        // すでに参加済み
-        // ==================================================
-
-        if (
-            existingParticipation
-        ) {
-
-            console.log(
-                "すでに参加登録済み:",
-                {
-                    participantId,
-                    trainingId:
-                        actualTrainingId
-                }
-            );
-
-
-            // localStorageを最新状態にする
-            updateLocalStamp(
-                participant,
-                training,
-                actualTrainingId,
-                fallbackEvent,
-                fallbackDate
-            );
-
-
-            showResult(
-                "この訓練はすでに参加登録されています。"
-            );
-
-
-            if (addButton) {
-
-                addButton.textContent =
-                    "登録済み";
-
-            }
-
-
-            return;
-
-        }
-
-
-        // ==================================================
-        // ③ participations登録
-        //
-        // INSERT後にSELECTしない。
-        //
-        // RLS環境でのINSERT後SELECTエラーを回避。
-        // ==================================================
-
-        const {
-            error:
-                participationError
-        } =
-            await trainingSupabaseClient
-                .from(
-                    "participations"
-                )
-                .insert(
-                    {
-                        participant_id:
-                            participantId,
-
-                        training_id:
+                        p_training_id:
                             actualTrainingId
                     }
                 );
 
 
-        if (participationError) {
+        // ==================================================
+        // RPC通信エラー
+        // ==================================================
+
+        if (error) {
 
             console.error(
-                "participations保存エラー:",
-                participationError
+                "参加登録RPCエラー:",
+                error
             );
 
-
             throw new Error(
-                "参加記録の保存に失敗しました。\n\n" +
+                "参加登録処理に失敗しました。\n\n" +
                 getErrorMessage(
-                    participationError
+                    error
                 )
             );
 
@@ -1182,17 +1005,179 @@ async function registerParticipation(
 
 
         console.log(
-            "participations保存完了:",
-            {
-                participantId,
-                trainingId:
-                    actualTrainingId
-            }
+            "参加登録RPC結果:",
+            data
         );
 
 
         // ==================================================
-        // ④ localStorageスタンプ更新
+        // RPC結果確認
+        // ==================================================
+
+        if (!data) {
+
+            throw new Error(
+                "参加登録結果を確認できませんでした。"
+            );
+
+        }
+
+
+        // ==================================================
+        // JSON結果を確認
+        // ==================================================
+
+        const success =
+            data.success === true;
+
+
+        if (!success) {
+
+            const resultError =
+                normalizeValue(
+                    data.error
+                );
+
+
+            // ----------------------------------------------
+            // 利用者がparticipantsに存在しない
+            // ----------------------------------------------
+
+            if (
+                resultError ===
+                "participant_not_found"
+            ) {
+
+                throw new Error(
+                    "参加者情報が登録されていません。\n\n" +
+                    "スタンプカードを一度登録し直してください。"
+                );
+
+            }
+
+
+            // ----------------------------------------------
+            // 訓練が存在しない
+            // ----------------------------------------------
+
+            if (
+                resultError ===
+                "training_not_found"
+            ) {
+
+                throw new Error(
+                    "この訓練は管理者画面に登録されていません。"
+                );
+
+            }
+
+
+            // ----------------------------------------------
+            // 二重登録
+            // ----------------------------------------------
+
+            if (
+                resultError ===
+                "already_registered"
+            ) {
+
+                // ------------------------------------------
+                // Supabase上では登録済みなので
+                // localStorageだけ修復する
+                // ------------------------------------------
+
+                updateLocalStamp(
+                    participant,
+                    training,
+                    actualTrainingId,
+                    fallbackEvent,
+                    fallbackDate
+                );
+
+
+                showResult(
+                    "この訓練はすでに参加登録されています。"
+                );
+
+
+                if (addButton) {
+
+                    addButton.textContent =
+                        "登録済み";
+
+                }
+
+
+                return;
+
+            }
+
+
+            // ----------------------------------------------
+            // 入力エラー
+            // ----------------------------------------------
+
+            if (
+                resultError ===
+                "participant_id_missing"
+            ) {
+
+                throw new Error(
+                    "参加者IDがありません。"
+                );
+
+            }
+
+
+            if (
+                resultError ===
+                "training_id_missing"
+            ) {
+
+                throw new Error(
+                    "訓練IDがありません。"
+                );
+
+            }
+
+
+            // ----------------------------------------------
+            // DBエラー
+            // ----------------------------------------------
+
+            if (
+                resultError ===
+                "database_error"
+            ) {
+
+                throw new Error(
+                    "データベースへの登録に失敗しました。\n\n" +
+                    (
+                        data.message ||
+                        "Supabaseでエラーが発生しました。"
+                    )
+                );
+
+            }
+
+
+            // ----------------------------------------------
+            // その他
+            // ----------------------------------------------
+
+            throw new Error(
+                "参加登録できませんでした。\n\n" +
+                (
+                    resultError ||
+                    "原因不明のエラー"
+                )
+            );
+
+        }
+
+
+        // ==================================================
+        // 成功
         // ==================================================
 
         updateLocalStamp(
@@ -1203,10 +1188,6 @@ async function registerParticipation(
             fallbackDate
         );
 
-
-        // ==================================================
-        // ⑤ 完了
-        // ==================================================
 
         showResult(
             "✅ 参加登録が完了しました！"
@@ -1225,6 +1206,7 @@ async function registerParticipation(
             "参加登録完了:",
             {
                 participantId,
+
                 trainingId:
                     actualTrainingId
             }
