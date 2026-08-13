@@ -1206,18 +1206,102 @@ function createTrainingRanking(
 
 
 /* ==================================================
-   最近の参加記録
+   訓練ランキング
+   ※ ダッシュボードのランキング表示は削除済み
+   ※ 「最多参加訓練」の集計だけ維持
 ================================================== */
 
-function createRecentParticipations(
-    participants,
+function createTrainingRanking(
     trainings,
     participations
 ) {
 
+    /* ------------------------------------------
+       訓練ごとの参加回数を集計
+    ------------------------------------------ */
+
+    const ranking =
+        trainings
+            .map(
+                training => {
+
+                    const count =
+                        participations.filter(
+                            item =>
+                                item.training_id ===
+                                training.training_id
+                        ).length;
+
+                    return {
+
+                        training,
+
+                        count
+
+                    };
+
+                }
+            )
+
+            /* ------------------------------------------
+               参加者0人の訓練は除外
+            ------------------------------------------ */
+
+            .filter(
+                item =>
+                    item.count > 0
+            )
+
+            /* ------------------------------------------
+               参加者数の多い順
+            ------------------------------------------ */
+
+            .sort(
+                (a, b) =>
+                    b.count -
+                    a.count
+            );
+
+
+    /* ------------------------------------------
+       最多参加訓練
+    ------------------------------------------ */
+
+    if (
+        ranking.length === 0
+    ) {
+
+        setText(
+            "mostPopularTraining",
+            "-"
+        );
+
+        return;
+
+    }
+
+
+    const mostPopular =
+        ranking[0];
+
+
+    setText(
+        "mostPopularTraining",
+        mostPopular.training.title ||
+        mostPopular.training.training_id ||
+        "-"
+    );
+
+
+    /* ------------------------------------------
+       ダッシュボードのランキング表示が
+       残っている場合だけ表示
+       （現在は削除済みなので通常は実行されない）
+    ------------------------------------------ */
+
     const container =
         document.getElementById(
-            "recentParticipations"
+            "trainingRanking"
         );
 
 
@@ -1228,94 +1312,56 @@ function createRecentParticipations(
     }
 
 
-    const recent =
-        [...participations]
-            .sort(
-                (a, b) =>
-                    new Date(
-                        b.registered_at
-                    ) -
-                    new Date(
-                        a.registered_at
-                    )
-            )
-            .slice(
-                0,
-                10
-            );
-
-
-    if (
-        recent.length === 0
-    ) {
-
-        container.innerHTML =
-            `<div class="empty-message">
-                まだ参加記録がありません。
-            </div>`;
-
-        return;
-
-    }
-
-
     container.innerHTML =
         "";
 
 
-    recent.forEach(
-        item => {
+    ranking
+        .slice(
+            0,
+            10
+        )
+        .forEach(
+            (item, index) => {
 
-            const participant =
-                participants.find(
-                    p =>
-                        p.participant_id ===
-                        item.participant_id
+                const div =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                div.className =
+                    "ranking-item";
+
+
+                div.innerHTML = `
+
+                    <span class="ranking-number">
+                        ${index + 1}
+                    </span>
+
+                    <span class="ranking-name">
+                        ${escapeHtml(
+                            item.training.title ||
+                            item.training.training_id
+                        )}
+                    </span>
+
+                    <strong>
+                        ${item.count}人
+                    </strong>
+
+                `;
+
+
+                container.appendChild(
+                    div
                 );
 
-
-            const training =
-                trainings.find(
-                    t =>
-                        t.training_id ===
-                        item.training_id
-                );
-
-
-            const div =
-                document.createElement(
-                    "div"
-                );
-
-
-            div.className =
-                "recent-item";
-
-
-            div.textContent =
-                `${participant?.name || "名前未登録"}　` +
-                `${training?.title || item.training_id}　` +
-                `実施日：${
-                    formatTrainingDate(
-                        training?.training_date
-                    )
-                }　` +
-                `登録：${
-                    formatDate(
-                        item.registered_at
-                    )
-                }`;
-
-
-            container.appendChild(
-                div
-            );
-
-        }
-    );
+            }
+        );
 
 }
-
 
 /* ==================================================
    参加者管理
