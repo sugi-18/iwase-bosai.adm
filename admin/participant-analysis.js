@@ -1,10 +1,8 @@
 /* ==================================================
    岩瀬自治会 防災アプリ
-   Step 2
-   参加者分析
-================================================== */
-
-(function () {
+   参加者分析ダッシュボード
+   training_date 対応版
+   ================================================== */
 
 "use strict";
 
@@ -15,9 +13,22 @@
 
 let participantAnalysisChart = null;
 
+let participantMonthlyChart = null;
+
 let analysisParticipants = [];
 
 let analysisParticipations = [];
+
+let analysisTrainings = [];
+
+
+/* ==================================================
+   設定
+================================================== */
+
+const ANALYSIS_FISCAL_YEAR = 2026;
+
+const MASTER_TARGET = 5;
 
 
 /* ==================================================
@@ -81,9 +92,11 @@ function setupParticipantAnalysis() {
                             ) {
 
                                 if (
-                                    !analysisSection.classList.contains(
-                                        "hidden"
-                                    )
+                                    !analysisSection
+                                        .classList
+                                        .contains(
+                                            "hidden"
+                                        )
                                 ) {
 
                                     loadParticipantAnalysis();
@@ -112,10 +125,10 @@ function setupParticipantAnalysis() {
 
 
 /* ==================================================
-   Supabase確認
+   Supabase
 ================================================== */
 
-function getSupabaseClient() {
+function getAnalysisSupabaseClient() {
 
     if (
         typeof adminSupabaseClient !==
@@ -124,16 +137,6 @@ function getSupabaseClient() {
     ) {
 
         return adminSupabaseClient;
-
-    }
-
-
-    if (
-        typeof window.supabase !==
-        "undefined"
-    ) {
-
-        return window.supabase;
 
     }
 
@@ -150,7 +153,7 @@ function getSupabaseClient() {
 async function loadParticipantAnalysis() {
 
     const client =
-        getSupabaseClient();
+        getAnalysisSupabaseClient();
 
 
     if (!client) {
@@ -171,20 +174,27 @@ async function loadParticipantAnalysis() {
 
         const [
             participantsResult,
-            participationsResult
+            participationsResult,
+            trainingsResult
         ] =
             await Promise.all([
 
                 client
                     .from("participants")
                     .select(
-                        "participant_id, name"
+                        "id, participant_id, name, created_at"
                     ),
 
                 client
                     .from("participations")
                     .select(
                         "id, participant_id, training_id, registered_at"
+                    ),
+
+                client
+                    .from("trainings")
+                    .select(
+                        "*"
                     )
 
             ]);
@@ -208,6 +218,15 @@ async function loadParticipantAnalysis() {
         }
 
 
+        if (
+            trainingsResult.error
+        ) {
+
+            throw trainingsResult.error;
+
+        }
+
+
         analysisParticipants =
             participantsResult.data ||
             [];
@@ -215,6 +234,11 @@ async function loadParticipantAnalysis() {
 
         analysisParticipations =
             participationsResult.data ||
+            [];
+
+
+        analysisTrainings =
+            trainingsResult.data ||
             [];
 
 
@@ -231,7 +255,10 @@ async function loadParticipantAnalysis() {
 
         showAnalysisError(
             "参加者分析の読み込みに失敗しました。\n" +
-            error.message
+            (
+                error.message ||
+                "不明なエラー"
+            )
         );
 
     }
@@ -240,7 +267,7 @@ async function loadParticipantAnalysis() {
 
 
 /* ==================================================
-   分析表示
+   メイン分析
 ================================================== */
 
 function renderParticipantAnalysis() {
@@ -253,9 +280,9 @@ function renderParticipantAnalysis() {
         analysisParticipations.length;
 
 
-    /* ----------------------------------------------
-       参加回数集計
-    ---------------------------------------------- */
+    /* ==================================================
+       参加回数マップ
+    ================================================== */
 
     const participationMap =
         {};
@@ -265,7 +292,9 @@ function renderParticipantAnalysis() {
         participant => {
 
             participationMap[
-                participant.participant_id
+                normalizeId(
+                    participant.participant_id
+                )
             ] = 0;
 
         }
@@ -276,7 +305,9 @@ function renderParticipantAnalysis() {
         participation => {
 
             const id =
-                participation.participant_id;
+                normalizeId(
+                    participation.participant_id
+                );
 
 
             if (
@@ -294,9 +325,9 @@ function renderParticipantAnalysis() {
     );
 
 
-    /* ----------------------------------------------
-       基本数値
-    ---------------------------------------------- */
+    /* ==================================================
+       基本統計
+    ================================================== */
 
     let activeCount = 0;
 
@@ -310,7 +341,9 @@ function renderParticipantAnalysis() {
 
             const count =
                 participationMap[
-                    participant.participant_id
+                    normalizeId(
+                        participant.participant_id
+                    )
                 ] || 0;
 
 
@@ -328,7 +361,7 @@ function renderParticipantAnalysis() {
             }
 
 
-            if (count >= 5) {
+            if (count >= MASTER_TARGET) {
 
                 masterCount++;
 
@@ -375,9 +408,75 @@ function renderParticipantAnalysis() {
             : 0;
 
 
-    /* ----------------------------------------------
-       数値表示
-    ---------------------------------------------- */
+    /* ==================================================
+       訓練情報と参加履歴を結合
+    ================================================== */
+
+    const detailedParticipations =
+        analysisParticipations.map(
+            participation => {
+
+                const training =
+                    findTraining(
+                        participation.training_id
+                    );
+
+
+                return {
+
+                    ...participation,
+
+                    training,
+
+                    trainingDate:
+                        getTrainingDate(
+                            training
+                        )
+
+                };
+
+            }
+        );
+
+
+    /* ==================================================
+       2026年度
+    ================================================== */
+
+    const fiscalYearParticipations =
+        detailedParticipations.filter(
+            item =>
+                isInFiscalYear(
+                    item.trainingDate,
+                    ANALYSIS_FISCAL_YEAR
+                )
+        );
+
+
+    const fiscalYearParticipantIds =
+        new Set(
+            fiscalYearParticipations
+                .map(
+                    item =>
+                        normalizeId(
+                            item.participant_id
+                        )
+                )
+                .filter(Boolean)
+        );
+
+
+    const fiscalYearParticipantCount =
+        fiscalYearParticipantIds.size;
+
+
+    const fiscalYearParticipationCount =
+        fiscalYearParticipations.length;
+
+
+    /* ==================================================
+       表示
+    ================================================== */
 
     setText(
         "analysisTotalParticipants",
@@ -427,9 +526,9 @@ function renderParticipantAnalysis() {
     );
 
 
-    /* ----------------------------------------------
-       参加回数別データ
-    ---------------------------------------------- */
+    /* ==================================================
+       参加回数分布
+    ================================================== */
 
     const distribution =
         createDistribution(
@@ -442,31 +541,131 @@ function renderParticipantAnalysis() {
     );
 
 
-    /* ----------------------------------------------
-       ランキング
-    ---------------------------------------------- */
+    /* ==================================================
+       月別分析
+    ================================================== */
+
+    renderMonthlyAnalysis(
+        detailedParticipations
+    );
+
+
+    /* ==================================================
+       参加者ランキング
+    ================================================== */
 
     renderRanking(
         participationMap
     );
 
 
-    /* ----------------------------------------------
+    /* ==================================================
        未参加者
-    ---------------------------------------------- */
+    ================================================== */
 
     renderInactiveParticipants(
         participationMap
     );
 
 
-    /* ----------------------------------------------
-       全参加者
-    ---------------------------------------------- */
+    /* ==================================================
+       参加者一覧
+    ================================================== */
 
     renderParticipantTable(
-        participationMap
+        participationMap,
+        detailedParticipations
     );
+
+
+    /* ==================================================
+       訓練別分析
+    ================================================== */
+
+    renderTrainingAnalysis(
+        detailedParticipations
+    );
+
+
+    /* ==================================================
+       年度統計
+    ================================================== */
+
+    renderFiscalYearSummary(
+        fiscalYearParticipantCount,
+        fiscalYearParticipationCount
+    );
+
+}
+
+
+/* ==================================================
+   訓練検索
+================================================== */
+
+function findTraining(
+    trainingId
+) {
+
+    const target =
+        normalizeId(
+            trainingId
+        );
+
+
+    return (
+        analysisTrainings.find(
+            training =>
+                normalizeId(
+                    training.training_id
+                ) === target
+        ) ||
+        null
+    );
+
+}
+
+
+/* ==================================================
+   訓練実施日
+================================================== */
+
+function getTrainingDate(
+    training
+) {
+
+    if (!training) {
+
+        return null;
+
+    }
+
+
+    /*
+     * 正式カラム
+     */
+    if (
+        training.training_date
+    ) {
+
+        return training.training_date;
+
+    }
+
+
+    /*
+     * 予備
+     */
+    if (
+        training.date
+    ) {
+
+        return training.date;
+
+    }
+
+
+    return null;
 
 }
 
@@ -499,7 +698,9 @@ function createDistribution(
     ).forEach(
         count => {
 
-            if (count === 0) {
+            if (
+                count === 0
+            ) {
 
                 distribution.zero++;
 
@@ -538,7 +739,7 @@ function createDistribution(
 
 
 /* ==================================================
-   グラフ
+   参加回数分布グラフ
 ================================================== */
 
 function renderDistributionChart(
@@ -674,7 +875,213 @@ function renderDistributionChart(
 
 
 /* ==================================================
-   ランキング
+   月別分析
+================================================== */
+
+function renderMonthlyAnalysis(
+    detailedParticipations
+) {
+
+    const canvas =
+        document.getElementById(
+            "participantMonthlyChart"
+        );
+
+
+    if (!canvas) {
+
+        return;
+
+    }
+
+
+    if (
+        typeof Chart ===
+        "undefined"
+    ) {
+
+        return;
+
+    }
+
+
+    const months = [];
+
+    const counts = [];
+
+
+    const today =
+        new Date();
+
+
+    for (
+        let i = 11;
+        i >= 0;
+        i--
+    ) {
+
+        const date =
+            new Date(
+                today.getFullYear(),
+                today.getMonth() - i,
+                1
+            );
+
+
+        const key =
+            date.getFullYear() +
+            "-" +
+            String(
+                date.getMonth() + 1
+            ).padStart(
+                2,
+                "0"
+            );
+
+
+        months.push(
+            key
+        );
+
+
+        counts.push(
+            0
+        );
+
+    }
+
+
+    detailedParticipations.forEach(
+        item => {
+
+            const date =
+                parseDateValue(
+                    item.trainingDate
+                );
+
+
+            if (!date) {
+
+                return;
+
+            }
+
+
+            const key =
+                date.getFullYear() +
+                "-" +
+                String(
+                    date.getMonth() + 1
+                ).padStart(
+                    2,
+                    "0"
+                );
+
+
+            const index =
+                months.indexOf(
+                    key
+                );
+
+
+            if (
+                index !== -1
+            ) {
+
+                counts[index]++;
+
+            }
+
+        }
+    );
+
+
+    if (
+        participantMonthlyChart
+    ) {
+
+        participantMonthlyChart.destroy();
+
+    }
+
+
+    participantMonthlyChart =
+        new Chart(
+            canvas,
+            {
+
+                type: "line",
+
+                data: {
+
+                    labels:
+                        months.map(
+                            value =>
+                                value.replace(
+                                    "-",
+                                    "/"
+                                )
+                        ),
+
+                    datasets: [
+
+                        {
+
+                            label:
+                                "延べ参加回数",
+
+                            data:
+                                counts,
+
+                            tension:
+                                0.25,
+
+                            borderWidth:
+                                2,
+
+                            fill:
+                                false
+
+                        }
+
+                    ]
+
+                },
+
+                options: {
+
+                    responsive: true,
+
+                    maintainAspectRatio: false,
+
+                    scales: {
+
+                        y: {
+
+                            beginAtZero:
+                                true,
+
+                            ticks: {
+
+                                precision:
+                                    0
+
+                            }
+
+                        }
+
+                    }
+
+                }
+
+            }
+        );
+
+}
+
+
+/* ==================================================
+   参加者ランキング
 ================================================== */
 
 function renderRanking(
@@ -696,6 +1103,7 @@ function renderRanking(
 
     const ranking =
         analysisParticipants
+
             .map(
                 participant => ({
 
@@ -703,11 +1111,14 @@ function renderRanking(
 
                     count:
                         participationMap[
-                            participant.participant_id
+                            normalizeId(
+                                participant.participant_id
+                            )
                         ] || 0
 
                 })
             )
+
             .sort(
                 (a, b) =>
                     b.count -
@@ -720,74 +1131,70 @@ function renderRanking(
     ) {
 
         container.innerHTML =
-            `<div class="analysis-empty">
+            `
+            <div class="analysis-empty">
                 参加者が登録されていません。
-            </div>`;
+            </div>
+            `;
 
         return;
 
     }
 
 
-    const topRanking =
-        ranking.slice(
-            0,
-            10
-        );
-
-
     container.innerHTML =
         "";
 
 
-    topRanking.forEach(
-        (item, index) => {
+    ranking
+        .slice(
+            0,
+            10
+        )
+        .forEach(
+            (item, index) => {
 
-            const row =
-                document.createElement(
-                    "div"
+                const row =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                row.className =
+                    "analysis-ranking-item";
+
+
+                row.innerHTML = `
+
+                    <span
+                        class="analysis-rank"
+                    >
+                        ${index + 1}
+                    </span>
+
+                    <div
+                        class="analysis-ranking-name"
+                    >
+                        ${escapeHtml(
+                            item.participant.name ||
+                            "名前未登録"
+                        )}
+                    </div>
+
+                    <strong>
+                        ${item.count}
+                        <span>回</span>
+                    </strong>
+
+                `;
+
+
+                container.appendChild(
+                    row
                 );
 
-
-            row.className =
-                "analysis-ranking-item";
-
-
-            const rank =
-                index + 1;
-
-
-            row.innerHTML = `
-
-                <span
-                    class="analysis-rank"
-                >
-                    ${rank}
-                </span>
-
-                <div
-                    class="analysis-ranking-name"
-                >
-                    ${escapeHtml(
-                        item.participant.name ||
-                        "名前未登録"
-                    )}
-                </div>
-
-                <strong>
-                    ${item.count}
-                    <span>回</span>
-                </strong>
-
-            `;
-
-
-            container.appendChild(
-                row
-            );
-
-        }
-    );
+            }
+        );
 
 }
 
@@ -815,14 +1222,18 @@ function renderInactiveParticipants(
 
     const inactive =
         analysisParticipants
+
             .filter(
                 participant =>
                     (
                         participationMap[
-                            participant.participant_id
+                            normalizeId(
+                                participant.participant_id
+                            )
                         ] || 0
                     ) === 0
             )
+
             .sort(
                 (a, b) =>
                     String(
@@ -841,9 +1252,11 @@ function renderInactiveParticipants(
     ) {
 
         container.innerHTML =
-            `<div class="analysis-empty success">
+            `
+            <div class="analysis-empty success">
                 全員が1回以上参加しています。
-            </div>`;
+            </div>
+            `;
 
         return;
 
@@ -876,7 +1289,9 @@ function renderInactiveParticipants(
                     )}
                 </span>
 
-                <span class="inactive-badge">
+                <span
+                    class="inactive-badge"
+                >
                     未参加
                 </span>
 
@@ -894,11 +1309,12 @@ function renderInactiveParticipants(
 
 
 /* ==================================================
-   参加者一覧
+   参加者別分析
 ================================================== */
 
 function renderParticipantTable(
-    participationMap
+    participationMap,
+    detailedParticipations
 ) {
 
     const tbody =
@@ -916,18 +1332,71 @@ function renderParticipantTable(
 
     const ranking =
         analysisParticipants
+
             .map(
-                participant => ({
+                participant => {
 
-                    participant,
-
-                    count:
-                        participationMap[
+                    const participantId =
+                        normalizeId(
                             participant.participant_id
-                        ] || 0
+                        );
 
-                })
+
+                    const count =
+                        participationMap[
+                            participantId
+                        ] || 0;
+
+
+                    const records =
+                        detailedParticipations.filter(
+                            item =>
+                                normalizeId(
+                                    item.participant_id
+                                ) === participantId
+                        );
+
+
+                    const validDates =
+                        records
+
+                            .map(
+                                item =>
+                                    parseDateValue(
+                                        item.trainingDate
+                                    )
+                            )
+
+                            .filter(Boolean);
+
+
+                    validDates.sort(
+                        (a, b) =>
+                            a - b
+                    );
+
+
+                    return {
+
+                        participant,
+
+                        count,
+
+                        firstDate:
+                            validDates[0] ||
+                            null,
+
+                        latestDate:
+                            validDates[
+                                validDates.length - 1
+                            ] ||
+                            null
+
+                    };
+
+                }
             )
+
             .sort(
                 (a, b) => {
 
@@ -968,11 +1437,13 @@ function renderParticipantTable(
     ) {
 
         tbody.innerHTML =
-            `<tr>
+            `
+            <tr>
                 <td colspan="4">
                     参加者が登録されていません。
                 </td>
-            </tr>`;
+            </tr>
+            `;
 
         return;
 
@@ -982,12 +1453,6 @@ function renderParticipantTable(
     ranking.forEach(
         (item, index) => {
 
-            const tr =
-                document.createElement(
-                    "tr"
-                );
-
-
             let status = "";
 
 
@@ -996,36 +1461,59 @@ function renderParticipantTable(
             ) {
 
                 status =
-                    `<span class="analysis-status inactive">
+                    `
+                    <span
+                        class="analysis-status inactive"
+                    >
                         未参加
-                    </span>`;
+                    </span>
+                    `;
 
             } else if (
-                item.count >= 5
+                item.count >=
+                MASTER_TARGET
             ) {
 
                 status =
-                    `<span class="analysis-status master">
+                    `
+                    <span
+                        class="analysis-status master"
+                    >
                         5回以上
-                    </span>`;
+                    </span>
+                    `;
 
             } else if (
                 item.count >= 2
             ) {
 
                 status =
-                    `<span class="analysis-status repeat">
+                    `
+                    <span
+                        class="analysis-status repeat"
+                    >
                         リピーター
-                    </span>`;
+                    </span>
+                    `;
 
             } else {
 
                 status =
-                    `<span class="analysis-status active">
+                    `
+                    <span
+                        class="analysis-status active"
+                    >
                         参加経験あり
-                    </span>`;
+                    </span>
+                    `;
 
             }
+
+
+            const tr =
+                document.createElement(
+                    "tr"
+                );
 
 
             tr.innerHTML = `
@@ -1042,10 +1530,27 @@ function renderParticipantTable(
                 </td>
 
                 <td>
+
                     <strong>
                         ${item.count}
                     </strong>
+
                     回
+
+                    ${
+                        item.latestDate
+                            ? `
+                                <br>
+                                <small>
+                                    最終：
+                                    ${formatDate(
+                                        item.latestDate
+                                    )}
+                                </small>
+                              `
+                            : ""
+                    }
+
                 </td>
 
                 <td>
@@ -1060,6 +1565,222 @@ function renderParticipantTable(
             );
 
         }
+    );
+
+}
+
+
+/* ==================================================
+   訓練別分析
+================================================== */
+
+function renderTrainingAnalysis(
+    detailedParticipations
+) {
+
+    const container =
+        document.getElementById(
+            "trainingAnalysisList"
+        );
+
+
+    if (!container) {
+
+        return;
+
+    }
+
+
+    const map =
+        {};
+
+
+    detailedParticipations.forEach(
+        item => {
+
+            const training =
+                item.training;
+
+
+            const id =
+                normalizeId(
+                    item.training_id
+                );
+
+
+            if (!id) {
+
+                return;
+
+            }
+
+
+            if (!map[id]) {
+
+                map[id] = {
+
+                    training,
+
+                    count: 0,
+
+                    participantIds:
+                        new Set()
+
+                };
+
+            }
+
+
+            map[id].count++;
+
+
+            map[id]
+                .participantIds
+                .add(
+                    normalizeId(
+                        item.participant_id
+                    )
+                );
+
+        }
+    );
+
+
+    const ranking =
+        Object.values(
+            map
+        )
+            .sort(
+                (a, b) =>
+                    b.count -
+                    a.count
+            );
+
+
+    if (
+        ranking.length === 0
+    ) {
+
+        container.innerHTML =
+            `
+            <div class="analysis-empty">
+                参加記録がありません。
+            </div>
+            `;
+
+        return;
+
+    }
+
+
+    container.innerHTML =
+        "";
+
+
+    ranking.forEach(
+        item => {
+
+            const training =
+                item.training;
+
+
+            const title =
+                training?.title ||
+                "訓練・講座";
+
+
+            const date =
+                getTrainingDate(
+                    training
+                );
+
+
+            const location =
+                training?.location ||
+                "";
+
+
+            const row =
+                document.createElement(
+                    "div"
+                );
+
+
+            row.className =
+                "analysis-training-item";
+
+
+            row.innerHTML = `
+
+                <div>
+
+                    <strong>
+                        ${escapeHtml(
+                            title
+                        )}
+                    </strong>
+
+                    <span>
+                        実施日：
+                        ${escapeHtml(
+                            formatDate(
+                                date
+                            )
+                        )}
+                    </span>
+
+                    ${
+                        location
+                            ? `
+                                <span>
+                                    場所：
+                                    ${escapeHtml(
+                                        location
+                                    )}
+                                </span>
+                              `
+                            : ""
+                    }
+
+                </div>
+
+
+                <strong>
+                    ${item.count}
+                    <span>人</span>
+                </strong>
+
+            `;
+
+
+            container.appendChild(
+                row
+            );
+
+        }
+    );
+
+}
+
+
+/* ==================================================
+   年度サマリー
+================================================== */
+
+function renderFiscalYearSummary(
+    participantCount,
+    participationCount
+) {
+
+    setText(
+        "analysisFiscalYearParticipants",
+        participantCount
+    );
+
+
+    setText(
+        "analysisFiscalYearParticipations",
+        participationCount
     );
 
 }
@@ -1087,7 +1808,11 @@ function showAnalysisLoading() {
 
         "analysisMasterParticipants",
 
-        "analysisMasterRate"
+        "analysisMasterRate",
+
+        "analysisFiscalYearParticipants",
+
+        "analysisFiscalYearParticipations"
 
     ];
 
@@ -1113,9 +1838,11 @@ function showAnalysisLoading() {
     if (ranking) {
 
         ranking.innerHTML =
-            `<div class="analysis-loading">
+            `
+            <div class="analysis-loading">
                 読み込み中...
-            </div>`;
+            </div>
+            `;
 
     }
 
@@ -1129,9 +1856,11 @@ function showAnalysisLoading() {
     if (inactive) {
 
         inactive.innerHTML =
-            `<div class="analysis-loading">
+            `
+            <div class="analysis-loading">
                 読み込み中...
-            </div>`;
+            </div>
+            `;
 
     }
 
@@ -1145,11 +1874,31 @@ function showAnalysisLoading() {
     if (table) {
 
         table.innerHTML =
-            `<tr>
+            `
+            <tr>
                 <td colspan="4">
                     読み込み中...
                 </td>
-            </tr>`;
+            </tr>
+            `;
+
+    }
+
+
+    const trainingList =
+        document.getElementById(
+            "trainingAnalysisList"
+        );
+
+
+    if (trainingList) {
+
+        trainingList.innerHTML =
+            `
+            <div class="analysis-loading">
+                読み込み中...
+            </div>
+            `;
 
     }
 
@@ -1164,37 +1913,44 @@ function showAnalysisError(
     message
 ) {
 
-    const ids = [
-
-        "analysisRanking",
-
-        "analysisInactiveList"
-
-    ];
+    const ranking =
+        document.getElementById(
+            "analysisRanking"
+        );
 
 
-    ids.forEach(
-        id => {
+    if (ranking) {
 
-            const element =
-                document.getElementById(
-                    id
-                );
+        ranking.innerHTML =
+            `
+            <div class="analysis-error">
+                ${escapeHtml(
+                    message
+                )}
+            </div>
+            `;
+
+    }
 
 
-            if (element) {
+    const inactive =
+        document.getElementById(
+            "analysisInactiveList"
+        );
 
-                element.innerHTML =
-                    `<div class="analysis-error">
-                        ${escapeHtml(
-                            message
-                        )}
-                    </div>`;
 
-            }
+    if (inactive) {
 
-        }
-    );
+        inactive.innerHTML =
+            `
+            <div class="analysis-error">
+                ${escapeHtml(
+                    message
+                )}
+            </div>
+            `;
+
+    }
 
 
     const table =
@@ -1206,13 +1962,231 @@ function showAnalysisError(
     if (table) {
 
         table.innerHTML =
-            `<tr>
+            `
+            <tr>
                 <td colspan="4">
                     読み込みに失敗しました。
                 </td>
-            </tr>`;
+            </tr>
+            `;
 
     }
+
+}
+
+
+/* ==================================================
+   年度判定
+================================================== */
+
+function isInFiscalYear(
+    value,
+    fiscalYear
+) {
+
+    const date =
+        parseDateValue(
+            value
+        );
+
+
+    if (!date) {
+
+        return false;
+
+    }
+
+
+    const start =
+        new Date(
+            fiscalYear,
+            3,
+            1,
+            0,
+            0,
+            0,
+            0
+        );
+
+
+    const end =
+        new Date(
+            fiscalYear + 1,
+            2,
+            31,
+            23,
+            59,
+            59,
+            999
+        );
+
+
+    return (
+        date >= start &&
+        date <= end
+    );
+
+}
+
+
+/* ==================================================
+   日付解析
+================================================== */
+
+function parseDateValue(
+    value
+) {
+
+    if (!value) {
+
+        return null;
+
+    }
+
+
+    if (
+        value instanceof Date
+    ) {
+
+        return isNaN(
+            value.getTime()
+        )
+            ? null
+            : value;
+
+    }
+
+
+    const text =
+        String(
+            value
+        ).trim();
+
+
+    if (!text) {
+
+        return null;
+
+    }
+
+
+    if (
+        /^\d{4}-\d{2}-\d{2}$/.test(
+            text
+        )
+    ) {
+
+        const [
+            year,
+            month,
+            day
+        ] =
+            text
+                .split("-")
+                .map(Number);
+
+
+        const date =
+            new Date(
+                year,
+                month - 1,
+                day
+            );
+
+
+        return isNaN(
+            date.getTime()
+        )
+            ? null
+            : date;
+
+    }
+
+
+    const date =
+        new Date(
+            text
+        );
+
+
+    return isNaN(
+        date.getTime()
+    )
+        ? null
+        : date;
+
+}
+
+
+/* ==================================================
+   日付表示
+================================================== */
+
+function formatDate(
+    value
+) {
+
+    const date =
+        parseDateValue(
+            value
+        );
+
+
+    if (!date) {
+
+        return "-";
+
+    }
+
+
+    return (
+
+        date.getFullYear() +
+
+        "/" +
+
+        String(
+            date.getMonth() + 1
+        ).padStart(
+            2,
+            "0"
+        ) +
+
+        "/" +
+
+        String(
+            date.getDate()
+        ).padStart(
+            2,
+            "0"
+        )
+
+    );
+
+}
+
+
+/* ==================================================
+   ID正規化
+================================================== */
+
+function normalizeId(
+    value
+) {
+
+    if (
+        value === null ||
+        value === undefined
+    ) {
+
+        return "";
+
+    }
+
+
+    return String(
+        value
+    ).trim();
 
 }
 
@@ -1251,24 +2225,30 @@ function escapeHtml(
 ) {
 
     return String(
-        value ?? ""
+        value ??
+        ""
     )
+
         .replace(
             /&/g,
             "&amp;"
         )
+
         .replace(
             /</g,
             "&lt;"
         )
+
         .replace(
             />/g,
             "&gt;"
         )
+
         .replace(
             /"/g,
             "&quot;"
         )
+
         .replace(
             /'/g,
             "&#039;"
@@ -1276,4 +2256,10 @@ function escapeHtml(
 
 }
 
-})();
+
+/* ==================================================
+   admin.js から呼び出せるよう公開
+================================================== */
+
+window.loadParticipantAnalysis =
+    loadParticipantAnalysis;
