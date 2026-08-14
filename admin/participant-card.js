@@ -3,6 +3,7 @@
    参加者カルテ
    Step 1 強化版
    training_date 対応版
+   PDF出力対応版
    ================================================== */
 
 (function () {
@@ -73,14 +74,35 @@ function createParticipantCardModal() {
                     参加者カルテ
                 </h2>
 
-                <button
-                    type="button"
-                    id="closeParticipantCardButton"
-                    class="participant-card-close"
-                    aria-label="閉じる"
+
+                <div
+                    style="
+                        display:flex;
+                        align-items:center;
+                        gap:8px;
+                        flex-wrap:wrap;
+                    "
                 >
-                    ×
-                </button>
+
+                    <button
+                        type="button"
+                        id="exportParticipantCardPdfButton"
+                        class="secondary-button"
+                    >
+                        📄 PDF出力
+                    </button>
+
+
+                    <button
+                        type="button"
+                        id="closeParticipantCardButton"
+                        class="participant-card-close"
+                        aria-label="閉じる"
+                    >
+                        ×
+                    </button>
+
+                </div>
 
             </div>
 
@@ -178,6 +200,41 @@ function setupParticipantCardEvents() {
         );
 
 
+    /*
+     * PDF出力
+     */
+    document
+        .getElementById(
+            "exportParticipantCardPdfButton"
+        )
+        ?.addEventListener(
+            "click",
+            () => {
+
+                if (
+                    typeof window.exportParticipantCardPdf ===
+                    "function"
+                ) {
+
+                    window.exportParticipantCardPdf();
+
+                }
+                else {
+
+                    alert(
+                        "PDF出力機能を読み込めませんでした。\n" +
+                        "pdf-export.js が読み込まれているか確認してください。"
+                    );
+
+                }
+
+            }
+        );
+
+
+    /*
+     * モーダル外側クリック
+     */
     document.addEventListener(
         "click",
         event => {
