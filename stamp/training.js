@@ -1679,6 +1679,248 @@ function normalizeValue(
 
 }
 
+// ==================================================
+// QRアクセス時の利用者登録確認
+//
+// localStorageに利用者IDがあっても、
+// Supabase participantsに存在しなければ
+// QR参加画面への進入を許可しない。
+// ==================================================
+
+async function verifyRegisteredParticipant() {
+
+    // ------------------------------------------
+    // Supabase確認
+    // ------------------------------------------
+
+    if (
+        !trainingSupabaseClient
+    ) {
+
+        return {
+
+            success:
+                false,
+
+            error:
+                "supabase_unavailable",
+
+            message:
+                "サーバーに接続できません。\n\n" +
+                "通信状態を確認して、もう一度QRコードを読み取ってください。"
+
+        };
+
+    }
+
+
+    // ------------------------------------------
+    // 端末の利用者情報取得
+    // ------------------------------------------
+
+    const saved =
+        localStorage.getItem(
+            STORAGE_KEY
+        );
+
+
+    if (!saved) {
+
+        return {
+
+            success:
+                false,
+
+            error:
+                "participant_not_registered",
+
+            message:
+                "この端末は利用者登録されていません。\n\n" +
+                "先に岩瀬自治会防災アプリの利用者登録を行ってください。"
+
+        };
+
+    }
+
+
+    // ------------------------------------------
+    // JSON解析
+    // ------------------------------------------
+
+    let participant;
+
+
+    try {
+
+        participant =
+            JSON.parse(
+                saved
+            );
+
+    }
+    catch (error) {
+
+        console.error(
+            "利用者情報解析エラー:",
+            error
+        );
+
+
+        return {
+
+            success:
+                false,
+
+            error:
+                "invalid_local_data",
+
+            message:
+                "利用者情報を確認できませんでした。\n\n" +
+                "このQRコードからは訓練参加登録できません。"
+
+        };
+
+    }
+
+
+    // ------------------------------------------
+    // 利用者ID確認
+    // ------------------------------------------
+
+    const participantId =
+        normalizeValue(
+            participant?.id
+        );
+
+
+    if (!participantId) {
+
+        return {
+
+            success:
+                false,
+
+            error:
+                "participant_id_missing",
+
+            message:
+                "利用者IDを確認できませんでした。\n\n" +
+                "このQRコードからは訓練参加登録できません。"
+
+        };
+
+    }
+
+
+    // ------------------------------------------
+    // Supabase participants存在確認
+    // ------------------------------------------
+
+    try {
+
+        const {
+            data,
+            error
+        } =
+            await trainingSupabaseClient.rpc(
+                "check_participant_exists",
+                {
+                    p_participant_id:
+                        participantId
+                }
+            );
+
+
+        if (error) {
+
+            console.error(
+                "利用者存在確認RPCエラー:",
+                error
+            );
+
+
+            return {
+
+                success:
+                    false,
+
+                error:
+                    "participant_check_error",
+
+                message:
+                    "利用者情報を確認できませんでした。\n\n" +
+                    "通信状態を確認して、もう一度QRコードを読み取ってください。"
+
+            };
+
+        }
+
+
+        // ------------------------------------------
+        // Supabaseに存在しない
+        // ------------------------------------------
+
+        if (data !== true) {
+
+            return {
+
+                success:
+                    false,
+
+                error:
+                    "participant_not_registered",
+
+                message:
+                    "この端末は利用者登録されていません。\n\n" +
+                    "先に岩瀬自治会防災アプリの利用者登録を行ってください。\n\n" +
+                    "訓練参加登録はできません。"
+
+            };
+
+        }
+
+
+        // ------------------------------------------
+        // 登録済み
+        // ------------------------------------------
+
+        return {
+
+            success:
+                true,
+
+            participantId:
+                participantId
+
+        };
+
+
+    }
+    catch (error) {
+
+        console.error(
+            "利用者確認例外:",
+            error
+        );
+
+
+        return {
+
+            success:
+                false,
+
+            error:
+                "participant_check_exception",
+
+            message:
+                "利用者情報を確認できませんでした。\n\n" +
+                "通信状態を確認して、もう一度QRコードを読み取ってください。"
+
+        };
+
+    }
+
+}
 
 // ==================================================
 // Supabaseエラーメッセージ
