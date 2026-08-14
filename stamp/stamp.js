@@ -669,6 +669,59 @@ async function syncWithSupabase() {
             )
         );
 
+        // ==================================================
+// 最新の参加者名をSupabaseから取得
+// ==================================================
+
+try {
+
+    const {
+        data: nameData,
+        error: nameError
+    } =
+        await stampSupabaseClient.rpc(
+            "get_participant_name",
+            {
+                p_participant_id:
+                    participantId
+            }
+        );
+
+
+    if (nameError) {
+
+        console.error(
+            "参加者名取得RPCエラー:",
+            nameError
+        );
+
+    }
+    else if (
+        nameData &&
+        nameData.success === true &&
+        typeof nameData.name === "string" &&
+        nameData.name.trim() !== ""
+    ) {
+
+        userData.name =
+            nameData.name.trim();
+
+        console.log(
+            "参加者名をSupabaseから同期:",
+            userData.name
+        );
+
+    }
+
+}
+catch (nameSyncError) {
+
+    console.error(
+        "参加者名同期エラー:",
+        nameSyncError
+    );
+
+}
 
         // ------------------------------------------
         // 再表示
