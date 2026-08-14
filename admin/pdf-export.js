@@ -1,23 +1,276 @@
 /* ==================================================
    岩瀬自治会 防災アプリ
    管理者画面 PDF出力
-
    完成版
-
-   対応
-   ・参加者分析PDF
-   ・参加者カルテPDF
-   ・Chart.jsグラフ
-   ・hiddenクラス対策
-   ・印刷ウィンドウ表示安定化
-   ・Chrome / Edge / Safari
 ================================================== */
 
 "use strict";
 
 
 /* ==================================================
-   共通：印刷用ウィンドウ
+   共通：HTMLエスケープ
+================================================== */
+
+function escapePdfText(value) {
+
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+}
+
+
+/* ==================================================
+   共通：日付
+================================================== */
+
+function formatPdfDate(value) {
+
+    const date =
+        value instanceof Date
+            ? value
+            : new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+
+        return "";
+
+    }
+
+    return (
+        date.getFullYear() +
+        "/" +
+        String(
+            date.getMonth() + 1
+        ).padStart(2, "0") +
+        "/" +
+        String(
+            date.getDate()
+        ).padStart(2, "0") +
+        " " +
+        String(
+            date.getHours()
+        ).padStart(2, "0") +
+        ":" +
+        String(
+            date.getMinutes()
+        ).padStart(2, "0")
+    );
+
+}
+
+
+/* ==================================================
+   PDF用クローンを作成
+================================================== */
+
+function preparePdfClone(source) {
+
+    const clone =
+        source.cloneNode(true);
+
+
+    /* ----------------------------------------------
+       重要
+       hiddenをPDF側では解除
+    ---------------------------------------------- */
+
+    clone
+        .classList
+        .remove("hidden");
+
+
+    /*
+     * 子要素にもhiddenが付いている場合に備える
+     */
+
+    clone
+        .querySelectorAll(".hidden")
+        .forEach(
+            element => {
+
+                element.classList.remove(
+                    "hidden"
+                );
+
+            }
+        );
+
+
+    /*
+     * 操作用ボタンを削除
+     */
+
+    clone
+        .querySelectorAll(
+            "button"
+        )
+        .forEach(
+            button => {
+
+                button.remove();
+
+            }
+        );
+
+
+    /*
+     * モーダル・操作用要素を削除
+     */
+
+    clone
+        .querySelectorAll(
+            ".modal-buttons"
+        )
+        .forEach(
+            element => {
+
+                element.remove();
+
+            }
+        );
+
+
+    /*
+     * 明らかにPDFに不要な操作要素
+     */
+
+    clone
+        .querySelectorAll(
+            ".participant-card-delete"
+        )
+        .forEach(
+            element => {
+
+                element.remove();
+
+            }
+        );
+
+
+    return clone;
+
+}
+
+
+/* ==================================================
+   Canvas → Image
+================================================== */
+
+function replaceCanvasWithImage(
+    originalSource,
+    clonedSource
+) {
+
+    const originalCanvases =
+        originalSource.querySelectorAll(
+            "canvas"
+        );
+
+
+    const clonedCanvases =
+        clonedSource.querySelectorAll(
+            "canvas"
+        );
+
+
+    originalCanvases.forEach(
+        (
+            originalCanvas,
+            index
+        ) => {
+
+            const clonedCanvas =
+                clonedCanvases[index];
+
+
+            if (!clonedCanvas) {
+
+                return;
+
+            }
+
+
+            try {
+
+                const image =
+                    document.createElement(
+                        "img"
+                    );
+
+
+                image.src =
+                    originalCanvas.toDataURL(
+                        "image/png"
+                    );
+
+
+                image.style.display =
+                    "block";
+
+                image.style.width =
+                    "100%";
+
+                image.style.maxWidth =
+                    "100%";
+
+                image.style.height =
+                    "auto";
+
+
+                /*
+                 * Canvasの表示サイズを取得
+                 */
+
+                const rect =
+                    originalCanvas.getBoundingClientRect();
+
+
+                if (
+                    rect.width > 0
+                ) {
+
+                    image.style.width =
+                        rect.width + "px";
+
+                }
+
+
+                if (
+                    rect.height > 0
+                ) {
+
+                    image.style.height =
+                        rect.height + "px";
+
+                }
+
+
+                clonedCanvas.replaceWith(
+                    image
+                );
+
+
+            } catch (error) {
+
+                console.error(
+                    "Canvas → Image conversion error:",
+                    error
+                );
+
+            }
+
+        }
+    );
+
+}
+
+
+/* ==================================================
+   印刷ウィンドウ
 ================================================== */
 
 function openPrintWindow(
@@ -45,6 +298,10 @@ function openPrintWindow(
     }
 
 
+    /*
+     * admin.cssの絶対URL
+     */
+
     const cssUrl =
         new URL(
             "admin.css",
@@ -53,11 +310,10 @@ function openPrintWindow(
 
 
     /*
-     * 印刷用HTML
+     * PDF専用HTML
      */
 
-    const html = `
-<!DOCTYPE html>
+    const html = `<!DOCTYPE html>
 
 <html lang="ja">
 
@@ -84,7 +340,7 @@ function openPrintWindow(
 <style>
 
 /* ==================================================
-   PDF基本設定
+   PDF基本
 ================================================== */
 
 @page {
@@ -112,12 +368,12 @@ body {
 
     background: #ffffff;
 
+    color: #222222;
+
 }
 
 
 body {
-
-    color: #222;
 
     font-family:
         -apple-system,
@@ -131,6 +387,31 @@ body {
     font-size: 12px;
 
     line-height: 1.6;
+
+}
+
+
+/* ==================================================
+   ★重要
+   admin.cssのhiddenをPDFでは無効化
+================================================== */
+
+.hidden {
+
+    display: block !important;
+
+}
+
+
+/*
+ * 本来のhidden要素でもPDFでは
+ * 内容を表示するための指定
+ */
+
+.content-section.hidden,
+.admin-section.hidden {
+
+    display: block !important;
 
 }
 
@@ -151,7 +432,7 @@ body {
 
 
 /* ==================================================
-   PDFヘッダー
+   ヘッダー
 ================================================== */
 
 .pdf-header {
@@ -187,7 +468,7 @@ body {
 
 
 /* ==================================================
-   PDFフッター
+   フッター
 ================================================== */
 
 .pdf-footer {
@@ -209,47 +490,13 @@ body {
 
 
 /* ==================================================
-   hidden対策
-================================================== */
-
-/*
- * 元画面では hidden でも、
- * PDF側では表示する。
- */
-
-.hidden {
-
-    display: block !important;
-
-}
-
-
-.content-section {
-
-    display: block !important;
-
-}
-
-
-#participantAnalysisSection {
-
-    display: block !important;
-
-    visibility: visible !important;
-
-}
-
-
-/* ==================================================
-   操作用UIを非表示
+   操作系を非表示
 ================================================== */
 
 button,
 .action-button,
 .modal-buttons,
 .participant-card-delete,
-.nav-button,
-.admin-nav,
 #refreshParticipantAnalysisButton,
 #exportParticipantAnalysisPdfButton {
 
@@ -259,45 +506,30 @@ button,
 
 
 /* ==================================================
-   不要な画面要素
-================================================== */
-
-.screen {
-
-    display: block !important;
-
-}
-
-
-.screen.hidden {
-
-    display: block !important;
-
-}
-
-
-/* ==================================================
-   Canvas
+   グラフ
 ================================================== */
 
 canvas {
+
+    display: block;
 
     max-width: 100% !important;
 
 }
 
 
-/* ==================================================
-   グラフ
-================================================== */
+img {
+
+    max-width: 100%;
+
+}
+
 
 .chart-container {
 
     height: 260px !important;
 
     max-height: 260px !important;
-
-    overflow: visible !important;
 
 }
 
@@ -308,13 +540,15 @@ canvas {
 
     width: 100%;
 
+    max-width: 100%;
+
     height: auto;
 
 }
 
 
 /* ==================================================
-   改ページ
+   改ページ制御
 ================================================== */
 
 .dashboard-card,
@@ -326,7 +560,10 @@ canvas {
 .participant-card-progress,
 .participant-card-history,
 .history-item,
-.ranking-item {
+.ranking-item,
+.analysis-ranking-item,
+.analysis-inactive-item,
+.analysis-training-item {
 
     break-inside: avoid;
 
@@ -354,6 +591,8 @@ td {
 
     text-align: left;
 
+    vertical-align: top;
+
 }
 
 
@@ -378,15 +617,43 @@ h3 {
 
 
 /* ==================================================
-   印刷時
+   PDF専用
+================================================== */
+
+.admin-container {
+
+    padding: 0 !important;
+
+    margin: 0 !important;
+
+}
+
+
+.admin-section {
+
+    margin: 0 0 16px 0 !important;
+
+    padding: 0 !important;
+
+}
+
+
+.content-section {
+
+    display: block !important;
+
+}
+
+
+/* ==================================================
+   印刷
 ================================================== */
 
 @media print {
 
-    html,
     body {
 
-        background: #ffffff !important;
+        background: #ffffff;
 
     }
 
@@ -405,12 +672,6 @@ h3 {
     }
 
 
-    .content-section {
-
-        display: block !important;
-
-    }
-
 }
 
 </style>
@@ -420,10 +681,9 @@ h3 {
 
 <body>
 
+
 <div class="pdf-document">
 
-
-    <!-- PDFヘッダー -->
 
     <div class="pdf-header">
 
@@ -438,16 +698,12 @@ h3 {
     </div>
 
 
-    <!-- PDF本体 -->
-
     <div id="pdfContent">
 
         ${contentHtml}
 
     </div>
 
-
-    <!-- PDFフッター -->
 
     <div class="pdf-footer">
 
@@ -461,41 +717,14 @@ h3 {
 </div>
 
 
-<script>
-
-/*
- * 印刷準備完了
- */
-
-window.addEventListener(
-    "load",
-    function () {
-
-        setTimeout(
-            function () {
-
-                window.focus();
-
-                window.print();
-
-            },
-            500
-        );
-
-    }
-);
-
-</script>
-
-
 </body>
 
-</html>
-`;
+</html>`;
 
 
     /*
-     * HTMLを書き込む
+     * document.writeではなく
+     * DOMへ直接書き込む
      */
 
     printWindow.document.open();
@@ -506,277 +735,107 @@ window.addEventListener(
 
     printWindow.document.close();
 
-}
-
-
-/* ==================================================
-   HTMLエスケープ
-================================================== */
-
-function escapePdfText(
-    value
-) {
-
-    return String(
-        value ?? ""
-    )
-
-    .replace(
-        /&/g,
-        "&amp;"
-    )
-
-    .replace(
-        /</g,
-        "&lt;"
-    )
-
-    .replace(
-        />/g,
-        "&gt;"
-    )
-
-    .replace(
-        /"/g,
-        "&quot;"
-    )
-
-    .replace(
-        /'/g,
-        "&#039;"
-    );
-
-}
-
-
-/* ==================================================
-   日付
-================================================== */
-
-function formatPdfDate(
-    date
-) {
-
-    const d =
-        date instanceof Date
-            ? date
-            : new Date(date);
-
-
-    if (
-        Number.isNaN(
-            d.getTime()
-        )
-    ) {
-
-        return "";
-
-    }
-
-
-    return `${d.getFullYear()}/` +
-           `${String(
-               d.getMonth() + 1
-           ).padStart(2, "0")}/` +
-           `${String(
-               d.getDate()
-           ).padStart(2, "0")} ` +
-           `${String(
-               d.getHours()
-           ).padStart(2, "0")}:` +
-           `${String(
-               d.getMinutes()
-           ).padStart(2, "0")}`;
-
-}
-
-
-/* ==================================================
-   Canvas → 画像
-================================================== */
-
-function convertCanvasToImage(
-    canvas
-) {
-
-    if (!canvas) {
-
-        return null;
-
-    }
-
-
-    try {
-
-        const image =
-            document.createElement(
-                "img"
-            );
-
-
-        image.src =
-            canvas.toDataURL(
-                "image/png"
-            );
-
-
-        image.style.display =
-            "block";
-
-
-        image.style.width =
-            "100%";
-
-
-        image.style.height =
-            "auto";
-
-
-        image.style.maxWidth =
-            "100%";
-
-
-        return image;
-
-    } catch (error) {
-
-        console.error(
-            "Canvas PDF conversion error:",
-            error
-        );
-
-        return null;
-
-    }
-
-}
-
-
-/* ==================================================
-   PDF用クローンを作成
-================================================== */
-
-function createPdfClone(
-    source
-) {
-
-    const clone =
-        source.cloneNode(
-            true
-        );
-
 
     /*
-     * ★最重要
-     *
-     * 元画面の hidden を解除
+     * 印刷前にCSS・画像等の読み込みを待つ
      */
 
-    clone.classList.remove(
-        "hidden"
-    );
+    const printWhenReady =
+        async () => {
 
+            try {
 
-    /*
-     * hidden属性も解除
-     */
+                if (
+                    printWindow.document
+                        .fonts
+                ) {
 
-    clone.removeAttribute(
-        "hidden"
-    );
+                    await printWindow.document
+                        .fonts
+                        .ready;
 
+                }
 
-    /*
-     * style属性によるdisplay:noneも解除
-     */
+            } catch (error) {
 
-    clone.style.display =
-        "block";
-
-
-    clone.style.visibility =
-        "visible";
-
-
-    /*
-     * 子要素の hidden も解除
-     */
-
-    clone
-        .querySelectorAll(
-            ".hidden"
-        )
-        .forEach(
-            element => {
-
-                element.classList.remove(
-                    "hidden"
-                );
-
-                element.style.display =
-                    "";
-
-                element.style.visibility =
-                    "visible";
-
-            }
-        );
-
-
-    /*
-     * hidden属性
-     */
-
-    clone
-        .querySelectorAll(
-            "[hidden]"
-        )
-        .forEach(
-            element => {
-
-                element.removeAttribute(
-                    "hidden"
+                console.warn(
+                    "Font loading wait error:",
+                    error
                 );
 
             }
-        );
 
 
-    /*
-     * 操作用ボタンを除去
-     */
+            /*
+             * 画像読み込み待ち
+             */
 
-    clone
-        .querySelectorAll(
-            "button"
-        )
-        .forEach(
-            button => {
+            const images =
+                Array.from(
+                    printWindow.document
+                        .images
+                );
 
-                button.remove();
+
+            if (
+                images.length > 0
+            ) {
+
+                await Promise.all(
+                    images.map(
+                        image =>
+                            new Promise(
+                                resolve => {
+
+                                    if (
+                                        image.complete
+                                    ) {
+
+                                        resolve();
+
+                                        return;
+
+                                    }
+
+
+                                    image.onload =
+                                        resolve;
+
+                                    image.onerror =
+                                        resolve;
+
+                                }
+                            )
+                    )
+                );
 
             }
-        );
 
 
-    /*
-     * ナビゲーションを除去
-     */
+            /*
+             * 少し待つ
+             *
+             * Chart画像・CSS等の反映
+             */
 
-    clone
-        .querySelectorAll(
-            ".admin-nav"
-        )
-        .forEach(
-            element => {
-
-                element.remove();
-
-            }
-        );
+            await new Promise(
+                resolve =>
+                    setTimeout(
+                        resolve,
+                        300
+                    )
+            );
 
 
-    return clone;
+            printWindow.focus();
+
+
+            printWindow.print();
+
+        };
+
+
+    printWhenReady();
 
 }
 
@@ -807,68 +866,29 @@ function exportParticipantCardPdf() {
     const title =
         document.getElementById(
             "participantCardTitle"
-        )?.textContent?.trim()
+        )?.textContent
+        ?.trim()
         ||
         "参加者カルテ";
 
 
+    /*
+     * PDF用クローン
+     */
+
     const clone =
-        createPdfClone(
+        preparePdfClone(
             content
         );
 
 
     /*
-     * Canvasを画像化
+     * Canvas対応
      */
 
-    const originalCanvases =
-        content.querySelectorAll(
-            "canvas"
-        );
-
-
-    const clonedCanvases =
-        clone.querySelectorAll(
-            "canvas"
-        );
-
-
-    originalCanvases.forEach(
-        (
-            originalCanvas,
-            index
-        ) => {
-
-            const clonedCanvas =
-                clonedCanvases[index];
-
-
-            if (
-                !originalCanvas ||
-                !clonedCanvas
-            ) {
-
-                return;
-
-            }
-
-
-            const image =
-                convertCanvasToImage(
-                    originalCanvas
-                );
-
-
-            if (image) {
-
-                clonedCanvas.replaceWith(
-                    image
-                );
-
-            }
-
-        }
+    replaceCanvasWithImage(
+        content,
+        clone
     );
 
 
@@ -906,69 +926,23 @@ function exportParticipantAnalysisPdf() {
     /*
      * PDF用クローン
      *
-     * ★ここで hidden を解除する
+     * ★ここでhiddenを解除する
      */
 
     const clone =
-        createPdfClone(
+        preparePdfClone(
             section
         );
 
 
     /*
-     * Canvas
-     *
-     * 元画面に表示されているChart.jsを
-     * PNG画像へ変換する
+     * Chart.jsのCanvasを
+     * PDFで表示可能な画像へ変換
      */
 
-    const originalCanvases =
-        section.querySelectorAll(
-            "canvas"
-        );
-
-
-    const clonedCanvases =
-        clone.querySelectorAll(
-            "canvas"
-        );
-
-
-    originalCanvases.forEach(
-        (
-            originalCanvas,
-            index
-        ) => {
-
-            const clonedCanvas =
-                clonedCanvases[index];
-
-
-            if (
-                !originalCanvas ||
-                !clonedCanvas
-            ) {
-
-                return;
-
-            }
-
-
-            const image =
-                convertCanvasToImage(
-                    originalCanvas
-                );
-
-
-            if (image) {
-
-                clonedCanvas.replaceWith(
-                    image
-                );
-
-            }
-
-        }
+    replaceCanvasWithImage(
+        section,
+        clone
     );
 
 
