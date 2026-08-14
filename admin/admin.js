@@ -5863,3 +5863,124 @@ function escapeHtml(
 
 
 })();
+
+/* ==================================================
+   ブラウザ印刷
+   Ctrl + P / QRコード印刷対応
+================================================== */
+
+(function setupBrowserPrint() {
+
+    function getCurrentPrintSection() {
+
+        const sections =
+            document.querySelectorAll(
+                ".content-section"
+            );
+
+        for (const section of sections) {
+
+            if (
+                !section.classList.contains(
+                    "hidden"
+                )
+            ) {
+
+                return section;
+
+            }
+
+        }
+
+        return null;
+
+    }
+
+
+    /* ==================================================
+       印刷開始前
+    ================================================== */
+
+    window.addEventListener(
+        "beforeprint",
+        () => {
+
+            /*
+             * QRコード印刷中は
+             * 通常画面の印刷対象を変更しない
+             */
+
+            if (
+                document.body.classList.contains(
+                    "qr-print-mode"
+                )
+            ) {
+
+                return;
+
+            }
+
+
+            const section =
+                getCurrentPrintSection();
+
+
+            if (!section) {
+
+                console.warn(
+                    "印刷対象の画面が見つかりません。"
+                );
+
+                return;
+
+            }
+
+
+            section.classList.add(
+                "print-target"
+            );
+
+        }
+    );
+
+
+    /* ==================================================
+       印刷終了後
+    ================================================== */
+
+    window.addEventListener(
+        "afterprint",
+        () => {
+
+            /*
+             * QRコード印刷モードを解除
+             */
+
+            document.body.classList.remove(
+                "qr-print-mode"
+            );
+
+
+            /*
+             * 通常印刷用の
+             * print-targetを解除
+             */
+
+            document
+                .querySelectorAll(
+                    ".print-target"
+                )
+                .forEach(
+                    section => {
+
+                        section.classList.remove(
+                            "print-target"
+                        );
+
+                    }
+                );
+
+        }
+    );
+
+})();
