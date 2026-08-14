@@ -51,21 +51,72 @@ window.addEventListener(
     "DOMContentLoaded",
     async function () {
 
-        initializeSupabase();
+        const initialized =
+            initializeSupabase();
+
+
+        if (!initialized) {
+
+            showStampAccessBlocked(
+                "サーバーに接続できません。\n\n" +
+                "通信状態を確認してください。"
+            );
+
+            return;
+
+        }
+
+
+        // ------------------------------------------
+        // 既存利用者確認
+        // ------------------------------------------
+
+        const participantCheck =
+            await verifyRegisteredParticipantForStamp();
+
+
+        if (!participantCheck.success) {
+
+            showStampAccessBlocked(
+                participantCheck.message
+            );
+
+            return;
+
+        }
+
+
+        // ------------------------------------------
+        // 登録済み利用者
+        // ------------------------------------------
 
         const registerButton =
             document.getElementById(
                 "register-button"
             );
 
+
         if (registerButton) {
 
-            registerButton.addEventListener(
-                "click",
-                registerUser
-            );
+            registerButton.style.display =
+                "none";
 
         }
+
+
+        const registerArea =
+            document.getElementById(
+                "register-area"
+            );
+
+
+        if (registerArea) {
+
+            registerArea.style.display =
+                "none";
+
+        }
+
 
         loadCard();
 
