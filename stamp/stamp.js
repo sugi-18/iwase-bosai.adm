@@ -71,19 +71,58 @@ window.addEventListener(
         // 既存利用者確認
         // ------------------------------------------
 
-        const participantCheck =
-            await verifyRegisteredParticipantForStamp();
+       window.addEventListener(
+    "DOMContentLoaded",
+    async function () {
 
+        const initialized =
+            initializeSupabase();
 
-        if (!participantCheck.success) {
+        if (!initialized) {
 
             showStampAccessBlocked(
-                participantCheck.message
+                "サーバーに接続できません。\n\n" +
+                "通信状態を確認してください。"
             );
 
             return;
-
         }
+
+        // ------------------------------------------
+        // 本体からの正規アクセス確認
+        // ------------------------------------------
+
+        const stampAccess =
+            sessionStorage.getItem(
+                "iwaseStampAccess"
+            );
+
+        if (stampAccess !== "1") {
+
+            showStampAccessBlocked(
+                "このスタンプカードは、\n" +
+                "防災アプリ本体からアクセスしてください。"
+            );
+
+            return;
+        }
+
+        // ------------------------------------------
+        // 入場フラグは一度使ったら削除
+        // ------------------------------------------
+
+        sessionStorage.removeItem(
+            "iwaseStampAccess"
+        );
+
+        // ------------------------------------------
+        // 利用者登録済みデータを読み込む
+        // ------------------------------------------
+
+        loadCard();
+
+    }
+);
 
 
         // ------------------------------------------
