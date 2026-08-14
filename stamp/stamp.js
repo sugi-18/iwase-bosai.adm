@@ -1226,16 +1226,13 @@ function displayHistory(
 // ==================================================
 // 完全退会
 //
-// 注意:
-//
-// 現在のSupabase RLSでDELETEが許可されていない場合、
-// Supabase側の削除は失敗する。
-// その場合はlocalStorageを削除せず、
-// 「Supabase側の削除が必要」と明示する。
-//
-// DELETE順:
-// 1. participations
-// 2. participants
+// Supabase RPC
+//   ↓
+// participations削除
+//   ↓
+// participants削除
+//   ↓
+// 端末データ削除
 // ==================================================
 
 async function clearData() {
@@ -1251,9 +1248,7 @@ async function clearData() {
 
 
     if (!result) {
-
         return;
-
     }
 
 
@@ -1277,7 +1272,6 @@ async function clearData() {
 
     if (!saved) {
 
-        // 端末データだけ残っていない場合
         localStorage.removeItem(
             STORAGE_KEY
         );
@@ -1306,7 +1300,8 @@ async function clearData() {
         userData =
             JSON.parse(saved);
 
-    } catch (error) {
+    }
+    catch (error) {
 
         console.error(
             "退会データ解析エラー:",
@@ -1314,7 +1309,8 @@ async function clearData() {
         );
 
         alert(
-            "利用者データを確認できませんでした。"
+            "利用者データを確認できませんでした。\n\n" +
+            "安全のため、端末データは削除していません。"
         );
 
         return;
@@ -1328,10 +1324,29 @@ async function clearData() {
         ).trim();
 
 
+    const participantName =
+        String(
+            userData.name || ""
+        ).trim();
+
+
     if (!participantId) {
 
         alert(
-            "利用者IDを確認できませんでした。"
+            "利用者IDを確認できませんでした。\n\n" +
+            "安全のため、退会処理を中止しました。"
+        );
+
+        return;
+
+    }
+
+
+    if (!participantName) {
+
+        alert(
+            "利用者名を確認できませんでした。\n\n" +
+            "安全のため、退会処理を中止しました。"
         );
 
         return;
@@ -1341,77 +1356,95 @@ async function clearData() {
 
     try {
 
-        // ------------------------------------------
-        // 参加履歴削除
-        // ------------------------------------------
+        /*
+         * ==========================================
+         * Supabase退会RPC
+         *
+         * participant_id + name が一致した
+         * 利用者だけを削除
+         * ==========================================
+         */
 
         const {
-            error:
-                participationDeleteError
+            data,
+            error
         } =
-            await stampSupabaseClient
-                .from("participations")
-                .delete()
-                .eq(
-                    "participant_id",
-                    participantId
-                );
+            await stampSupabaseClient.rpc(
+                "delete_my_participant",
+                {
+                    p_participant_id:
+                        participantId,
+
+                    p_name:
+                        participantName
+                }
+            );
 
 
-        if (
-            participationDeleteError
-        ) {
+        if (error) {
 
             console.error(
-                "participations DELETE error:",
-                participationDeleteError
+                "完全退会RPCエラー:",
+                error
             );
 
             throw new Error(
-                "参加履歴を削除できませんでした。\n\n" +
-                participationDeleteError.message
+                error.message ||
+                "Supabaseの退会処理に失敗しました。"
             );
 
         }
 
 
-        // ------------------------------------------
-        // participants削除
-        // ------------------------------------------
+        console.log(
+            "完全退会RPC結果:",
+            data
+        );
 
-        const {
-            error:
-                participantDeleteError
-        } =
-            await stampSupabaseClient
-                .from("participants")
-                .delete()
-                .eq(
-                    "participant_id",
-                    participantId
-                );
 
+        /*
+         * RPCが成功したか確認
+         */
 
         if (
-            participantDeleteError
+            !data ||
+            data.success !== true
         ) {
 
-            console.error(
-                "participants DELETE error:",
-                participantDeleteError
-            );
+            const rpcError =
+                data?.error ||
+                "unknown_error";
+
+
+            if (
+                rpcError ===
+                "participant_not_found"
+            ) {
+
+                throw new Error(
+                    "Supabase上に一致する利用者情報がありません。\n\n" +
+                    "すでに退会済みの可能性があります。"
+                );
+
+            }
+
 
             throw new Error(
-                "参加者情報を削除できませんでした。\n\n" +
-                participantDeleteError.message
+                "Supabaseの退会処理が完了しませんでした。\n\n" +
+                rpcError
             );
 
         }
 
 
-        // ------------------------------------------
-        // Supabase削除成功
-        // ------------------------------------------
+        /*
+         * ==========================================
+         * Supabase削除成功
+         *
+         * ここまで成功して初めて
+         * 端末データを削除する
+         * ==========================================
+         */
 
         localStorage.removeItem(
             STORAGE_KEY
@@ -1428,6 +1461,10 @@ async function clearData() {
         );
 
 
+        /*
+         * 完了
+         */
+
         alert(
             "退会処理が完了しました。\n\n" +
             "参加者情報・参加履歴・端末内データを削除しました。"
@@ -1438,7 +1475,8 @@ async function clearData() {
             "../login/login.html";
 
 
-    } catch (error) {
+    }
+    catch (error) {
 
         console.error(
             "完全退会エラー:",
@@ -1446,11 +1484,21 @@ async function clearData() {
         );
 
 
+        /*
+         * Supabase削除に失敗した場合は
+         * localStorageを削除しない。
+         *
+         * これにより、
+         * 「Supabaseには残っているのに
+         * 端末だけ退会済み」
+         * という不整合を防ぐ。
+         */
+
         alert(
             "退会処理を完了できませんでした。\n\n" +
             (
                 error?.message ||
-                "Supabaseの削除権限を確認してください。"
+                "Supabaseの削除処理に失敗しました。"
             ) +
             "\n\n" +
             "端末内のデータは削除していません。"
