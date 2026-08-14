@@ -7,7 +7,9 @@
 // ・iPhone / Android / PC / iPad 対応
 // ・Supabase Authを一般利用者には使用しない
 // ・スタンプカード専用Supabaseクライアント
-// ・参加者登録
+// ・一般利用者の新規登録は本体loginでのみ実施
+// ・本体からの正規アクセスのみスタンプカードを表示
+// ・直接stamp.htmlを開いた場合はブロック
 // ・参加履歴同期
 // ・訓練情報同期
 // ・QRコード表示
@@ -51,6 +53,10 @@ window.addEventListener(
     "DOMContentLoaded",
     async function () {
 
+        // ------------------------------------------
+        // Supabase初期化
+        // ------------------------------------------
+
         const initialized =
             initializeSupabase();
 
@@ -67,38 +73,29 @@ window.addEventListener(
         }
 
 
-// ------------------------------------------
-// 本体からの正規アクセス確認
-// ------------------------------------------
-
-const stampAccess =
-    sessionStorage.getItem(
-        "iwaseStampAccess"
-    );
-
-if (stampAccess !== "1") {
-
-    showStampAccessBlocked(
-        "このスタンプカードは、\n" +
-        "防災アプリ本体からアクセスしてください。"
-    );
-
-    return;
-}
-
-// 一度使用したら削除
-sessionStorage.removeItem(
-    "iwaseStampAccess"
-);
-
         // ------------------------------------------
         // 本体からの正規アクセス確認
+        //
+        // index.htmlからスタンプカードへ移動する際に
+        //
+        // sessionStorage:
+        // iwaseStampAccess = "1"
+        //
+        // が設定される。
+        //
+        // stamp.htmlを直接URLで開いた場合は
+        // この値が存在しないため即ブロックする。
+        //
+        // sessionStorageはリロードしても維持されるため、
+        // スタンプカード表示後のページ更新でも
+        // 利用者を追い出さない。
         // ------------------------------------------
 
         const stampAccess =
             sessionStorage.getItem(
                 "iwaseStampAccess"
             );
+
 
         if (stampAccess !== "1") {
 
@@ -108,15 +105,9 @@ sessionStorage.removeItem(
             );
 
             return;
+
         }
 
-        // ------------------------------------------
-        // 入場フラグは一度使ったら削除
-        // ------------------------------------------
-
-        sessionStorage.removeItem(
-            "iwaseStampAccess"
-        );
 
         // ------------------------------------------
         // 利用者登録済みデータを読み込む
@@ -124,12 +115,12 @@ sessionStorage.removeItem(
 
         loadCard();
 
-    }
-);
-
 
         // ------------------------------------------
-        // 登録済み利用者
+        // 登録ボタン・登録エリアを非表示
+        //
+        // 一般利用者の新規登録は
+        // 本体login画面でのみ行う。
         // ------------------------------------------
 
         const registerButton =
@@ -158,9 +149,6 @@ sessionStorage.removeItem(
                 "none";
 
         }
-
-
-        loadCard();
 
     }
 );
@@ -219,7 +207,8 @@ function initializeSupabase() {
         return true;
 
 
-    } catch (error) {
+    }
+    catch (error) {
 
         console.error(
             "Supabase初期化エラー:",
@@ -237,6 +226,9 @@ function initializeSupabase() {
 
 // ==================================================
 // 利用者ID生成
+//
+// ※現在の一般利用者登録は本体loginで行う。
+// スタンプカードからは呼び出さない。
 // ==================================================
 
 function createParticipantId() {
@@ -244,11 +236,13 @@ function createParticipantId() {
     const timestamp =
         Date.now();
 
+
     const random =
         Math.random()
             .toString(36)
             .substring(2, 8)
             .toUpperCase();
+
 
     return (
         "IWASE-" +
@@ -275,7 +269,9 @@ async function registerUser() {
     );
 
     return;
+
 }
+
 
 // ==================================================
 // localStorage読み込み
@@ -289,7 +285,21 @@ function loadCard() {
         );
 
 
+    // ------------------------------------------
+    // 利用者情報が存在しない
+    //
+    // 本体から正常に来た場合は
+    // 原則としてここには到達しない。
+    //
+    // 安全のためカードを表示しない。
+    // ------------------------------------------
+
     if (!saved) {
+
+        showStampAccessBlocked(
+            "利用者情報を確認できませんでした。\n\n" +
+            "先に防災アプリ本体で利用者登録を行ってください。"
+        );
 
         return;
 
@@ -310,6 +320,12 @@ function loadCard() {
 
             localStorage.removeItem(
                 STORAGE_KEY
+            );
+
+
+            showStampAccessBlocked(
+                "利用者情報を確認できませんでした。\n\n" +
+                "先に防災アプリ本体で利用者登録を行ってください。"
             );
 
             return;
@@ -342,16 +358,26 @@ function loadCard() {
         );
 
 
+        // ------------------------------------------
+        // カード表示
+        // ------------------------------------------
+
         displayCard(
             data
         );
 
 
-        // バックグラウンド同期
+        // ------------------------------------------
+        // Supabase同期
+        //
+        // 表示後にバックグラウンドで実行
+        // ------------------------------------------
+
         syncWithSupabase();
 
 
-    } catch (error) {
+    }
+    catch (error) {
 
         console.error(
             "カードデータ読み込みエラー:",
@@ -361,6 +387,12 @@ function loadCard() {
 
         localStorage.removeItem(
             STORAGE_KEY
+        );
+
+
+        showStampAccessBlocked(
+            "利用者情報を読み込めませんでした。\n\n" +
+            "先に防災アプリ本体で利用者登録を行ってください。"
         );
 
     }
@@ -375,34 +407,61 @@ function loadCard() {
 async function syncWithSupabase() {
 
     if (!stampSupabaseClient) {
+
         return;
+
     }
+
 
     const saved =
-        localStorage.getItem(STORAGE_KEY);
+        localStorage.getItem(
+            STORAGE_KEY
+        );
+
 
     if (!saved) {
+
         return;
+
     }
+
 
     let userData;
 
+
     try {
-        userData = JSON.parse(saved);
-    } catch (error) {
+
+        userData =
+            JSON.parse(saved);
+
+    }
+    catch (error) {
+
         console.error(
             "利用者データ解析エラー:",
             error
         );
+
         return;
+
     }
 
-    if (!userData || !userData.id) {
+
+    if (
+        !userData ||
+        !userData.id
+    ) {
+
         return;
+
     }
+
 
     const participantId =
-        String(userData.id).trim();
+        String(
+            userData.id
+        ).trim();
+
 
     try {
 
@@ -410,6 +469,7 @@ async function syncWithSupabase() {
             "Supabaseスタンプ同期開始:",
             participantId
         );
+
 
         const {
             data,
@@ -423,101 +483,165 @@ async function syncWithSupabase() {
                 }
             );
 
+
         if (error) {
+
             console.error(
                 "スタンプ取得RPCエラー:",
                 error
             );
+
             throw error;
+
         }
+
 
         console.log(
             "スタンプ取得RPC結果:",
             data
         );
 
+
         if (!data) {
+
             throw new Error(
                 "Supabaseからスタンプ情報を取得できませんでした。"
             );
+
         }
 
-        if (data.success !== true) {
+
+        if (
+            data.success !== true
+        ) {
+
             throw new Error(
                 data.error ||
                 "unknown_error"
             );
+
         }
 
+
         let stamps =
-            Array.isArray(data.stamps)
+            Array.isArray(
+                data.stamps
+            )
                 ? data.stamps
                 : [];
 
+
+        // ------------------------------------------
+        // スタンプデータ整理
+        // ------------------------------------------
+
         stamps =
             stamps
-                .map(stamp => {
+                .map(
+                    stamp => {
 
-                    if (!stamp) {
-                        return null;
+                        if (!stamp) {
+
+                            return null;
+
+                        }
+
+
+                        const trainingId =
+                            String(
+                                stamp.training_id ||
+                                ""
+                            ).trim();
+
+
+                        if (!trainingId) {
+
+                            return null;
+
+                        }
+
+
+                        return {
+
+                            training_id:
+                                trainingId,
+
+                            date:
+                                stamp.date ||
+                                "",
+
+                            event:
+                                stamp.event ||
+                                "防災訓練"
+
+                        };
+
                     }
-
-                    const trainingId =
-                        String(
-                            stamp.training_id ||
-                            ""
-                        ).trim();
-
-                    if (!trainingId) {
-                        return null;
-                    }
-
-                    return {
-                        training_id:
-                            trainingId,
-
-                        date:
-                            stamp.date || "",
-
-                        event:
-                            stamp.event ||
-                            "防災訓練"
-                    };
-
-                })
+                )
                 .filter(
                     stamp => !!stamp
                 );
 
-        const uniqueStamps = [];
-        const usedTrainingIds = new Set();
 
-        stamps.forEach(stamp => {
+        // ------------------------------------------
+        // training_id重複除去
+        // ------------------------------------------
 
-            if (
-                usedTrainingIds.has(
+        const uniqueStamps =
+            [];
+
+
+        const usedTrainingIds =
+            new Set();
+
+
+        stamps.forEach(
+            stamp => {
+
+                if (
+                    usedTrainingIds.has(
+                        stamp.training_id
+                    )
+                ) {
+
+                    return;
+
+                }
+
+
+                usedTrainingIds.add(
                     stamp.training_id
-                )
-            ) {
-                return;
+                );
+
+
+                uniqueStamps.push(
+                    stamp
+                );
+
             }
+        );
 
-            usedTrainingIds.add(
-                stamp.training_id
-            );
 
-            uniqueStamps.push(stamp);
-
-        });
+        // ------------------------------------------
+        // 日付順
+        // ------------------------------------------
 
         uniqueStamps.sort(
             (a, b) => {
 
                 const dateA =
-                    String(a.date || "");
+                    String(
+                        a.date ||
+                        ""
+                    );
+
 
                 const dateB =
-                    String(b.date || "");
+                    String(
+                        b.date ||
+                        ""
+                    );
+
 
                 return dateB.localeCompare(
                     dateA
@@ -526,18 +650,34 @@ async function syncWithSupabase() {
             }
         );
 
+
+        // ------------------------------------------
+        // 最大10件
+        // ------------------------------------------
+
         userData.stamps =
             uniqueStamps.slice(
                 0,
                 MAX_STAMP
             );
 
+
         localStorage.setItem(
             STORAGE_KEY,
-            JSON.stringify(userData)
+            JSON.stringify(
+                userData
+            )
         );
 
-        displayCard(userData);
+
+        // ------------------------------------------
+        // 再表示
+        // ------------------------------------------
+
+        displayCard(
+            userData
+        );
+
 
         console.log(
             "Supabase同期完了:",
@@ -550,20 +690,28 @@ async function syncWithSupabase() {
 
                 stamps:
                     userData.stamps
+
             }
         );
 
-    } catch (error) {
+
+    }
+    catch (error) {
 
         console.error(
             "Supabase同期エラー:",
             error
         );
 
+
+        // ------------------------------------------
         // 同期失敗時はlocalStorageを維持
+        // ------------------------------------------
+
     }
 
 }
+
 
 // ==================================================
 // 参加した訓練一覧
@@ -576,14 +724,19 @@ async function loadTrainingList() {
             "training-list"
         );
 
+
     if (!container) {
+
         return;
+
     }
+
 
     const saved =
         localStorage.getItem(
             STORAGE_KEY
         );
+
 
     if (!saved) {
 
@@ -591,80 +744,115 @@ async function loadTrainingList() {
             "<p>参加した訓練はありません。</p>";
 
         return;
+
     }
 
+
     let userData;
+
 
     try {
 
         userData =
             JSON.parse(saved);
 
-    } catch (error) {
+    }
+    catch (error) {
 
         console.error(
             "訓練一覧データ解析エラー:",
             error
         );
 
+
         container.innerHTML =
             "<p>参加した訓練を読み込めませんでした。</p>";
 
         return;
+
     }
 
+
     const stamps =
-        Array.isArray(userData.stamps)
+        Array.isArray(
+            userData.stamps
+        )
             ? userData.stamps
             : [];
 
-    if (stamps.length === 0) {
+
+    if (
+        stamps.length ===
+        0
+    ) {
 
         container.innerHTML =
             "<p>参加した訓練はありません。</p>";
 
         return;
+
     }
 
-    container.innerHTML = "";
 
-    stamps.forEach(stamp => {
+    container.innerHTML =
+        "";
 
-        const item =
-            document.createElement(
-                "div"
+
+    stamps.forEach(
+        stamp => {
+
+            const item =
+                document.createElement(
+                    "div"
+                );
+
+
+            item.className =
+                "training-item";
+
+
+            const title =
+                document.createElement(
+                    "strong"
+                );
+
+
+            title.textContent =
+                stamp.event ||
+                "防災訓練";
+
+
+            const date =
+                document.createElement(
+                    "div"
+                );
+
+
+            date.textContent =
+                formatTrainingDate(
+                    stamp.date
+                );
+
+
+            item.appendChild(
+                title
             );
 
-        item.className =
-            "training-item";
 
-        const title =
-            document.createElement(
-                "strong"
+            item.appendChild(
+                date
             );
 
-        title.textContent =
-            stamp.event ||
-            "防災訓練";
 
-        const date =
-            document.createElement(
-                "div"
+            container.appendChild(
+                item
             );
 
-        date.textContent =
-            formatTrainingDate(
-                stamp.date
-            );
-
-        item.appendChild(title);
-        item.appendChild(date);
-
-        container.appendChild(item);
-
-    });
+        }
+    );
 
 }
+
 
 // ==================================================
 // 日付表示
@@ -737,7 +925,10 @@ function displayCard(
     }
 
 
+    // ------------------------------------------
     // 最大10件
+    // ------------------------------------------
+
     data.stamps =
         data.stamps.slice(
             0,
@@ -833,19 +1024,22 @@ function displayCard(
                     }
                 );
 
-            } catch (error) {
+            }
+            catch (error) {
 
                 console.error(
                     "QRコード生成エラー:",
                     error
                 );
 
+
                 qrArea.textContent =
                     "QRコードを表示できませんでした。";
 
             }
 
-        } else {
+        }
+        else {
 
             qrArea.textContent =
                 "QRコードを読み込めませんでした。";
@@ -972,7 +1166,8 @@ function displayCard(
 
         }
 
-    } else {
+    }
+    else {
 
         const remaining =
             CERTIFICATE_COUNT -
@@ -1145,7 +1340,9 @@ async function clearData() {
 
 
     if (!result) {
+
         return;
+
     }
 
 
@@ -1173,16 +1370,25 @@ async function clearData() {
             STORAGE_KEY
         );
 
+
         localStorage.removeItem(
             "iwaseLogin"
         );
+
 
         localStorage.removeItem(
             "role"
         );
 
+
+        sessionStorage.removeItem(
+            "iwaseStampAccess"
+        );
+
+
         location.href =
             "../login/login.html";
+
 
         return;
 
@@ -1205,10 +1411,12 @@ async function clearData() {
             error
         );
 
+
         alert(
             "利用者データを確認できませんでした。\n\n" +
             "安全のため、端末データは削除していません。"
         );
+
 
         return;
 
@@ -1217,13 +1425,15 @@ async function clearData() {
 
     const participantId =
         String(
-            userData.id || ""
+            userData.id ||
+            ""
         ).trim();
 
 
     const participantName =
         String(
-            userData.name || ""
+            userData.name ||
+            ""
         ).trim();
 
 
@@ -1233,6 +1443,7 @@ async function clearData() {
             "利用者IDを確認できませんでした。\n\n" +
             "安全のため、退会処理を中止しました。"
         );
+
 
         return;
 
@@ -1246,6 +1457,7 @@ async function clearData() {
             "安全のため、退会処理を中止しました。"
         );
 
+
         return;
 
     }
@@ -1253,14 +1465,9 @@ async function clearData() {
 
     try {
 
-        /*
-         * ==========================================
-         * Supabase退会RPC
-         *
-         * participant_id + name が一致した
-         * 利用者だけを削除
-         * ==========================================
-         */
+        // ------------------------------------------
+        // Supabase完全退会RPC
+        // ------------------------------------------
 
         const {
             data,
@@ -1285,6 +1492,7 @@ async function clearData() {
                 error
             );
 
+
             throw new Error(
                 error.message ||
                 "Supabaseの退会処理に失敗しました。"
@@ -1299,9 +1507,9 @@ async function clearData() {
         );
 
 
-        /*
-         * RPCが成功したか確認
-         */
+        // ------------------------------------------
+        // RPC成功確認
+        // ------------------------------------------
 
         if (
             !data ||
@@ -1334,14 +1542,11 @@ async function clearData() {
         }
 
 
-        /*
-         * ==========================================
-         * Supabase削除成功
-         *
-         * ここまで成功して初めて
-         * 端末データを削除する
-         * ==========================================
-         */
+        // ------------------------------------------
+        // Supabase削除成功
+        //
+        // ここで初めて端末データを削除
+        // ------------------------------------------
 
         localStorage.removeItem(
             STORAGE_KEY
@@ -1358,9 +1563,18 @@ async function clearData() {
         );
 
 
-        /*
-         * 完了
-         */
+        // ------------------------------------------
+        // 本体→スタンプカード入口フラグも削除
+        // ------------------------------------------
+
+        sessionStorage.removeItem(
+            "iwaseStampAccess"
+        );
+
+
+        // ------------------------------------------
+        // 完了
+        // ------------------------------------------
 
         alert(
             "退会処理が完了しました。\n\n" +
@@ -1371,7 +1585,6 @@ async function clearData() {
         location.href =
             "../login/login.html";
 
-
     }
     catch (error) {
 
@@ -1381,15 +1594,11 @@ async function clearData() {
         );
 
 
-        /*
-         * Supabase削除に失敗した場合は
-         * localStorageを削除しない。
-         *
-         * これにより、
-         * 「Supabaseには残っているのに
-         * 端末だけ退会済み」
-         * という不整合を防ぐ。
-         */
+        // ------------------------------------------
+        // Supabase削除失敗時
+        //
+        // localStorageは削除しない
+        // ------------------------------------------
 
         alert(
             "退会処理を完了できませんでした。\n\n" +
@@ -1400,240 +1609,6 @@ async function clearData() {
             "\n\n" +
             "端末内のデータは削除していません。"
         );
-
-    }
-
-}
-
-
-// ==================================================
-// グローバル公開
-//
-// HTMLのonclickから呼び出している場合に対応
-// ==================================================
-
-window.clearData =
-    clearData;
-
-window.registerUser =
-    registerUser;
-
-window.loadCard =
-    loadCard;
-
-window.loadTrainingList =
-    loadTrainingList;
-
-window.syncWithSupabase =
-    syncWithSupabase;
-
-// ==================================================
-// スタンプカード利用者確認
-//
-// 一般利用者の新規登録入口として
-// stamp.htmlを使用させない。
-//
-// participantsに存在する利用者だけ
-// スタンプカードを表示する。
-// ==================================================
-
-async function verifyRegisteredParticipantForStamp() {
-
-    const saved =
-        localStorage.getItem(
-            STORAGE_KEY
-        );
-
-
-    // ------------------------------------------
-    // localStorageなし
-    // ------------------------------------------
-
-    if (!saved) {
-
-        return {
-
-            success:
-                false,
-
-            error:
-                "participant_not_registered",
-
-            message:
-                "この端末は利用者登録されていません。\n\n" +
-                "先にアプリの利用者登録を行ってください。\n\n" +
-                "この画面から新規利用者登録はできません。"
-
-        };
-
-    }
-
-
-    // ------------------------------------------
-    // JSON解析
-    // ------------------------------------------
-
-    let userData;
-
-
-    try {
-
-        userData =
-            JSON.parse(
-                saved
-            );
-
-    }
-    catch (error) {
-
-        console.error(
-            "スタンプ利用者情報解析エラー:",
-            error
-        );
-
-
-        return {
-
-            success:
-                false,
-
-            error:
-                "invalid_local_data",
-
-            message:
-                "利用者情報を確認できませんでした。\n\n" +
-                "この画面から新規利用者登録はできません。"
-
-        };
-
-    }
-
-
-    // ------------------------------------------
-    // 利用者ID確認
-    // ------------------------------------------
-
-    const participantId =
-        String(
-            userData?.id || ""
-        ).trim();
-
-
-    if (!participantId) {
-
-        return {
-
-            success:
-                false,
-
-            error:
-                "participant_id_missing",
-
-            message:
-                "利用者IDを確認できませんでした。\n\n" +
-                "この画面から新規利用者登録はできません。"
-
-        };
-
-    }
-
-
-    // ------------------------------------------
-    // Supabase存在確認
-    // ------------------------------------------
-
-    try {
-
-        const {
-            data,
-            error
-        } =
-            await stampSupabaseClient.rpc(
-                "check_participant_exists",
-                {
-                    p_participant_id:
-                        participantId
-                }
-            );
-
-
-        if (error) {
-
-            console.error(
-                "スタンプ利用者確認RPCエラー:",
-                error
-            );
-
-
-            return {
-
-                success:
-                    false,
-
-                error:
-                    "participant_check_error",
-
-                message:
-                    "利用者情報を確認できませんでした。\n\n" +
-                    "通信状態を確認してください。"
-
-            };
-
-        }
-
-
-        if (data !== true) {
-
-            return {
-
-                success:
-                    false,
-
-                error:
-                    "participant_not_registered",
-
-                message:
-                    "この端末の利用者登録は確認できませんでした。\n\n" +
-                    "この画面から新規利用者登録はできません。"
-
-            };
-
-        }
-
-
-        return {
-
-            success:
-                true,
-
-            participantId:
-                participantId
-
-        };
-
-
-    }
-    catch (error) {
-
-        console.error(
-            "スタンプ利用者確認例外:",
-            error
-        );
-
-
-        return {
-
-            success:
-                false,
-
-            error:
-                "participant_check_exception",
-
-            message:
-                "利用者情報を確認できませんでした。\n\n" +
-                "通信状態を確認してください。"
-
-        };
 
     }
 
@@ -1691,7 +1666,7 @@ function showStampAccessBlocked(
 
 
     // ------------------------------------------
-    // 既存メッセージがあれば使用
+    // 既存ブロックメッセージ
     // ------------------------------------------
 
     let blocked =
@@ -1756,5 +1731,30 @@ function showStampAccessBlocked(
     blocked.textContent =
         message;
 
-
 }
+
+
+// ==================================================
+// グローバル公開
+//
+// HTMLのonclickから呼び出している場合に対応
+// ==================================================
+
+window.clearData =
+    clearData;
+
+
+window.registerUser =
+    registerUser;
+
+
+window.loadCard =
+    loadCard;
+
+
+window.loadTrainingList =
+    loadTrainingList;
+
+
+window.syncWithSupabase =
+    syncWithSupabase;
