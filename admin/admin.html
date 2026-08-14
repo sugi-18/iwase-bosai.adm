@@ -490,20 +490,24 @@
     class="admin-section content-section hidden"
 >
 
-    <div class="section-header">
+<div class="section-header">
+    <div>
+        <h2>
+            防災訓練 参加者分析
+        </h2>
 
-        <div>
+        <p>
+            地域の防災活動への参加状況を分析します。
+        </p>
+    </div>
 
-            <h2>
-                防災訓練 参加者分析
-            </h2>
-
-            <p>
-                地域の防災活動への参加状況を分析します。
-            </p>
-
-        </div>
-
+    <div
+        style="
+            display:flex;
+            gap:8px;
+            flex-wrap:wrap;
+        "
+    >
 
         <button
             type="button"
@@ -513,7 +517,16 @@
             ↻ 更新
         </button>
 
+        <button
+            type="button"
+            id="exportParticipantAnalysisPdfButton"
+            class="primary-button"
+        >
+            📄 PDF出力
+        </button>
+
     </div>
+</div>
 
 
     <!-- ==================================================
