@@ -1580,3 +1580,335 @@ window.loadTrainingList =
 
 window.syncWithSupabase =
     syncWithSupabase;
+
+// ==================================================
+// スタンプカード利用者確認
+//
+// 一般利用者の新規登録入口として
+// stamp.htmlを使用させない。
+//
+// participantsに存在する利用者だけ
+// スタンプカードを表示する。
+// ==================================================
+
+async function verifyRegisteredParticipantForStamp() {
+
+    const saved =
+        localStorage.getItem(
+            STORAGE_KEY
+        );
+
+
+    // ------------------------------------------
+    // localStorageなし
+    // ------------------------------------------
+
+    if (!saved) {
+
+        return {
+
+            success:
+                false,
+
+            error:
+                "participant_not_registered",
+
+            message:
+                "この端末は利用者登録されていません。\n\n" +
+                "先にアプリの利用者登録を行ってください。\n\n" +
+                "この画面から新規利用者登録はできません。"
+
+        };
+
+    }
+
+
+    // ------------------------------------------
+    // JSON解析
+    // ------------------------------------------
+
+    let userData;
+
+
+    try {
+
+        userData =
+            JSON.parse(
+                saved
+            );
+
+    }
+    catch (error) {
+
+        console.error(
+            "スタンプ利用者情報解析エラー:",
+            error
+        );
+
+
+        return {
+
+            success:
+                false,
+
+            error:
+                "invalid_local_data",
+
+            message:
+                "利用者情報を確認できませんでした。\n\n" +
+                "この画面から新規利用者登録はできません。"
+
+        };
+
+    }
+
+
+    // ------------------------------------------
+    // 利用者ID確認
+    // ------------------------------------------
+
+    const participantId =
+        String(
+            userData?.id || ""
+        ).trim();
+
+
+    if (!participantId) {
+
+        return {
+
+            success:
+                false,
+
+            error:
+                "participant_id_missing",
+
+            message:
+                "利用者IDを確認できませんでした。\n\n" +
+                "この画面から新規利用者登録はできません。"
+
+        };
+
+    }
+
+
+    // ------------------------------------------
+    // Supabase存在確認
+    // ------------------------------------------
+
+    try {
+
+        const {
+            data,
+            error
+        } =
+            await stampSupabaseClient.rpc(
+                "check_participant_exists",
+                {
+                    p_participant_id:
+                        participantId
+                }
+            );
+
+
+        if (error) {
+
+            console.error(
+                "スタンプ利用者確認RPCエラー:",
+                error
+            );
+
+
+            return {
+
+                success:
+                    false,
+
+                error:
+                    "participant_check_error",
+
+                message:
+                    "利用者情報を確認できませんでした。\n\n" +
+                    "通信状態を確認してください。"
+
+            };
+
+        }
+
+
+        if (data !== true) {
+
+            return {
+
+                success:
+                    false,
+
+                error:
+                    "participant_not_registered",
+
+                message:
+                    "この端末の利用者登録は確認できませんでした。\n\n" +
+                    "この画面から新規利用者登録はできません。"
+
+            };
+
+        }
+
+
+        return {
+
+            success:
+                true,
+
+            participantId:
+                participantId
+
+        };
+
+
+    }
+    catch (error) {
+
+        console.error(
+            "スタンプ利用者確認例外:",
+            error
+        );
+
+
+        return {
+
+            success:
+                false,
+
+            error:
+                "participant_check_exception",
+
+            message:
+                "利用者情報を確認できませんでした。\n\n" +
+                "通信状態を確認してください。"
+
+        };
+
+    }
+
+}
+
+
+// ==================================================
+// スタンプカード利用不可表示
+// ==================================================
+
+function showStampAccessBlocked(
+    message
+) {
+
+    const registerArea =
+        document.getElementById(
+            "register-area"
+        );
+
+
+    const cardArea =
+        document.getElementById(
+            "card-area"
+        );
+
+
+    const deleteArea =
+        document.getElementById(
+            "delete-area"
+        );
+
+
+    if (registerArea) {
+
+        registerArea.style.display =
+            "none";
+
+    }
+
+
+    if (cardArea) {
+
+        cardArea.style.display =
+            "none";
+
+    }
+
+
+    if (deleteArea) {
+
+        deleteArea.style.display =
+            "none";
+
+    }
+
+
+    // ------------------------------------------
+    // 既存メッセージがあれば使用
+    // ------------------------------------------
+
+    let blocked =
+        document.getElementById(
+            "stamp-access-blocked"
+        );
+
+
+    if (!blocked) {
+
+        blocked =
+            document.createElement(
+                "section"
+            );
+
+
+        blocked.id =
+            "stamp-access-blocked";
+
+
+        blocked.style.marginTop =
+            "30px";
+
+
+        blocked.style.padding =
+            "20px";
+
+
+        blocked.style.border =
+            "1px solid #ccc";
+
+
+        blocked.style.borderRadius =
+            "10px";
+
+
+        blocked.style.background =
+            "#f8f8f8";
+
+
+        blocked.style.whiteSpace =
+            "pre-line";
+
+
+        const container =
+            document.querySelector(
+                ".stamp-container"
+            );
+
+
+        if (container) {
+
+            container.appendChild(
+                blocked
+            );
+
+        }
+
+    }
+
+
+    blocked.textContent =
+        message;
+
+
+}
