@@ -39,33 +39,56 @@
 
 
 <!-- ==================================================
-     認証確認
+     利用者登録確認
 ================================================== -->
 
 <script>
 
-(async function(){
+(async function () {
 
     try {
 
-        const {
-            data,
-            error
-        } =
-        await supabaseClient.auth.getSession();
-
-
         /*
-        ==================================================
-        Supabaseセッションがない場合
-        ==================================================
-        */
+         * まず端末に利用者情報があるか確認
+         */
 
-        if (
-            error ||
-            !data ||
-            !data.session
-        ) {
+        const saved =
+            localStorage.getItem(
+                "iwaseStamp"
+            );
+
+
+        if (!saved) {
+
+            location.href =
+                "./login/login.html";
+
+            return;
+
+        }
+
+
+        let userData;
+
+
+        try {
+
+            userData =
+                JSON.parse(saved);
+
+        }
+        catch (parseError) {
+
+            console.error(
+                "利用者データ解析エラー:",
+                parseError
+            );
+
+
+            localStorage.removeItem(
+                "iwaseStamp"
+            );
+
 
             location.href =
                 "./login/login.html";
@@ -76,34 +99,90 @@
 
 
         /*
-        ==================================================
-        認証成功
-        ==================================================
-        */
+         * 利用者IDと氏名が必要
+         */
 
-        console.log(
-            "認証確認OK"
+        if (
+            !userData ||
+            !userData.id ||
+            !userData.name
+        ) {
+
+            localStorage.removeItem(
+                "iwaseStamp"
+            );
+
+
+            location.href =
+                "./login/login.html";
+
+            return;
+
+        }
+
+
+        /*
+         * Supabase上に利用者が
+         * 本当に存在するか確認
+         */
+
+        const {
+            data,
+            error
+        } =
+        await supabaseClient.rpc(
+            "check_participant_exists",
+            {
+                p_participant_id:
+                    userData.id
+            }
         );
 
 
-        console.log(
-            "ユーザーUID:",
-            data.session.user.id
-        );
+        if (
+            error ||
+            data !== true
+        ) {
+
+            console.log(
+                "Supabase上に利用者が存在しません。"
+            );
 
 
+            localStorage.removeItem(
+                "iwaseStamp"
+            );
+
+
+            location.href =
+                "./login/login.html";
+
+            return;
+
+        }
+
+
+        /*
+         * 登録済み利用者
+         */
+
         console.log(
-            "Anonymous:",
-            data.session.user.is_anonymous
+            "利用者登録確認OK:",
+            userData.id
         );
 
 
     }
-    catch(error) {
+    catch (error) {
 
         console.error(
-            "認証確認エラー:",
+            "利用者確認エラー:",
             error
+        );
+
+
+        localStorage.removeItem(
+            "iwaseStamp"
         );
 
 
