@@ -5751,9 +5751,40 @@ function escapeHtml(
 
     function printTrainingQr() {
 
-        window.print();
+    const modal =
+        document.getElementById(
+            "trainingQrModal"
+        );
+
+
+    if (!modal) {
+
+        return;
 
     }
+
+
+    /*
+     * QR印刷モード
+     */
+
+    document.body.classList.add(
+        "qr-print-mode"
+    );
+
+
+    /*
+     * モーダルを強制表示
+     */
+
+    modal.classList.remove(
+        "hidden"
+    );
+
+
+    window.print();
+
+}
 
 
     /* ==================================================
