@@ -1,7 +1,16 @@
 // =====================================
 // 岩瀬自治会 防災アプリ
-// 会員アクセスコード認証
-// ＋ Anonymous Auth
+// 一般利用者 初回登録
+//
+// 自治会コード＋氏名
+// ↓
+// participants登録
+// ↓
+// 利用者ID保存
+// ↓
+// アプリ開始
+//
+// 一般利用者にはSupabase Authを使用しない
 // =====================================
 
 "use strict";
@@ -18,48 +27,99 @@ window.addEventListener(
 
 
 // =====================================
-// 既存セッション確認
+// 既存利用者確認
 // =====================================
 
 async function checkLogin() {
 
     try {
 
+        const saved =
+            localStorage.getItem(
+                "iwaseStamp"
+            );
+
+
+        if (!saved) {
+            return;
+        }
+
+
+        const userData =
+            JSON.parse(saved);
+
+
+        if (
+            !userData ||
+            !userData.id ||
+            !userData.name
+        ) {
+            localStorage.removeItem(
+                "iwaseStamp"
+            );
+
+            return;
+        }
+
+
+        /*
+         * 端末に利用者IDが残っていても、
+         * Supabase上に存在しなければ
+         * 利用者として認めない。
+         */
+
         const {
             data,
             error
         } =
-        await supabaseClient.auth.getSession();
+        await supabaseClient.rpc(
+            "check_participant_exists",
+            {
+                p_participant_id:
+                    userData.id
+            }
+        );
 
 
         if (
-            !error &&
-            data &&
-            data.session
+            error ||
+            data !== true
         ) {
 
             console.log(
-                "既存のSupabaseセッションを確認しました。"
+                "Supabase上に利用者が存在しません。"
             );
 
 
-            console.log(
-                "UID:",
-                data.session.user.id
+            localStorage.removeItem(
+                "iwaseStamp"
             );
 
 
-            location.href =
-                "../index.html";
+            return;
 
         }
 
-    }
 
+        /*
+         * 登録済み利用者
+         */
+
+        console.log(
+            "登録済み利用者を確認しました:",
+            userData.id
+        );
+
+
+        location.href =
+            "../index.html";
+
+
+    }
     catch (error) {
 
         console.error(
-            "セッション確認エラー:",
+            "利用者確認エラー:",
             error
         );
 
@@ -69,14 +129,47 @@ async function checkLogin() {
 
 
 // =====================================
-// ログイン
+// 利用者ID生成
+// =====================================
+
+function createParticipantId() {
+
+    const timestamp =
+        Date.now();
+
+
+    const random =
+        Math.random()
+            .toString(36)
+            .substring(2, 8)
+            .toUpperCase();
+
+
+    return (
+        "IWASE-" +
+        timestamp +
+        "-" +
+        random
+    );
+
+}
+
+
+// =====================================
+// 利用登録
 // =====================================
 
 async function login() {
 
-    const input =
+    const codeInput =
         document.getElementById(
             "access-code"
+        );
+
+
+    const nameInput =
+        document.getElementById(
+            "username"
         );
 
 
@@ -93,7 +186,11 @@ async function login() {
 
 
     const code =
-        input.value.trim();
+        codeInput.value.trim();
+
+
+    const name =
+        nameInput.value.trim();
 
 
     // ==================================
@@ -103,7 +200,33 @@ async function login() {
     if (!code) {
 
         errorElement.textContent =
-            "アクセスコードを入力してください。";
+            "自治会コードを入力してください。";
+
+        codeInput.focus();
+
+        return;
+
+    }
+
+
+    if (!name) {
+
+        errorElement.textContent =
+            "氏名を入力してください。";
+
+        nameInput.focus();
+
+        return;
+
+    }
+
+
+    if (name.length > 100) {
+
+        errorElement.textContent =
+            "氏名が長すぎます。";
+
+        nameInput.focus();
 
         return;
 
@@ -112,16 +235,20 @@ async function login() {
 
     try {
 
-        button.disabled = true;
+        button.disabled =
+            true;
+
 
         button.textContent =
             "確認中...";
 
-        errorElement.textContent = "";
+
+        errorElement.textContent =
+            "";
 
 
         // ==================================
-        // Edge Functionでコード確認
+        // 自治会コード確認
         // ==================================
 
         const {
@@ -138,19 +265,15 @@ async function login() {
         );
 
 
-        // ==================================
-        // Functionエラー
-        // ==================================
-
         if (error) {
 
             console.error(
-                "アクセスコード認証エラー:",
+                "自治会コード認証エラー:",
                 error
             );
 
             throw new Error(
-                "アクセスコードの確認に失敗しました。"
+                "自治会コードの確認に失敗しました。"
             );
 
         }
@@ -167,12 +290,16 @@ async function login() {
 
             errorElement.textContent =
                 data?.message ||
-                "アクセスコードが正しくありません。";
+                "自治会コードが正しくありません。";
 
-            button.disabled = false;
+
+            button.disabled =
+                false;
+
 
             button.textContent =
-                "利用開始";
+                "利用登録して開始";
+
 
             return;
 
@@ -180,88 +307,166 @@ async function login() {
 
 
         // ==================================
-        // Anonymous Auth
+        // 利用者ID生成
         // ==================================
 
-        button.textContent =
-            "利用開始中...";
+        const participantId =
+            createParticipantId();
 
+
+        button.textContent =
+            "利用登録中...";
+
+
+        // ==================================
+        // participants登録
+        //
+        // 現在のRLSでanon INSERTが
+        // 許可されている
+        // ==================================
 
         const {
-            data: authData,
-            error: authError
+            error:
+                insertError
         } =
-        await supabaseClient.auth
-            .signInAnonymously();
+        await supabaseClient
+            .from("participants")
+            .insert({
+
+                participant_id:
+                    participantId,
+
+                name:
+                    name
+
+            });
 
 
-        if (authError) {
+        if (insertError) {
 
             console.error(
-                "Anonymous Auth error:",
+                "participants INSERT error:",
+                insertError
+            );
+
+            throw insertError;
+
+        }
+
+
+        // ==================================
+        // 端末保存
+        // stamp.jsと同じ形式を使用
+        // ==================================
+
+        const userData = {
+
+            id:
+                participantId,
+
+            name:
+                name,
+
+            stamps:
+                []
+
+        };
+
+
+        localStorage.setItem(
+            "iwaseStamp",
+            JSON.stringify(
+                userData
+            )
+        );
+
+
+        // ==================================
+        // 保存確認
+        // ==================================
+
+        const saved =
+            localStorage.getItem(
+                "iwaseStamp"
+            );
+
+
+        if (!saved) {
+
+            throw new Error(
+                "端末への利用者情報保存を確認できませんでした。"
+            );
+
+        }
+
+
+        // ==================================
+        // 既存のAnonymous Authがあれば
+        // 一般利用者では使用しないため解除
+        // ==================================
+
+        try {
+
+            await supabaseClient.auth.signOut();
+
+        }
+        catch (authError) {
+
+            console.warn(
+                "既存Authセッション解除警告:",
                 authError
             );
 
-            throw authError;
-
-        }
-
-
-        if (
-            !authData ||
-            !authData.user
-        ) {
-
-            throw new Error(
-                "Anonymous Authに失敗しました。"
-            );
-
         }
 
 
         // ==================================
-        // UID確認
-        // ==================================
-
-        console.log(
-            "Anonymous Auth UID:",
-            authData.user.id
-        );
-
-
-        console.log(
-            "Anonymous:",
-            authData.user.is_anonymous
-        );
-
-
-        // ==================================
-        // トップページ
+        // アプリ開始
         // ==================================
 
         location.href =
             "../index.html";
 
+
     }
-
-
     catch (error) {
 
         console.error(
-            "ログインエラー:",
+            "利用登録エラー:",
             error
         );
 
 
+        let message =
+            "利用登録に失敗しました。";
+
+
+        if (
+            error?.message
+        ) {
+
+            message +=
+                "\n\n" +
+                error.message;
+
+        }
+
+
+        message +=
+            "\n\n" +
+            "通信状態を確認して、もう一度お試しください。";
+
+
         errorElement.textContent =
-            error.message ||
-            "ログインに失敗しました。";
+            message;
 
 
-        button.disabled = false;
+        button.disabled =
+            false;
+
 
         button.textContent =
-            "利用開始";
+            "利用登録して開始";
 
     }
 
