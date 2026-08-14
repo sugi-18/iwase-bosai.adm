@@ -3092,53 +3092,7 @@ opacity: 1 !important;
 }
 
 
-/* ==================================================
-   QR印刷
-================================================== */
 
-@media print {
-
-    body * {
-        visibility: hidden !important;
-    }
-
-    #trainingQrModal,
-    #trainingQrModal * {
-        visibility: visible !important;
-    }
-
-    #trainingQrModal {
-        position: absolute;
-        left: 0;
-        top: 0;
-
-        width: 100%;
-        height: 100%;
-
-        background: #ffffff;
-    }
-
-    .qr-modal {
-        max-width: none;
-        width: 100%;
-        box-shadow: none;
-    }
-
-    .modal-buttons {
-        display: none !important;
-    }
-
-    .qr-code img {
-        width: 320px;
-        height: 320px;
-    }
-
-    .qr-url {
-        max-width: 600px;
-        margin-left: auto;
-        margin-right: auto;
-    }
-}
 
 
 /* ==================================================
