@@ -67,26 +67,29 @@ window.addEventListener(
         }
 
 
-        // ------------------------------------------
-        // 既存利用者確認
-        // ------------------------------------------
+// ------------------------------------------
+// 本体からの正規アクセス確認
+// ------------------------------------------
 
-       window.addEventListener(
-    "DOMContentLoaded",
-    async function () {
+const stampAccess =
+    sessionStorage.getItem(
+        "iwaseStampAccess"
+    );
 
-        const initialized =
-            initializeSupabase();
+if (stampAccess !== "1") {
 
-        if (!initialized) {
+    showStampAccessBlocked(
+        "このスタンプカードは、\n" +
+        "防災アプリ本体からアクセスしてください。"
+    );
 
-            showStampAccessBlocked(
-                "サーバーに接続できません。\n\n" +
-                "通信状態を確認してください。"
-            );
+    return;
+}
 
-            return;
-        }
+// 一度使用したら削除
+sessionStorage.removeItem(
+    "iwaseStampAccess"
+);
 
         // ------------------------------------------
         // 本体からの正規アクセス確認
