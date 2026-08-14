@@ -215,7 +215,43 @@ async function initializeTrainingPage() {
                 "date"
             )
         );
+    // ==================================================
+    // 利用者登録確認
+    //
+    // QRを開いた時点でSupabase上の利用者存在を確認する
+    // ==================================================
 
+    const participantCheck =
+        await verifyRegisteredParticipant();
+
+
+    if (!participantCheck.success) {
+
+        console.error(
+            "利用者確認NG:",
+            participantCheck.error
+        );
+
+
+        showResult(
+            participantCheck.message
+        );
+
+
+        disableRegisterButton(
+            "利用登録が必要です"
+        );
+
+
+        return;
+
+    }
+
+
+    console.log(
+        "QRアクセス利用者確認OK:",
+        participantCheck.participantId
+    );
 
     console.log(
         "QRパラメータ:",
