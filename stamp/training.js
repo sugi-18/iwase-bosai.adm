@@ -264,6 +264,45 @@ async function initializeTrainingPage() {
         }
     );
 
+    // ==================================================
+    // QRアクセス時の利用者確認
+    //
+    // 端末に利用者IDがあるだけでは許可しない。
+    // Supabase participants に存在する利用者だけ
+    // 訓練QRを利用できる。
+    // ==================================================
+
+    const participantCheck =
+        await verifyRegisteredParticipant();
+
+
+    if (!participantCheck.success) {
+
+        console.error(
+            "QR利用者確認NG:",
+            participantCheck.error
+        );
+
+
+        showResult(
+            participantCheck.message
+        );
+
+
+        disableRegisterButton(
+            "利用者登録が必要です"
+        );
+
+
+        return;
+
+    }
+
+
+    console.log(
+        "QR利用者確認OK:",
+        participantCheck.participantId
+    );
 
     // ==================================================
     // 訓練情報取得
@@ -1998,3 +2037,246 @@ function getErrorMessage(
 console.log(
     "training.js 読み込み完了"
 );
+
+// ==================================================
+// QRアクセス時 利用者存在確認
+//
+// localStorageに利用者IDが残っていても、
+// Supabase participants に存在しなければ
+// 訓練参加画面を利用させない。
+// ==================================================
+
+async function verifyRegisteredParticipant() {
+
+    // ------------------------------------------
+    // Supabase確認
+    // ------------------------------------------
+
+    if (
+        !trainingSupabaseClient
+    ) {
+
+        return {
+
+            success:
+                false,
+
+            error:
+                "supabase_unavailable",
+
+            message:
+                "サーバーに接続できません。\n\n" +
+                "通信状態を確認して、もう一度QRコードを読み取ってください。"
+
+        };
+
+    }
+
+
+    // ------------------------------------------
+    // 端末の利用者情報
+    // ------------------------------------------
+
+    const saved =
+        localStorage.getItem(
+            STORAGE_KEY
+        );
+
+
+    if (!saved) {
+
+        return {
+
+            success:
+                false,
+
+            error:
+                "participant_not_registered",
+
+            message:
+                "この端末は利用者登録されていません。\n\n" +
+                "訓練参加登録を利用するには、先にアプリの利用者登録を行ってください。"
+
+        };
+
+    }
+
+
+    // ------------------------------------------
+    // JSON解析
+    // ------------------------------------------
+
+    let participant;
+
+
+    try {
+
+        participant =
+            JSON.parse(
+                saved
+            );
+
+    }
+    catch (error) {
+
+        console.error(
+            "利用者情報解析エラー:",
+            error
+        );
+
+
+        return {
+
+            success:
+                false,
+
+            error:
+                "invalid_local_data",
+
+            message:
+                "利用者情報を確認できませんでした。\n\n" +
+                "このQRコードからは訓練参加登録できません。"
+
+        };
+
+    }
+
+
+    // ------------------------------------------
+    // 利用者ID
+    // ------------------------------------------
+
+    const participantId =
+        normalizeValue(
+            participant?.id
+        );
+
+
+    if (!participantId) {
+
+        return {
+
+            success:
+                false,
+
+            error:
+                "participant_id_missing",
+
+            message:
+                "利用者IDを確認できませんでした。\n\n" +
+                "このQRコードからは訓練参加登録できません。"
+
+        };
+
+    }
+
+
+    // ------------------------------------------
+    // Supabase participants確認
+    // ------------------------------------------
+
+    try {
+
+        const {
+            data,
+            error
+        } =
+            await trainingSupabaseClient.rpc(
+                "check_participant_exists",
+                {
+                    p_participant_id:
+                        participantId
+                }
+            );
+
+
+        if (error) {
+
+            console.error(
+                "利用者存在確認RPCエラー:",
+                error
+            );
+
+
+            return {
+
+                success:
+                    false,
+
+                error:
+                    "participant_check_error",
+
+                message:
+                    "利用者情報を確認できませんでした。\n\n" +
+                    "通信状態を確認して、もう一度QRコードを読み取ってください。"
+
+            };
+
+        }
+
+
+        // ------------------------------------------
+        // Supabaseに存在しない
+        // ------------------------------------------
+
+        if (data !== true) {
+
+            return {
+
+                success:
+                    false,
+
+                error:
+                    "participant_not_registered",
+
+                message:
+                    "この端末は利用者登録されていません。\n\n" +
+                    "訓練参加登録を利用するには、先にアプリの利用者登録を行ってください。\n\n" +
+                    "訓練参加登録はできません。"
+
+            };
+
+        }
+
+
+        // ------------------------------------------
+        // 登録済み
+        // ------------------------------------------
+
+        return {
+
+            success:
+                true,
+
+            participantId:
+                participantId
+
+        };
+
+
+    }
+    catch (error) {
+
+        console.error(
+            "利用者存在確認例外:",
+            error
+        );
+
+
+        return {
+
+            success:
+                false,
+
+            error:
+                "participant_check_exception",
+
+            message:
+                "利用者情報を確認できませんでした。\n\n" +
+                "通信状態を確認して、もう一度QRコードを読み取ってください。"
+
+        };
+
+    }
+
+}
