@@ -159,6 +159,8 @@ function checkSupabaseClient() {
 
 /* ==================================================
    認証確認
+   ※ 管理者画面を開いた際は必ずログインを要求
+   ※ 既存のSupabaseセッションは信用しない
 ================================================== */
 
 async function checkAuth() {
@@ -167,65 +169,41 @@ async function checkAuth() {
 
         checkSupabaseClient();
 
+        /*
+         * 管理者画面を直接開いた場合、
+         * 既存のSupabase Authセッションが残っていても
+         * そのまま管理画面には入れない。
+         *
+         * 必ず一度ログアウト状態にして、
+         * メールアドレス＋パスワードの入力を要求する。
+         */
 
-        const {
-            data,
-            error
-        } =
-            await adminSupabaseClient
-                .auth
-                .getSession();
+        await adminSupabaseClient
+            .auth
+            .signOut();
 
+        console.log(
+            "ADMIN: 既存セッションを解除しました。"
+        );
 
-        if (error) {
+        showLoginScreen();
 
-            throw error;
-
-        }
-
-
-        if (
-            data &&
-            data.session
-        ) {
-
-console.log("ADMIN SESSION USER:", data.session?.user);
-console.log("ADMIN UID:", data.session?.user?.id);
-
-            console.log("ADMIN: showAdminScreen 開始");
-
-showAdminScreen();
-
-console.log("ADMIN: showAdminScreen 完了");
-
-console.log("ADMIN: loadAllData 開始");
-
-await loadAllData();
-
-console.log("ADMIN: loadAllData 完了");
-
-        } else {
-
-            showLoginScreen();
-
-        }
-
+        console.log(
+            "ADMIN: 管理者ログイン画面を表示しました。"
+        );
 
     } catch (error) {
 
         console.error(
-            "Authentication error:",
+            "Authentication initialization error:",
             error
         );
-
 
         showLoginScreen();
 
     }
 
 }
-
-
 /* ==================================================
    ログイン
 ================================================== */
