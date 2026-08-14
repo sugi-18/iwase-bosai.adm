@@ -4290,3 +4290,211 @@ opacity: 1 !important;
     }
 
 }
+
+/* ==================================================
+   印刷
+   通常のCtrl + P対応
+================================================== */
+
+@media print {
+
+    @page {
+        size: A4;
+        margin: 12mm;
+    }
+
+
+    html,
+    body {
+        margin: 0 !important;
+        padding: 0 !important;
+
+        background: #ffffff !important;
+
+        color: #222222 !important;
+    }
+
+
+    /*
+     * ログイン画面は印刷しない
+     */
+
+    #loginScreen {
+        display: none !important;
+    }
+
+
+    /*
+     * 管理画面そのもの
+     */
+
+    #adminScreen {
+        display: block !important;
+
+        min-height: auto !important;
+    }
+
+
+    /*
+     * ヘッダー
+     */
+
+    .admin-header {
+        display: none !important;
+    }
+
+
+    /*
+     * ナビゲーション
+     */
+
+    .admin-nav {
+        display: none !important;
+    }
+
+
+    /*
+     * 管理画面コンテナ
+     */
+
+    .admin-container {
+        width: 100% !important;
+
+        max-width: none !important;
+
+        margin: 0 !important;
+
+        padding: 0 !important;
+    }
+
+
+    /*
+     * 通常はhiddenを維持
+     *
+     * JavaScriptで
+     * print対象だけに
+     * print-targetクラスを付ける
+     */
+
+    .content-section.hidden {
+        display: none !important;
+    }
+
+
+    /*
+     * 印刷対象
+     */
+
+    .content-section.print-target {
+        display: block !important;
+
+        width: 100% !important;
+
+        margin: 0 !important;
+
+        padding: 0 !important;
+    }
+
+
+    /*
+     * 印刷時は操作ボタンを非表示
+     */
+
+    .print-target button,
+    .print-target .primary-button,
+    .print-target .secondary-button,
+    .print-target .action-button,
+    .print-target .edit-button,
+    .print-target .delete-button,
+    .print-target .view-button {
+        display: none !important;
+    }
+
+
+    /*
+     * テーブル
+     */
+
+    .print-target .table-wrapper {
+        overflow: visible !important;
+
+        width: 100% !important;
+
+        box-shadow: none !important;
+    }
+
+
+    .print-target table {
+        width: 100% !important;
+
+        min-width: 0 !important;
+
+        border-collapse: collapse !important;
+    }
+
+
+    .print-target th,
+    .print-target td {
+        border: 1px solid #999 !important;
+
+        padding: 6px 8px !important;
+
+        color: #222 !important;
+    }
+
+
+    /*
+     * カード
+     */
+
+    .print-target .dashboard-card,
+    .print-target .stat-card,
+    .print-target .participant-card,
+    .print-target .participant-card-profile,
+    .print-target .participant-card-stat,
+    .print-target .participant-card-info,
+    .print-target .participant-card-progress,
+    .print-target .history-item,
+    .print-target .ranking-item,
+    .print-target .analysis-ranking-item,
+    .print-target .analysis-inactive-item,
+    .print-target .analysis-training-item,
+    .print-target .activity-management-card,
+    .print-target .content-management-card {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+
+    /*
+     * グラフ
+     */
+
+    .print-target .chart-container {
+        break-inside: avoid;
+
+        page-break-inside: avoid;
+    }
+
+
+    /*
+     * モーダルは通常印刷しない
+     */
+
+    .modal {
+        display: none !important;
+    }
+
+
+    /*
+     * 印刷用タイトル
+     */
+
+    .print-target h2,
+    .print-target h3 {
+        break-after: avoid;
+
+        page-break-after: avoid;
+    }
+
+}
