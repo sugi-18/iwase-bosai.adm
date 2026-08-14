@@ -120,6 +120,19 @@ document.addEventListener(
                 }
             );
 
+       
+       document
+    .getElementById(
+        "exportParticipantAnalysisPdfButton"
+    )
+    ?.addEventListener(
+        "click",
+        () => {
+
+            exportParticipantAnalysisPdf();
+
+        }
+    );
 
         await checkAuth();
 
