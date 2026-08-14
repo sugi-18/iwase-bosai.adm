@@ -1,89 +1,95 @@
 /* ==================================================
    岩瀬自治会 防災アプリ
    管理者画面 PDF出力
+
    完成版
 
    対応
-   ・参加者カルテPDF
    ・参加者分析PDF
-   ・Chart.js
-   ・A4印刷
-   ・日本語
-   ・PC
-   ・iPhone
-   ・iPad
-   ・Android
+   ・参加者カルテPDF
+   ・Chart.jsグラフ
+   ・hiddenクラス対策
+   ・印刷ウィンドウ表示安定化
+   ・Chrome / Edge / Safari
 ================================================== */
 
 "use strict";
 
 
 /* ==================================================
-   共通設定
+   共通：印刷用ウィンドウ
 ================================================== */
 
-const PDF_PRINT_DELAY = 800;
+function openPrintWindow(
+    title,
+    contentHtml
+) {
 
-const PDF_IMAGE_LOAD_TIMEOUT = 5000;
-
-
-/* ==================================================
-   HTMLエスケープ
-================================================== */
-
-function escapePdfText(value) {
-
-    return String(value ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-
-}
+    const printWindow =
+        window.open(
+            "",
+            "_blank",
+            "width=1000,height=800"
+        );
 
 
-/* ==================================================
-   日付
-================================================== */
+    if (!printWindow) {
 
-function formatPdfDate(date) {
+        alert(
+            "PDF出力用の画面を開けませんでした。\n\n" +
+            "ブラウザのポップアップブロックを確認してください。"
+        );
 
-    const d =
-        date instanceof Date
-            ? date
-            : new Date(date);
-
-
-    if (Number.isNaN(d.getTime())) {
-
-        return "";
+        return;
 
     }
 
 
-    return (
-        `${d.getFullYear()}/` +
-        `${String(d.getMonth() + 1).padStart(2, "0")}/` +
-        `${String(d.getDate()).padStart(2, "0")} ` +
-        `${String(d.getHours()).padStart(2, "0")}:` +
-        `${String(d.getMinutes()).padStart(2, "0")}`
-    );
+    const cssUrl =
+        new URL(
+            "admin.css",
+            window.location.href
+        ).href;
 
-}
 
+    /*
+     * 印刷用HTML
+     */
+
+    const html = `
+<!DOCTYPE html>
+
+<html lang="ja">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
+
+<title>
+    ${escapePdfText(title)}
+</title>
+
+
+<link
+    rel="stylesheet"
+    href="${cssUrl}"
+>
+
+
+<style>
 
 /* ==================================================
-   印刷用CSS
+   PDF基本設定
 ================================================== */
-
-function getPdfPrintCss() {
-
-    return `
 
 @page {
 
-    size: A4 portrait;
+    size: A4;
 
     margin: 12mm;
 
@@ -119,20 +125,19 @@ body {
         "Hiragino Kaku Gothic ProN",
         "Hiragino Sans",
         "Yu Gothic",
-        "YuGothic",
         "Meiryo",
         sans-serif;
 
-    font-size: 11px;
+    font-size: 12px;
 
     line-height: 1.6;
 
-    -webkit-print-color-adjust: exact;
-
-    print-color-adjust: exact;
-
 }
 
+
+/* ==================================================
+   PDF本体
+================================================== */
 
 .pdf-document {
 
@@ -145,9 +150,14 @@ body {
 }
 
 
+/* ==================================================
+   PDFヘッダー
+================================================== */
+
 .pdf-header {
 
-    border-bottom: 2px solid #333;
+    border-bottom:
+        2px solid #333;
 
     padding-bottom: 8px;
 
@@ -160,9 +170,7 @@ body {
 
     margin: 0 0 4px;
 
-    font-size: 21px;
-
-    line-height: 1.35;
+    font-size: 22px;
 
 }
 
@@ -171,22 +179,27 @@ body {
 
     margin: 0;
 
-    font-size: 10px;
+    font-size: 11px;
 
     color: #666;
 
 }
 
 
+/* ==================================================
+   PDFフッター
+================================================== */
+
 .pdf-footer {
 
-    margin-top: 18px;
+    margin-top: 20px;
 
     padding-top: 6px;
 
-    border-top: 1px solid #ccc;
+    border-top:
+        1px solid #ccc;
 
-    font-size: 8px;
+    font-size: 9px;
 
     color: #777;
 
@@ -195,22 +208,114 @@ body {
 }
 
 
+/* ==================================================
+   hidden対策
+================================================== */
+
+/*
+ * 元画面では hidden でも、
+ * PDF側では表示する。
+ */
+
+.hidden {
+
+    display: block !important;
+
+}
+
+
+.content-section {
+
+    display: block !important;
+
+}
+
+
+#participantAnalysisSection {
+
+    display: block !important;
+
+    visibility: visible !important;
+
+}
+
+
+/* ==================================================
+   操作用UIを非表示
+================================================== */
+
 button,
 .action-button,
 .modal-buttons,
 .participant-card-delete,
 .nav-button,
-.secondary-button,
-.primary-button {
+.admin-nav,
+#refreshParticipantAnalysisButton,
+#exportParticipantAnalysisPdfButton {
 
     display: none !important;
 
 }
 
 
-/* -----------------------------------------------
-   基本カード
------------------------------------------------- */
+/* ==================================================
+   不要な画面要素
+================================================== */
+
+.screen {
+
+    display: block !important;
+
+}
+
+
+.screen.hidden {
+
+    display: block !important;
+
+}
+
+
+/* ==================================================
+   Canvas
+================================================== */
+
+canvas {
+
+    max-width: 100% !important;
+
+}
+
+
+/* ==================================================
+   グラフ
+================================================== */
+
+.chart-container {
+
+    height: 260px !important;
+
+    max-height: 260px !important;
+
+    overflow: visible !important;
+
+}
+
+
+.chart-container img {
+
+    display: block;
+
+    width: 100%;
+
+    height: auto;
+
+}
+
+
+/* ==================================================
+   改ページ
+================================================== */
 
 .dashboard-card,
 .stat-card,
@@ -221,113 +326,11 @@ button,
 .participant-card-progress,
 .participant-card-history,
 .history-item,
-.ranking-item,
-.content-management-card {
+.ranking-item {
 
     break-inside: avoid;
 
     page-break-inside: avoid;
-
-}
-
-
-/* -----------------------------------------------
-   見出し
------------------------------------------------- */
-
-h1,
-h2,
-h3,
-h4 {
-
-    break-after: avoid;
-
-    page-break-after: avoid;
-
-}
-
-
-/* -----------------------------------------------
-   統計カード
------------------------------------------------- */
-
-.stats-grid {
-
-    display: grid !important;
-
-}
-
-
-.stat-card {
-
-    break-inside: avoid;
-
-    page-break-inside: avoid;
-
-}
-
-
-/* -----------------------------------------------
-   グラフ
------------------------------------------------- */
-
-.chart-card {
-
-    break-inside: avoid;
-
-    page-break-inside: avoid;
-
-}
-
-
-.chart-container {
-
-    width: 100% !important;
-
-    height: 250px !important;
-
-    max-height: 250px !important;
-
-    position: relative;
-
-}
-
-
-.chart-container canvas {
-
-    width: 100% !important;
-
-    height: auto !important;
-
-    max-width: 100% !important;
-
-}
-
-
-/* Canvasを画像化した場合 */
-
-.chart-container img {
-
-    display: block;
-
-    width: 100% !important;
-
-    height: auto !important;
-
-    max-width: 100% !important;
-
-}
-
-
-/* -----------------------------------------------
-   テーブル
------------------------------------------------- */
-
-.table-wrapper {
-
-    width: 100%;
-
-    overflow: visible !important;
 
 }
 
@@ -338,185 +341,52 @@ table {
 
     border-collapse: collapse;
 
-    border-spacing: 0;
-
-}
-
-
-thead {
-
-    display: table-header-group;
-
-}
-
-
-tfoot {
-
-    display: table-footer-group;
-
-}
-
-
-tr {
-
-    break-inside: avoid;
-
-    page-break-inside: avoid;
-
 }
 
 
 th,
 td {
 
-    border: 1px solid #ccc;
+    border:
+        1px solid #ccc;
 
-    padding: 4px 6px;
+    padding: 5px 7px;
 
     text-align: left;
-
-    vertical-align: middle;
-
-    font-size: 10px;
 
 }
 
 
 th {
 
-    background: #f2f2f2 !important;
+    background: #f2f2f2;
 
     font-weight: bold;
 
 }
 
 
-/* -----------------------------------------------
-   ランキング
------------------------------------------------- */
+h1,
+h2,
+h3 {
 
-.ranking-list {
+    break-after: avoid;
 
-    width: 100%;
-
-}
-
-
-.ranking-item {
-
-    break-inside: avoid;
-
-    page-break-inside: avoid;
+    page-break-after: avoid;
 
 }
 
 
-/* -----------------------------------------------
-   参加者カルテ
------------------------------------------------- */
-
-.participant-card {
-
-    width: 100%;
-
-}
-
-
-.participant-card-profile,
-.participant-card-stat,
-.participant-card-info,
-.participant-card-progress,
-.participant-card-history {
-
-    break-inside: avoid;
-
-    page-break-inside: avoid;
-
-}
-
-
-/* -----------------------------------------------
-   プログレスバー
------------------------------------------------- */
-
-.progress-bar,
-.participant-card-progress-bar {
-
-    print-color-adjust: exact;
-
-    -webkit-print-color-adjust: exact;
-
-}
-
-
-/* -----------------------------------------------
-   改ページ
------------------------------------------------- */
-
-.pdf-page-break {
-
-    break-before: page;
-
-    page-break-before: always;
-
-}
-
-
-/* -----------------------------------------------
-   不要なUI
------------------------------------------------- */
-
-.hidden,
-.screen.hidden {
-
-    display: none !important;
-
-}
-
-
-/* -----------------------------------------------
-   印刷
------------------------------------------------- */
+/* ==================================================
+   印刷時
+================================================== */
 
 @media print {
 
     html,
     body {
 
-        background: #fff !important;
-
-    }
-
-
-    .pdf-document {
-
-        width: 100%;
-
-        max-width: none;
-
-        margin: 0;
-
-    }
-
-
-    .no-print {
-
-        display: none !important;
-
-    }
-
-}
-
-
-/* -----------------------------------------------
-   スマートフォン
------------------------------------------------- */
-
-@media screen and (max-width: 600px) {
-
-    body {
-
-        font-size: 10px;
+        background: #ffffff !important;
 
     }
 
@@ -527,88 +397,21 @@ th {
 
     }
 
-}
 
-`;
+    .hidden {
 
-}
-
-
-/* ==================================================
-   印刷用ウィンドウを作成
-================================================== */
-
-function openPrintWindow(title, contentHtml) {
-
-    const printWindow =
-        window.open(
-            "",
-            "_blank",
-            "width=1000,height=800"
-        );
-
-
-    if (!printWindow) {
-
-        alert(
-            "PDF出力用の画面を開けませんでした。\n\n" +
-            "ブラウザのポップアップブロックを確認してください。"
-        );
-
-        return null;
+        display: block !important;
 
     }
 
 
-    const cssUrl =
-        new URL(
-            "admin.css",
-            window.location.href
-        ).href;
+    .content-section {
 
+        display: block !important;
 
-    const safeTitle =
-        escapePdfText(title);
+    }
 
-
-    const createdDate =
-        formatPdfDate(
-            new Date()
-        );
-
-
-    printWindow.document.open();
-
-
-    printWindow.document.write(`
-
-<!DOCTYPE html>
-
-<html lang="ja">
-
-<head>
-
-<meta charset="UTF-8">
-
-<meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
->
-
-<title>
-    ${safeTitle}
-</title>
-
-
-<link
-    rel="stylesheet"
-    href="${cssUrl}"
->
-
-
-<style>
-
-${getPdfPrintCss()}
+}
 
 </style>
 
@@ -617,14 +420,15 @@ ${getPdfPrintCss()}
 
 <body>
 
-
 <div class="pdf-document">
 
+
+    <!-- PDFヘッダー -->
 
     <div class="pdf-header">
 
         <h1>
-            ${safeTitle}
+            ${escapePdfText(title)}
         </h1>
 
         <p>
@@ -634,6 +438,8 @@ ${getPdfPrintCss()}
     </div>
 
 
+    <!-- PDF本体 -->
+
     <div id="pdfContent">
 
         ${contentHtml}
@@ -641,11 +447,13 @@ ${getPdfPrintCss()}
     </div>
 
 
+    <!-- PDFフッター -->
+
     <div class="pdf-footer">
 
         岩瀬自治会 防災アプリ　
         作成日：
-        ${escapePdfText(createdDate)}
+        ${formatPdfDate(new Date())}
 
     </div>
 
@@ -653,123 +461,138 @@ ${getPdfPrintCss()}
 </div>
 
 
+<script>
+
+/*
+ * 印刷準備完了
+ */
+
+window.addEventListener(
+    "load",
+    function () {
+
+        setTimeout(
+            function () {
+
+                window.focus();
+
+                window.print();
+
+            },
+            500
+        );
+
+    }
+);
+
+</script>
+
+
 </body>
 
 </html>
+`;
 
-`);
 
+    /*
+     * HTMLを書き込む
+     */
+
+    printWindow.document.open();
+
+    printWindow.document.write(
+        html
+    );
 
     printWindow.document.close();
-
-
-    return printWindow;
 
 }
 
 
 /* ==================================================
-   画像読み込み待機
+   HTMLエスケープ
 ================================================== */
 
-function waitForImages(
-    documentObject,
-    timeout = PDF_IMAGE_LOAD_TIMEOUT
+function escapePdfText(
+    value
 ) {
 
-    const images =
-        Array.from(
-            documentObject.images || []
-        );
+    return String(
+        value ?? ""
+    )
+
+    .replace(
+        /&/g,
+        "&amp;"
+    )
+
+    .replace(
+        /</g,
+        "&lt;"
+    )
+
+    .replace(
+        />/g,
+        "&gt;"
+    )
+
+    .replace(
+        /"/g,
+        "&quot;"
+    )
+
+    .replace(
+        /'/g,
+        "&#039;"
+    );
+
+}
 
 
-    if (images.length === 0) {
+/* ==================================================
+   日付
+================================================== */
 
-        return Promise.resolve();
+function formatPdfDate(
+    date
+) {
+
+    const d =
+        date instanceof Date
+            ? date
+            : new Date(date);
+
+
+    if (
+        Number.isNaN(
+            d.getTime()
+        )
+    ) {
+
+        return "";
 
     }
 
 
-    return new Promise(resolve => {
-
-        let finished = false;
-
-        let remaining =
-            images.length;
-
-
-        const finish = () => {
-
-            if (finished) {
-
-                return;
-
-            }
-
-
-            finished = true;
-
-            resolve();
-
-        };
-
-
-        const check = () => {
-
-            remaining--;
-
-            if (remaining <= 0) {
-
-                finish();
-
-            }
-
-        };
-
-
-        images.forEach(image => {
-
-            if (image.complete) {
-
-                check();
-
-                return;
-
-            }
-
-
-            image.addEventListener(
-                "load",
-                check,
-                {
-                    once: true
-                }
-            );
-
-
-            image.addEventListener(
-                "error",
-                check,
-                {
-                    once: true
-                }
-            );
-
-        });
-
-
-        setTimeout(
-            finish,
-            timeout
-        );
-
-    });
+    return `${d.getFullYear()}/` +
+           `${String(
+               d.getMonth() + 1
+           ).padStart(2, "0")}/` +
+           `${String(
+               d.getDate()
+           ).padStart(2, "0")} ` +
+           `${String(
+               d.getHours()
+           ).padStart(2, "0")}:` +
+           `${String(
+               d.getMinutes()
+           ).padStart(2, "0")}`;
 
 }
 
 
 /* ==================================================
-   CanvasをPNG画像へ変換
+   Canvas → 画像
 ================================================== */
 
 function convertCanvasToImage(
@@ -797,10 +620,6 @@ function convertCanvasToImage(
             );
 
 
-        image.alt =
-            "グラフ";
-
-
         image.style.display =
             "block";
 
@@ -822,7 +641,7 @@ function convertCanvasToImage(
     } catch (error) {
 
         console.error(
-            "Canvas → image conversion error:",
+            "Canvas PDF conversion error:",
             error
         );
 
@@ -834,93 +653,119 @@ function convertCanvasToImage(
 
 
 /* ==================================================
-   Canvasを画像へ変換
+   PDF用クローンを作成
 ================================================== */
 
-function convertCanvasesToImages(
+function createPdfClone(
     source
 ) {
 
-    if (!source) {
-
-        return;
-
-    }
-
-
-    const canvases =
-        source.querySelectorAll(
-            "canvas"
+    const clone =
+        source.cloneNode(
+            true
         );
 
 
-    canvases.forEach(
-        canvas => {
+    /*
+     * ★最重要
+     *
+     * 元画面の hidden を解除
+     */
 
-            const image =
-                convertCanvasToImage(
-                    canvas
-                );
-
-
-            if (!image) {
-
-                return;
-
-            }
-
-
-            canvas.replaceWith(
-                image
-            );
-
-        }
+    clone.classList.remove(
+        "hidden"
     );
 
-}
+
+    /*
+     * hidden属性も解除
+     */
+
+    clone.removeAttribute(
+        "hidden"
+    );
 
 
-/* ==================================================
-   操作用UIを除去
-================================================== */
+    /*
+     * style属性によるdisplay:noneも解除
+     */
 
-function removePdfControls(
-    root
-) {
-
-    if (!root) {
-
-        return;
-
-    }
+    clone.style.display =
+        "block";
 
 
-    const selectors = [
-
-        "button",
-
-        ".modal-buttons",
-
-        ".action-button",
-
-        ".participant-card-delete",
-
-        ".no-print",
-
-        ".nav-button",
-
-        "#refreshDashboardButton",
-
-        "#refreshParticipantAnalysisButton",
-
-        "#exportParticipantAnalysisPdfButton"
-
-    ];
+    clone.style.visibility =
+        "visible";
 
 
-    root
+    /*
+     * 子要素の hidden も解除
+     */
+
+    clone
         .querySelectorAll(
-            selectors.join(",")
+            ".hidden"
+        )
+        .forEach(
+            element => {
+
+                element.classList.remove(
+                    "hidden"
+                );
+
+                element.style.display =
+                    "";
+
+                element.style.visibility =
+                    "visible";
+
+            }
+        );
+
+
+    /*
+     * hidden属性
+     */
+
+    clone
+        .querySelectorAll(
+            "[hidden]"
+        )
+        .forEach(
+            element => {
+
+                element.removeAttribute(
+                    "hidden"
+                );
+
+            }
+        );
+
+
+    /*
+     * 操作用ボタンを除去
+     */
+
+    clone
+        .querySelectorAll(
+            "button"
+        )
+        .forEach(
+            button => {
+
+                button.remove();
+
+            }
+        );
+
+
+    /*
+     * ナビゲーションを除去
+     */
+
+    clone
+        .querySelectorAll(
+            ".admin-nav"
         )
         .forEach(
             element => {
@@ -930,193 +775,8 @@ function removePdfControls(
             }
         );
 
-}
 
-
-/* ==================================================
-   空の読み込み中表示を整理
-================================================== */
-
-function cleanupPdfContent(
-    root
-) {
-
-    if (!root) {
-
-        return;
-
-    }
-
-
-    removePdfControls(
-        root
-    );
-
-
-    /*
-     * PDFに不要な入力フォーム
-     */
-
-    root
-        .querySelectorAll(
-            "input[type='hidden'], textarea"
-        )
-        .forEach(
-            element =>
-                element.remove()
-        );
-
-
-    /*
-     * スクロール領域を解除
-     */
-
-    root
-        .querySelectorAll(
-            ".table-wrapper, " +
-            ".history-content, " +
-            ".ranking-list, " +
-            ".participant-card-history"
-        )
-        .forEach(
-            element => {
-
-                element.style.maxHeight =
-                    "none";
-
-                element.style.height =
-                    "auto";
-
-                element.style.overflow =
-                    "visible";
-
-            }
-        );
-
-
-    /*
-     * PDFでは横スクロールさせない
-     */
-
-    root
-        .querySelectorAll("*")
-        .forEach(
-            element => {
-
-                if (
-                    element.style.overflow ===
-                    "auto"
-                ) {
-
-                    element.style.overflow =
-                        "visible";
-
-                }
-
-            }
-        );
-
-}
-
-
-/* ==================================================
-   印刷開始
-================================================== */
-
-async function startPrint(
-    printWindow
-) {
-
-    if (!printWindow) {
-
-        return;
-
-    }
-
-
-    try {
-
-        /*
-         * フォント・CSS等の読み込み待ち
-         */
-
-        if (
-            printWindow.document.fonts &&
-            printWindow.document.fonts.ready
-        ) {
-
-            try {
-
-                await printWindow.document.fonts.ready;
-
-            } catch (error) {
-
-                console.warn(
-                    "PDF font loading warning:",
-                    error
-                );
-
-            }
-
-        }
-
-
-        /*
-         * 画像読み込み待ち
-         */
-
-        await waitForImages(
-            printWindow.document
-        );
-
-
-        /*
-         * 最終待機
-         */
-
-        await new Promise(
-            resolve =>
-                setTimeout(
-                    resolve,
-                    PDF_PRINT_DELAY
-                )
-        );
-
-
-        printWindow.focus();
-
-
-        /*
-         * 印刷
-         */
-
-        printWindow.print();
-
-
-    } catch (error) {
-
-        console.error(
-            "PDF print error:",
-            error
-        );
-
-
-        try {
-
-            printWindow.focus();
-
-            printWindow.print();
-
-        } catch (printError) {
-
-            console.error(
-                "Fallback print error:",
-                printError
-            );
-
-        }
-
-    }
+    return clone;
 
 }
 
@@ -1147,130 +807,30 @@ function exportParticipantCardPdf() {
     const title =
         document.getElementById(
             "participantCardTitle"
-        )?.textContent
-        ?.trim()
+        )?.textContent?.trim()
         ||
         "参加者カルテ";
 
 
-    /*
-     * 表示されているカルテを複製
-     */
-
     const clone =
-        content.cloneNode(
-            true
+        createPdfClone(
+            content
         );
 
 
     /*
-     * 操作ボタン除去
-     */
-
-    cleanupPdfContent(
-        clone
-    );
-
-
-    /*
-     * Canvasが存在する場合は画像化
-     */
-
-    convertCanvasesToImages(
-        clone
-    );
-
-
-    /*
-     * 印刷
-     */
-
-    const printWindow =
-        openPrintWindow(
-            title,
-            clone.innerHTML
-        );
-
-
-    if (!printWindow) {
-
-        return;
-
-    }
-
-
-    startPrint(
-        printWindow
-    );
-
-}
-
-
-/* ==================================================
-   参加者分析PDF
-================================================== */
-
-function exportParticipantAnalysisPdf() {
-
-    const section =
-        document.getElementById(
-            "participantAnalysisSection"
-        );
-
-
-    if (!section) {
-
-        alert(
-            "参加者分析画面を取得できませんでした。"
-        );
-
-        return;
-
-    }
-
-
-    /*
-     * 現在表示されている画面を複製
-     */
-
-    const clone =
-        section.cloneNode(
-            true
-        );
-
-
-    /*
-     * 操作用ボタンを除去
-     */
-
-    cleanupPdfContent(
-        clone
-    );
-
-
-    /*
-     * Canvasについては、
-     *
-     * 元画面のCanvasを画像化して
-     * 複製側へ移植する。
-     *
-     * これによりChart.jsのグラフを
-     * PDF側でも確実に表示する。
+     * Canvasを画像化
      */
 
     const originalCanvases =
-        Array.from(
-            section.querySelectorAll(
-                "canvas"
-            )
+        content.querySelectorAll(
+            "canvas"
         );
 
 
     const clonedCanvases =
-        Array.from(
-            clone.querySelectorAll(
-                "canvas"
-            )
+        clone.querySelectorAll(
+            "canvas"
         );
 
 
@@ -1300,73 +860,125 @@ function exportParticipantAnalysisPdf() {
                 );
 
 
-            if (!image) {
+            if (image) {
 
-                return;
-
-            }
-
-
-            /*
-             * 元Canvasの表示サイズを
-             * できるだけ維持
-             */
-
-            const rect =
-                originalCanvas.getBoundingClientRect();
-
-
-            if (
-                rect &&
-                rect.width > 0
-            ) {
-
-                image.style.width =
-                    `${rect.width}px`;
+                clonedCanvas.replaceWith(
+                    image
+                );
 
             }
-
-
-            image.style.maxWidth =
-                "100%";
-
-
-            clonedCanvas.replaceWith(
-                image
-            );
 
         }
     );
 
 
-    /*
-     * PDF用タイトル
-     */
+    openPrintWindow(
+        title,
+        clone.innerHTML
+    );
 
-    const title =
-        "防災訓練 参加者分析";
+}
 
 
-    /*
-     * 印刷ウィンドウ
-     */
+/* ==================================================
+   参加者分析PDF
+================================================== */
 
-    const printWindow =
-        openPrintWindow(
-            title,
-            clone.innerHTML
+function exportParticipantAnalysisPdf() {
+
+    const section =
+        document.getElementById(
+            "participantAnalysisSection"
         );
 
 
-    if (!printWindow) {
+    if (!section) {
+
+        alert(
+            "参加者分析画面を取得できませんでした。"
+        );
 
         return;
 
     }
 
 
-    startPrint(
-        printWindow
+    /*
+     * PDF用クローン
+     *
+     * ★ここで hidden を解除する
+     */
+
+    const clone =
+        createPdfClone(
+            section
+        );
+
+
+    /*
+     * Canvas
+     *
+     * 元画面に表示されているChart.jsを
+     * PNG画像へ変換する
+     */
+
+    const originalCanvases =
+        section.querySelectorAll(
+            "canvas"
+        );
+
+
+    const clonedCanvases =
+        clone.querySelectorAll(
+            "canvas"
+        );
+
+
+    originalCanvases.forEach(
+        (
+            originalCanvas,
+            index
+        ) => {
+
+            const clonedCanvas =
+                clonedCanvases[index];
+
+
+            if (
+                !originalCanvas ||
+                !clonedCanvas
+            ) {
+
+                return;
+
+            }
+
+
+            const image =
+                convertCanvasToImage(
+                    originalCanvas
+                );
+
+
+            if (image) {
+
+                clonedCanvas.replaceWith(
+                    image
+                );
+
+            }
+
+        }
+    );
+
+
+    /*
+     * PDF出力
+     */
+
+    openPrintWindow(
+        "防災訓練 参加者分析",
+        clone.innerHTML
     );
 
 }
@@ -1382,12 +994,3 @@ window.exportParticipantCardPdf =
 
 window.exportParticipantAnalysisPdf =
     exportParticipantAnalysisPdf;
-
-
-/* ==================================================
-   デバッグ用
-================================================== */
-
-console.log(
-    "pdf-export.js initialized."
-);
