@@ -11,6 +11,10 @@
 // アプリ開始
 //
 // 一般利用者にはSupabase Authを使用しない
+//
+// ・24時間ログイン期限なし
+// ・iwaseStampを利用者情報として使用
+// ・通信エラーでは利用者情報を削除しない
 // =====================================
 
 "use strict";
@@ -40,32 +44,82 @@ async function checkLogin() {
             );
 
 
+        /*
+         * 利用者情報がない
+         * → 初回登録画面のまま
+         */
+
         if (!saved) {
             return;
         }
 
 
-        const userData =
-            JSON.parse(saved);
+        let userData;
 
+
+        /*
+         * JSON解析
+         */
+
+        try {
+
+            userData =
+                JSON.parse(saved);
+
+        }
+        catch (parseError) {
+
+            console.error(
+                "利用者データ解析エラー:",
+                parseError
+            );
+
+
+            /*
+             * 明らかに壊れたデータだけ削除
+             */
+
+            localStorage.removeItem(
+                "iwaseStamp"
+            );
+
+
+            return;
+
+        }
+
+
+        /*
+         * ID・氏名確認
+         */
 
         if (
             !userData ||
             !userData.id ||
             !userData.name
         ) {
+
+            console.warn(
+                "利用者情報が不完全です。"
+            );
+
+
             localStorage.removeItem(
                 "iwaseStamp"
             );
 
+
             return;
+
         }
 
 
         /*
-         * 端末に利用者IDが残っていても、
-         * Supabase上に存在しなければ
-         * 利用者として認めない。
+         * ==================================================
+         * Supabase上に利用者が存在するか確認
+         *
+         * 通信エラーでは削除しない。
+         * ==================================================
          */
 
         const {
@@ -81,19 +135,31 @@ async function checkLogin() {
         );
 
 
-        if (
-            error ||
-            data !== true
-        ) {
+        /*
+         * ==================================================
+         * RPCエラー
+         *
+         * → 利用者情報を削除しない
+         * → 既存利用者としてアプリへ進む
+         * ==================================================
+         */
+
+        if (error) {
+
+            console.warn(
+                "利用者確認RPCエラー。",
+                error
+            );
+
 
             console.log(
-                "Supabase上に利用者が存在しません。"
+                "既存利用者情報を維持してアプリを起動します:",
+                userData.id
             );
 
 
-            localStorage.removeItem(
-                "iwaseStamp"
-            );
+            location.href =
+                "../index.html";
 
 
             return;
@@ -102,26 +168,81 @@ async function checkLogin() {
 
 
         /*
-         * 登録済み利用者
+         * ==================================================
+         * Supabase確認成功
+         *
+         * 登録済み
+         * ==================================================
          */
 
-        console.log(
-            "登録済み利用者を確認しました:",
+        if (data === true) {
+
+            console.log(
+                "登録済み利用者を確認しました:",
+                userData.id
+            );
+
+
+            location.href =
+                "../index.html";
+
+
+            return;
+
+        }
+
+
+        /*
+         * ==================================================
+         * Supabaseから正常にfalseが返った
+         *
+         * → 本当に存在しない場合だけ
+         *   ローカル情報を削除
+         * ==================================================
+         */
+
+        console.warn(
+            "Supabase上に利用者が存在しません:",
             userData.id
         );
 
 
-        location.href =
-            "../index.html";
+        localStorage.removeItem(
+            "iwaseStamp"
+        );
+
+
+        return;
 
 
     }
     catch (error) {
 
+        /*
+         * ==================================================
+         * 予期しないエラー
+         *
+         * 絶対にiwaseStampを削除しない。
+         * ==================================================
+         */
+
         console.error(
             "利用者確認エラー:",
             error
         );
+
+
+        /*
+         * 既存利用者情報を維持
+         */
+
+        console.warn(
+            "既存の利用者情報を維持します。"
+        );
+
+
+        location.href =
+            "../index.html";
 
     }
 
@@ -320,9 +441,6 @@ async function login() {
 
         // ==================================
         // participants登録
-        //
-        // 現在のRLSでanon INSERTが
-        // 許可されている
         // ==================================
 
         const {
@@ -356,7 +474,9 @@ async function login() {
 
         // ==================================
         // 端末保存
-        // stamp.jsと同じ形式を使用
+        //
+        // 新規登録時だけ新しいIDを作成する。
+        // 既存iwaseStampはここでは上書きしない。
         // ==================================
 
         const userData = {
@@ -401,8 +521,9 @@ async function login() {
 
 
         // ==================================
-        // 既存のAnonymous Authがあれば
-        // 一般利用者では使用しないため解除
+        // 既存Authセッション解除
+        //
+        // 一般利用者のログインには使用しない
         // ==================================
 
         try {
