@@ -520,25 +520,6 @@ async function login() {
         }
 
 
-        // ==================================
-        // 既存Authセッション解除
-        //
-        // 一般利用者のログインには使用しない
-        // ==================================
-
-        try {
-
-            await supabaseClient.auth.signOut();
-
-        }
-        catch (authError) {
-
-            console.warn(
-                "既存Authセッション解除警告:",
-                authError
-            );
-
-        }
 
 
         // ==================================
