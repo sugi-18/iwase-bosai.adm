@@ -1,8 +1,50 @@
 // =====================================================
 // いわぽん防災マイスター
 // 認定証 JavaScript
+//
+// ・氏名は Supabase から取得した最新のものを表示する
+//   （本体で氏名を変更した場合、端末に保存された氏名は
+//     古いままのため、そのまま表示すると変更前の氏名が
+//     出てしまう）
+// ・10回以上の参加で
+//   「いわぽんトップ防災マイスター」として認定する
+//
+// certificate.html に次の読み込みが必要:
+//   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+//   <script src="../common/iwase-identity.js"></script>
 // =====================================================
 
+"use strict";
+
+
+// =====================================================
+// 設定
+// =====================================================
+
+// いわぽん防災マイスター 認定に必要な参加回数
+const CERTIFICATE_COUNT = 5;
+
+// いわぽんトップ防災マイスター 認定に必要な参加回数
+const TOP_MEISTER_COUNT = 10;
+
+
+// 称号
+const RANK_NAME_NORMAL = "いわぽん防災マイスター";
+
+const RANK_NAME_TOP = "いわぽんトップ防災マイスター";
+
+
+// =====================================================
+// Supabase
+// =====================================================
+
+const CERT_SUPABASE_URL =
+    "https://zumbqukrojdpgfpfekjr.supabase.co";
+
+const CERT_SUPABASE_PUBLISHABLE_KEY =
+    "sb_publishable_8YXsMHOxLr7MOTEYShUM3w_LsZvR3Qn";
+
+let certSupabaseClient = null;
 
 
 // =====================================================
@@ -11,9 +53,9 @@
 
 window.addEventListener(
     "DOMContentLoaded",
-    function () {
+    async function () {
 
-        loadCertificateData();
+        await loadCertificateData();
 
         setupPDFButton();
 
@@ -21,25 +63,250 @@ window.addEventListener(
 );
 
 
+// =====================================================
+// Supabase初期化
+// =====================================================
+
+function initializeCertificateSupabase() {
+
+    try {
+
+        if (
+            typeof window.supabase ===
+            "undefined"
+        ) {
+
+            console.warn(
+                "Supabase JSライブラリを読み込めませんでした。"
+            );
+
+            certSupabaseClient = null;
+
+            return false;
+
+        }
+
+
+        certSupabaseClient =
+            window.supabase.createClient(
+                CERT_SUPABASE_URL,
+                CERT_SUPABASE_PUBLISHABLE_KEY,
+                {
+                    auth: {
+
+                        persistSession:
+                            false,
+
+                        autoRefreshToken:
+                            false,
+
+                        detectSessionInUrl:
+                            false
+
+                    }
+                }
+            );
+
+
+        return true;
+
+
+    }
+    catch (error) {
+
+        console.error(
+            "Supabase初期化エラー:",
+            error
+        );
+
+        certSupabaseClient = null;
+
+        return false;
+
+    }
+
+}
+
+
+// =====================================================
+// 最新の氏名を取得
+//
+// 取得できたときだけ端末の利用者情報も更新する。
+// 取得できなかった場合は端末の氏名をそのまま使う。
+// =====================================================
+
+async function fetchLatestName(
+    participantId
+) {
+
+    if (
+        !certSupabaseClient ||
+        !participantId
+    ) {
+
+        return null;
+
+    }
+
+
+    try {
+
+        const {
+            data,
+            error
+        } =
+            await certSupabaseClient.rpc(
+                "get_participant_name",
+                {
+                    p_participant_id:
+                        participantId
+                }
+            );
+
+
+        if (error) {
+
+            console.error(
+                "参加者名取得RPCエラー:",
+                error
+            );
+
+            return null;
+
+        }
+
+
+        if (
+            data &&
+            data.success === true &&
+            typeof data.name === "string" &&
+            data.name.trim() !== ""
+        ) {
+
+            return data.name.trim();
+
+        }
+
+
+        return null;
+
+
+    }
+    catch (error) {
+
+        console.error(
+            "参加者名同期エラー:",
+            error
+        );
+
+        return null;
+
+    }
+
+}
+
+
+// =====================================================
+// 認定日の表示
+//
+// "2026-08-18" → "2026年8月18日"
+// =====================================================
+
+function formatCertificateDate(
+    value
+) {
+
+    if (!value) {
+
+        return "";
+
+    }
+
+
+    const parts =
+        String(value).split("-");
+
+
+    if (
+        parts.length !==
+        3
+    ) {
+
+        return String(value);
+
+    }
+
+
+    return (
+        Number(parts[0])
+        + "年"
+        + Number(parts[1])
+        + "月"
+        + Number(parts[2])
+        + "日"
+    );
+
+}
+
 
 // =====================================================
 // 認定証データ表示
 // =====================================================
 
-function loadCertificateData() {
+async function loadCertificateData() {
 
 
     // -------------------------------------------------
-    // localStorageからデータ取得
+    // 利用者情報モジュール確認
     // -------------------------------------------------
 
-    const savedData =
-        localStorage.getItem(
-            "iwaseStamp"
+    if (
+        typeof window.IwaseIdentity ===
+        "undefined"
+    ) {
+
+        console.error(
+            "iwase-identity.js が読み込まれていません。"
         );
 
+        alert(
+            "認定証を表示できませんでした。"
+        );
 
-    if (!savedData) {
+        history.back();
+
+        return;
+
+    }
+
+
+    // -------------------------------------------------
+    // 利用者情報を復元
+    //
+    // localStorage / Cookie / IndexedDB のうち
+    // 残っているものから復元する。
+    // -------------------------------------------------
+
+    let data = null;
+
+
+    try {
+
+        data =
+            await IwaseIdentity.load();
+
+    }
+    catch (error) {
+
+        console.error(
+            "利用者情報の復元エラー:",
+            error
+        );
+
+    }
+
+
+    if (!data) {
 
         alert(
             "データがありません。"
@@ -52,51 +319,25 @@ function loadCertificateData() {
     }
 
 
-
     // -------------------------------------------------
-    // JSON解析
+    // 参加回数の確認
     // -------------------------------------------------
 
-    let data;
+    const stamps =
+        Array.isArray(data.stamps)
+            ? data.stamps
+            : [];
 
-    try {
-
-        data =
-            JSON.parse(
-                savedData
-            );
-
-    }
-    catch (error) {
-
-        console.error(
-            "データ解析エラー:",
-            error
-        );
-
-        alert(
-            "データを読み込めませんでした。"
-        );
-
-        history.back();
-
-        return;
-
-    }
-
-
-
-    // -------------------------------------------------
-    // スタンプ5個以上
-    // -------------------------------------------------
 
     if (
-        !data.stamps ||
-        data.stamps.length < 5
+        stamps.length <
+        CERTIFICATE_COUNT
     ) {
 
         alert(
-            "スタンプ5個以上で認定証を発行できます。"
+            "スタンプ" +
+            CERTIFICATE_COUNT +
+            "個以上で認定証を発行できます。"
         );
 
         history.back();
@@ -106,41 +347,76 @@ function loadCertificateData() {
     }
 
 
-
     // -------------------------------------------------
-    // 氏名
+    // 称号
+    //
+    // 10回以上でトップマイスター
     // -------------------------------------------------
 
-    const nameElement =
+    const rankName =
+        stamps.length >=
+        TOP_MEISTER_COUNT
+            ? RANK_NAME_TOP
+            : RANK_NAME_NORMAL;
+
+
+    const rankElement =
         document.getElementById(
-            "name"
+            "rank-title"
         );
 
 
-    if (nameElement) {
+    if (rankElement) {
 
-        nameElement.textContent =
-            data.name || "";
+        rankElement.textContent =
+            rankName;
 
     }
-
 
 
     // -------------------------------------------------
     // 認定日
+    //
+    // 初回に認定証を発行した日を保存し、
+    // 2回目以降は保存された日付を表示する。
+    // （開くたびに認定日が変わらないようにするため）
     // -------------------------------------------------
 
     const today =
         new Date();
 
 
-    const date =
-        today.getFullYear()
-        + "年"
-        + (today.getMonth() + 1)
-        + "月"
-        + today.getDate()
-        + "日";
+    let certificateDate =
+        localStorage.getItem(
+            "iwaseCertificateDate"
+        );
+
+
+    if (
+        !certificateDate ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(
+            certificateDate
+        )
+    ) {
+
+        certificateDate =
+            today.getFullYear()
+            + "-"
+            + String(
+                today.getMonth() + 1
+            ).padStart(2, "0")
+            + "-"
+            + String(
+                today.getDate()
+            ).padStart(2, "0");
+
+
+        localStorage.setItem(
+            "iwaseCertificateDate",
+            certificateDate
+        );
+
+    }
 
 
     const dateElement =
@@ -152,14 +428,18 @@ function loadCertificateData() {
     if (dateElement) {
 
         dateElement.textContent =
-            date;
+            formatCertificateDate(
+                certificateDate
+            );
 
     }
 
 
-
     // -------------------------------------------------
     // 認定番号
+    //
+    // 認定日と同じ日付を使うため、
+    // 認定日より後に組み立てる。
     // -------------------------------------------------
 
     let certificateNumber =
@@ -172,13 +452,10 @@ function loadCertificateData() {
 
         certificateNumber =
             "IW-"
-            + today.getFullYear()
-            + String(
-                today.getMonth() + 1
-            ).padStart(2, "0")
-            + String(
-                today.getDate()
-            ).padStart(2, "0")
+            + certificateDate.replace(
+                /-/g,
+                ""
+            )
             + "-"
             + Math.floor(
                 Math.random() * 9000
@@ -194,7 +471,6 @@ function loadCertificateData() {
     }
 
 
-
     const numberElement =
         document.getElementById(
             "number"
@@ -208,8 +484,90 @@ function loadCertificateData() {
 
     }
 
-}
 
+    // -------------------------------------------------
+    // 氏名
+    //
+    // 端末の氏名は本体で変更した直後は古いままなので、
+    // Supabaseから最新の氏名を取得してから表示する。
+    // -------------------------------------------------
+
+    initializeCertificateSupabase();
+
+
+    const latestName =
+        await fetchLatestName(
+            String(
+                data.id ||
+                ""
+            ).trim()
+        );
+
+
+    let displayName =
+        String(
+            data.name ||
+            ""
+        ).trim();
+
+
+    if (latestName) {
+
+        displayName =
+            latestName;
+
+
+        if (
+            latestName !==
+            String(data.name || "").trim()
+        ) {
+
+            console.log(
+                "参加者名をSupabaseから同期:",
+                latestName
+            );
+
+
+            // 端末側の利用者情報も更新しておく
+            data.name =
+                latestName;
+
+
+            try {
+
+                await IwaseIdentity.save(
+                    data
+                );
+
+            }
+            catch (error) {
+
+                console.error(
+                    "利用者情報の保存エラー:",
+                    error
+                );
+
+            }
+
+        }
+
+    }
+
+
+    const nameElement =
+        document.getElementById(
+            "name"
+        );
+
+
+    if (nameElement) {
+
+        nameElement.textContent =
+            displayName;
+
+    }
+
+}
 
 
 // =====================================================
@@ -232,14 +590,12 @@ function setupPDFButton() {
     }
 
 
-
     button.addEventListener(
         "click",
         createCertificatePDF
     );
 
 }
-
 
 
 // =====================================================
@@ -261,7 +617,6 @@ async function createCertificatePDF() {
         );
 
 
-
     if (!original) {
 
         alert(
@@ -271,7 +626,6 @@ async function createCertificatePDF() {
         return;
 
     }
-
 
 
     // -------------------------------------------------
@@ -306,7 +660,6 @@ async function createCertificatePDF() {
     }
 
 
-
     // -------------------------------------------------
     // ボタン無効化
     // -------------------------------------------------
@@ -321,9 +674,7 @@ async function createCertificatePDF() {
     }
 
 
-
     let clone = null;
-
 
 
     try {
@@ -343,9 +694,12 @@ async function createCertificatePDF() {
         }
 
 
-
         // =================================================
         // 認定証を複製
+        //
+        // idは変えるが、certificate クラスは残す。
+        // スタイルはクラス側で当てているため、
+        // 複製にも画面と同じ配置が適用される。
         // =================================================
 
         clone =
@@ -358,6 +712,10 @@ async function createCertificatePDF() {
             "certificate-pdf";
 
 
+        clone.classList.add(
+            "certificate"
+        );
+
 
         // =================================================
         // PDF専用クラス
@@ -366,7 +724,6 @@ async function createCertificatePDF() {
         clone.classList.add(
             "pdf-certificate"
         );
-
 
 
         // =================================================
@@ -390,7 +747,6 @@ async function createCertificatePDF() {
 
         clone.style.zIndex =
             "-1";
-
 
 
         // =================================================
@@ -429,7 +785,6 @@ async function createCertificatePDF() {
             "hidden";
 
 
-
         // =================================================
         // bodyへ追加
         // =================================================
@@ -437,7 +792,6 @@ async function createCertificatePDF() {
         document.body.appendChild(
             clone
         );
-
 
 
         // =================================================
@@ -465,7 +819,6 @@ async function createCertificatePDF() {
         );
 
 
-
         // =================================================
         // 少し待つ
         // =================================================
@@ -480,7 +833,6 @@ async function createCertificatePDF() {
 
             }
         );
-
 
 
         // =================================================
@@ -517,7 +869,6 @@ async function createCertificatePDF() {
             );
 
 
-
         // =================================================
         // Canvas確認
         // =================================================
@@ -535,7 +886,6 @@ async function createCertificatePDF() {
         }
 
 
-
         // =================================================
         // PNG化
         // =================================================
@@ -544,7 +894,6 @@ async function createCertificatePDF() {
             canvas.toDataURL(
                 "image/png"
             );
-
 
 
         if (
@@ -560,14 +909,12 @@ async function createCertificatePDF() {
         }
 
 
-
         // =================================================
         // jsPDF
         // =================================================
 
         const jsPDF =
             window.jspdf.jsPDF;
-
 
 
         const pdf =
@@ -590,7 +937,6 @@ async function createCertificatePDF() {
             );
 
 
-
         // =================================================
         // A4横
         // =================================================
@@ -600,7 +946,6 @@ async function createCertificatePDF() {
 
         const pageHeight =
             210;
-
 
 
         // =================================================
@@ -621,7 +966,6 @@ async function createCertificatePDF() {
             imageRatio;
 
 
-
         if (
             height >
             pageHeight
@@ -635,7 +979,6 @@ async function createCertificatePDF() {
                 imageRatio;
 
         }
-
 
 
         // =================================================
@@ -654,7 +997,6 @@ async function createCertificatePDF() {
                 pageHeight -
                 height
             ) / 2;
-
 
 
         // =================================================
@@ -682,19 +1024,14 @@ async function createCertificatePDF() {
         );
 
 
-
         // =================================================
         // Blobとして取得
-        //
-        // ここが今回の重要部分
-        // 「保存」ではなくPDFを作る
         // =================================================
 
         const pdfBlob =
             pdf.output(
                 "blob"
             );
-
 
 
         if (
@@ -709,7 +1046,6 @@ async function createCertificatePDF() {
         }
 
 
-
         // =================================================
         // Blob URL作成
         // =================================================
@@ -718,7 +1054,6 @@ async function createCertificatePDF() {
             URL.createObjectURL(
                 pdfBlob
             );
-
 
 
         // =================================================
@@ -732,21 +1067,16 @@ async function createCertificatePDF() {
             );
 
 
-
         // =================================================
         // ポップアップブロック対策
         // =================================================
 
         if (!newWindow) {
 
-            // 新しいタブが開けなかった場合は
-            // 同じページでPDFを表示
-
             window.location.href =
                 pdfURL;
 
         }
-
 
 
         // =================================================
@@ -794,7 +1124,6 @@ async function createCertificatePDF() {
             clone.remove();
 
         }
-
 
 
         // =================================================
