@@ -16,6 +16,21 @@
 // ・最大10スタンプ
 // ・5スタンプで認定
 // ・完全退会処理
+//
+// --------------------------------------------------
+// 利用者情報の扱い
+//
+// 利用者情報は localStorage 単独ではなく、
+// common/iwase-identity.js（IwaseIdentity）を通して
+// localStorage / Cookie / IndexedDB の3か所で保持する。
+//
+// このファイルでは、退会が成功したとき以外は
+// 利用者情報を削除しない。
+// 削除すると過去の訓練履歴への手がかりを失うため。
+//
+// stamp.html に次の読み込みが必要:
+//   <script src="../common/iwase-identity.js"></script>
+// --------------------------------------------------
 // ==================================================
 
 "use strict";
@@ -52,6 +67,31 @@ let stampSupabaseClient = null;
 window.addEventListener(
     "DOMContentLoaded",
     async function () {
+
+        // ------------------------------------------
+        // 利用者情報モジュール確認
+        // ------------------------------------------
+
+        if (
+            typeof window.IwaseIdentity ===
+            "undefined"
+        ) {
+
+            console.error(
+                "iwase-identity.js が読み込まれていません。"
+            );
+
+
+            showStampAccessBlocked(
+                "スタンプカードを表示できません。\n\n" +
+                "しばらくしてから、防災アプリ本体を\n" +
+                "開き直してください。"
+            );
+
+            return;
+
+        }
+
 
         // ------------------------------------------
         // Supabase初期化
@@ -110,10 +150,38 @@ window.addEventListener(
 
 
         // ------------------------------------------
-        // 利用者登録済みデータを読み込む
+        // 利用者情報を復元
+        //
+        // localStorage / Cookie / IndexedDB のうち
+        // 残っているものから復元し、3か所へ書き戻す。
         // ------------------------------------------
 
-        loadCard();
+        let userData = null;
+
+
+        try {
+
+            userData =
+                await IwaseIdentity.load();
+
+        }
+        catch (error) {
+
+            console.error(
+                "利用者情報の復元エラー:",
+                error
+            );
+
+        }
+
+
+        // ------------------------------------------
+        // カード表示
+        // ------------------------------------------
+
+        loadCard(
+            userData
+        );
 
 
         // ------------------------------------------
@@ -225,40 +293,13 @@ function initializeSupabase() {
 
 
 // ==================================================
-// 利用者ID生成
-//
-// ※現在の一般利用者登録は本体loginで行う。
-// スタンプカードからは呼び出さない。
-// ==================================================
-
-function createParticipantId() {
-
-    const timestamp =
-        Date.now();
-
-
-    const random =
-        Math.random()
-            .toString(36)
-            .substring(2, 8)
-            .toUpperCase();
-
-
-    return (
-        "IWASE-" +
-        timestamp +
-        "-" +
-        random
-    );
-
-}
-
-
-// ==================================================
 // 利用者登録
 //
 // 一般利用者の登録は本体のlogin画面で行う。
 // スタンプカードからの新規登録は禁止。
+//
+// 利用者IDはSupabaseが発行するため、
+// 端末側でIDを生成する処理は持たない。
 // ==================================================
 
 async function registerUser() {
@@ -274,16 +315,15 @@ async function registerUser() {
 
 
 // ==================================================
-// localStorage読み込み
+// カード表示準備
+//
+// 引数の利用者情報を使って表示する。
+// 利用者情報が無い場合でも端末データは削除しない。
 // ==================================================
 
-function loadCard() {
-
-    const saved =
-        localStorage.getItem(
-            STORAGE_KEY
-        );
-
+function loadCard(
+    userData
+) {
 
     // ------------------------------------------
     // 利用者情報が存在しない
@@ -291,14 +331,24 @@ function loadCard() {
     // 本体から正常に来た場合は
     // 原則としてここには到達しない。
     //
-    // 安全のためカードを表示しない。
+    // 端末データは消さず、本体での再開を案内する。
     // ------------------------------------------
 
-    if (!saved) {
+    if (
+        !userData ||
+        !userData.id ||
+        !userData.name
+    ) {
+
+        console.warn(
+            "利用者情報を確認できませんでした。"
+        );
+
 
         showStampAccessBlocked(
             "利用者情報を確認できませんでした。\n\n" +
-            "先に防災アプリ本体で利用者登録を行ってください。"
+            "防災アプリ本体に戻り、氏名と暗証番号を\n" +
+            "入力してご利用を再開してください。"
         );
 
         return;
@@ -308,53 +358,28 @@ function loadCard() {
 
     try {
 
-        const data =
-            JSON.parse(saved);
+        const data = {
+
+            id:
+                String(userData.id).trim(),
+
+            name:
+                String(userData.name).trim(),
+
+            stamps:
+                Array.isArray(userData.stamps)
+                    ? userData.stamps.slice(0, MAX_STAMP)
+                    : []
+
+        };
 
 
-        if (
-            !data ||
-            !data.id ||
-            !data.name
-        ) {
+        // ------------------------------------------
+        // 3か所へ保存
+        // ------------------------------------------
 
-            localStorage.removeItem(
-                STORAGE_KEY
-            );
-
-
-            showStampAccessBlocked(
-                "利用者情報を確認できませんでした。\n\n" +
-                "先に防災アプリ本体で利用者登録を行ってください。"
-            );
-
-            return;
-
-        }
-
-
-        if (
-            !Array.isArray(
-                data.stamps
-            )
-        ) {
-
-            data.stamps = [];
-
-        }
-
-
-        // 最大10件
-        data.stamps =
-            data.stamps.slice(
-                0,
-                MAX_STAMP
-            );
-
-
-        localStorage.setItem(
-            STORAGE_KEY,
-            JSON.stringify(data)
+        IwaseIdentity.save(
+            data
         );
 
 
@@ -385,14 +410,14 @@ function loadCard() {
         );
 
 
-        localStorage.removeItem(
-            STORAGE_KEY
-        );
-
+        // ------------------------------------------
+        // 端末データは削除しない
+        // ------------------------------------------
 
         showStampAccessBlocked(
             "利用者情報を読み込めませんでした。\n\n" +
-            "先に防災アプリ本体で利用者登録を行ってください。"
+            "通信状態を確認して、防災アプリ本体から\n" +
+            "開き直してください。"
         );
 
     }
@@ -413,38 +438,8 @@ async function syncWithSupabase() {
     }
 
 
-    const saved =
-        localStorage.getItem(
-            STORAGE_KEY
-        );
-
-
-    if (!saved) {
-
-        return;
-
-    }
-
-
-    let userData;
-
-
-    try {
-
-        userData =
-            JSON.parse(saved);
-
-    }
-    catch (error) {
-
-        console.error(
-            "利用者データ解析エラー:",
-            error
-        );
-
-        return;
-
-    }
+    const userData =
+        IwaseIdentity.read();
 
 
     if (
@@ -662,66 +657,70 @@ async function syncWithSupabase() {
             );
 
 
-        localStorage.setItem(
-            STORAGE_KEY,
-            JSON.stringify(
-                userData
-            )
-        );
-
         // ==================================================
-// 最新の参加者名をSupabaseから取得
-// ==================================================
+        // 最新の参加者名をSupabaseから取得
+        // ==================================================
 
-try {
+        try {
 
-    const {
-        data: nameData,
-        error: nameError
-    } =
-        await stampSupabaseClient.rpc(
-            "get_participant_name",
-            {
-                p_participant_id:
-                    participantId
+            const {
+                data: nameData,
+                error: nameError
+            } =
+                await stampSupabaseClient.rpc(
+                    "get_participant_name",
+                    {
+                        p_participant_id:
+                            participantId
+                    }
+                );
+
+
+            if (nameError) {
+
+                console.error(
+                    "参加者名取得RPCエラー:",
+                    nameError
+                );
+
             }
+            else if (
+                nameData &&
+                nameData.success === true &&
+                typeof nameData.name === "string" &&
+                nameData.name.trim() !== ""
+            ) {
+
+                userData.name =
+                    nameData.name.trim();
+
+
+                console.log(
+                    "参加者名をSupabaseから同期:",
+                    userData.name
+                );
+
+            }
+
+        }
+        catch (nameSyncError) {
+
+            console.error(
+                "参加者名同期エラー:",
+                nameSyncError
+            );
+
+        }
+
+
+        // ------------------------------------------
+        // 3か所へ保存
+        // ------------------------------------------
+
+        await IwaseIdentity.save(
+            userData
         );
 
-
-    if (nameError) {
-
-        console.error(
-            "参加者名取得RPCエラー:",
-            nameError
-        );
-
-    }
-    else if (
-        nameData &&
-        nameData.success === true &&
-        typeof nameData.name === "string" &&
-        nameData.name.trim() !== ""
-    ) {
-
-        userData.name =
-            nameData.name.trim();
-
-        console.log(
-            "参加者名をSupabaseから同期:",
-            userData.name
-        );
-
-    }
-
-}
-catch (nameSyncError) {
-
-    console.error(
-        "参加者名同期エラー:",
-        nameSyncError
-    );
-
-}
 
         // ------------------------------------------
         // 再表示
@@ -758,7 +757,7 @@ catch (nameSyncError) {
 
 
         // ------------------------------------------
-        // 同期失敗時はlocalStorageを維持
+        // 同期失敗時は端末の利用者情報を維持
         // ------------------------------------------
 
     }
@@ -770,7 +769,7 @@ catch (nameSyncError) {
 // 参加した訓練一覧
 // ==================================================
 
-async function loadTrainingList() {
+function loadTrainingList() {
 
     const container =
         document.getElementById(
@@ -785,51 +784,13 @@ async function loadTrainingList() {
     }
 
 
-    const saved =
-        localStorage.getItem(
-            STORAGE_KEY
-        );
-
-
-    if (!saved) {
-
-        container.innerHTML =
-            "<p>参加した訓練はありません。</p>";
-
-        return;
-
-    }
-
-
-    let userData;
-
-
-    try {
-
-        userData =
-            JSON.parse(saved);
-
-    }
-    catch (error) {
-
-        console.error(
-            "訓練一覧データ解析エラー:",
-            error
-        );
-
-
-        container.innerHTML =
-            "<p>参加した訓練を読み込めませんでした。</p>";
-
-        return;
-
-    }
+    const userData =
+        IwaseIdentity.read();
 
 
     const stamps =
-        Array.isArray(
-            userData.stamps
-        )
+        userData &&
+        Array.isArray(userData.stamps)
             ? userData.stamps
             : [];
 
@@ -1042,6 +1003,10 @@ function displayCard(
 
     // ------------------------------------------
     // QRコード
+    //
+    // 中身は利用者ID。
+    // 機種変更時の復元にも使えるため、
+    // 画面の控えとして案内している。
     // ------------------------------------------
 
     const qrArea =
@@ -1378,6 +1343,9 @@ function displayHistory(
 // participants削除
 //   ↓
 // 端末データ削除
+//   （localStorage / Cookie / IndexedDB の3か所）
+//
+// 端末データを消すのはこの処理だけ。
 // ==================================================
 
 async function clearData() {
@@ -1411,17 +1379,19 @@ async function clearData() {
     }
 
 
-    const saved =
-        localStorage.getItem(
-            STORAGE_KEY
-        );
+    const userData =
+        IwaseIdentity.read();
 
 
-    if (!saved) {
+    // ------------------------------------------
+    // 端末に利用者情報が無い
+    //
+    // 消すものが無いのでログイン画面へ戻す。
+    // ------------------------------------------
 
-        localStorage.removeItem(
-            STORAGE_KEY
-        );
+    if (!userData) {
+
+        await IwaseIdentity.clear();
 
 
         localStorage.removeItem(
@@ -1441,34 +1411,6 @@ async function clearData() {
 
         location.href =
             "../login/login.html";
-
-
-        return;
-
-    }
-
-
-    let userData;
-
-
-    try {
-
-        userData =
-            JSON.parse(saved);
-
-    }
-    catch (error) {
-
-        console.error(
-            "退会データ解析エラー:",
-            error
-        );
-
-
-        alert(
-            "利用者データを確認できませんでした。\n\n" +
-            "安全のため、端末データは削除していません。"
-        );
 
 
         return;
@@ -1598,12 +1540,11 @@ async function clearData() {
         // ------------------------------------------
         // Supabase削除成功
         //
-        // ここで初めて端末データを削除
+        // ここで初めて端末データを削除する。
+        // localStorage / Cookie / IndexedDB の3か所。
         // ------------------------------------------
 
-        localStorage.removeItem(
-            STORAGE_KEY
-        );
+        await IwaseIdentity.clear();
 
 
         localStorage.removeItem(
@@ -1650,7 +1591,7 @@ async function clearData() {
         // ------------------------------------------
         // Supabase削除失敗時
         //
-        // localStorageは削除しない
+        // 端末データは削除しない
         // ------------------------------------------
 
         alert(
