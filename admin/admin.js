@@ -1,12 +1,15 @@
 /* ==================================================
    岩瀬自治会 防災アプリ
    管理者画面
-   Step 2 参加者分析
-   Step 4 参加者カルテ連携
-   training_date 対応版
+
+   ・登録日時を日本時間で表示
+   ・訓練の複数日開催に対応
+   ・印刷時のグラフ再描画に対応
+   ・他ファイルとの関数名重複を解消
 ================================================== */
 
 "use strict";
+
 
 /* ==================================================
    Supabase
@@ -21,13 +24,17 @@ try {
         typeof supabaseClient === "undefined" ||
         !supabaseClient
     ) {
+
         throw new Error(
             "共通Supabaseクライアントが初期化されていません。"
         );
+
     }
+
 
     adminSupabaseClient =
         supabaseClient;
+
 
     console.log(
         "Admin Supabase client: shared client"
@@ -41,6 +48,7 @@ try {
     );
 
     adminSupabaseClient = null;
+
 }
 
 
@@ -107,32 +115,39 @@ document.addEventListener(
             );
 
 
+        /*
+         * 参加者分析のPDF出力
+         *
+         * 更新ボタンは participant-analysis.js 側で
+         * 設定しているため、ここでは登録しない。
+         */
+
         document
             .getElementById(
-                "refreshParticipantAnalysisButton"
+                "exportParticipantAnalysisPdfButton"
             )
             ?.addEventListener(
                 "click",
-                async () => {
+                () => {
 
-                    await loadParticipantAnalysis();
+                    if (
+                        typeof window.exportParticipantAnalysisPdf ===
+                        "function"
+                    ) {
+
+                        window.exportParticipantAnalysisPdf();
+
+                    } else {
+
+                        alert(
+                            "PDF出力機能を読み込めませんでした。"
+                        );
+
+                    }
 
                 }
             );
 
-       
-       document
-    .getElementById(
-        "exportParticipantAnalysisPdfButton"
-    )
-    ?.addEventListener(
-        "click",
-        () => {
-
-            exportParticipantAnalysisPdf();
-
-        }
-    );
 
         await checkAuth();
 
@@ -172,6 +187,7 @@ function checkSupabaseClient() {
 
 /* ==================================================
    認証確認
+
    ※ 管理者画面を開いた際は必ずログインを要求
    ※ 既存のSupabaseセッションは信用しない
 ================================================== */
@@ -182,28 +198,19 @@ async function checkAuth() {
 
         checkSupabaseClient();
 
-        /*
-         * 管理者画面を直接開いた場合、
-         * 既存のSupabase Authセッションが残っていても
-         * そのまま管理画面には入れない。
-         *
-         * 必ず一度ログアウト状態にして、
-         * メールアドレス＋パスワードの入力を要求する。
-         */
 
         await adminSupabaseClient
             .auth
             .signOut();
 
+
         console.log(
             "ADMIN: 既存セッションを解除しました。"
         );
 
+
         showLoginScreen();
 
-        console.log(
-            "ADMIN: 管理者ログイン画面を表示しました。"
-        );
 
     } catch (error) {
 
@@ -217,6 +224,8 @@ async function checkAuth() {
     }
 
 }
+
+
 /* ==================================================
    ログイン
 ================================================== */
@@ -455,15 +464,13 @@ function setupNavigation() {
                     );
 
 
-                    if (
-                        target ===
-                        "participantAnalysisSection"
-                    ) {
-
-                        await loadParticipantAnalysis();
-
-                    }
-
+                    /*
+                     * 参加者分析は
+                     * participant-analysis.js の
+                     * MutationObserver が自動で
+                     * 再読み込みするため
+                     * ここでは呼び出さない。
+                     */
 
                     if (
                         target ===
@@ -512,12 +519,32 @@ async function loadAllData() {
     try {
 
         await Promise.all([
+
             loadParticipants(),
+
             loadTrainings(),
+
             loadParticipations(),
-            loadDashboard(),
-            loadParticipantAnalysis()
+
+            loadDashboard()
+
         ]);
+
+
+        /*
+         * 参加者分析は participant-analysis.js 側で
+         * 公開されている関数を使用する
+         */
+
+        if (
+            typeof window.loadParticipantAnalysis ===
+            "function"
+        ) {
+
+            await window.loadParticipantAnalysis();
+
+        }
+
 
     } catch (error) {
 
@@ -526,11 +553,11 @@ async function loadAllData() {
             error
         );
 
-     }
-
-    console.log("===== loadAllData END =====");
+    }
 
 }
+
+
 /* ==================================================
    ダッシュボード
 ================================================== */
@@ -672,6 +699,7 @@ async function loadDashboard() {
 
         /* ------------------------------------------
            今月の参加状況
+           訓練開始日を基準に集計
         ------------------------------------------ */
 
         const now =
@@ -731,26 +759,11 @@ async function loadDashboard() {
         );
 
 
-        createMonthlyChart(
-            participations,
-            trainings
-        );
+        /* ------------------------------------------
+           最多参加訓練
+        ------------------------------------------ */
 
-
-        createParticipantRanking(
-            participants,
-            participations
-        );
-
-
-        createTrainingRanking(
-            trainings,
-            participations
-        );
-
-
-        createRecentParticipations(
-            participants,
+        updateMostPopularTraining(
             trainings,
             participations
         );
@@ -769,324 +782,16 @@ async function loadDashboard() {
 
 
 /* ==================================================
-   月別グラフ
-   training_date基準
+   最多参加訓練
+
+   ※ダッシュボードのランキング表示は廃止済み
+   ※「最多参加訓練」の集計のみ行う
 ================================================== */
 
-function createMonthlyChart(
-    participations,
-    trainings
-) {
-
-    const canvas =
-        document.getElementById(
-            "monthlyParticipationChart"
-        );
-
-
-    if (!canvas) {
-
-        return;
-
-    }
-
-
-    if (
-        typeof Chart ===
-        "undefined"
-    ) {
-
-        console.error(
-            "Chart.jsが読み込まれていません。"
-        );
-
-        return;
-
-    }
-
-
-    const now =
-        new Date();
-
-
-    const labels = [];
-
-    const values = [];
-
-
-    for (
-        let i = 5;
-        i >= 0;
-        i--
-    ) {
-
-        const date =
-            new Date(
-                now.getFullYear(),
-                now.getMonth() - i,
-                1
-            );
-
-
-        const year =
-            date.getFullYear();
-
-
-        const month =
-            date.getMonth();
-
-
-        labels.push(
-            `${month + 1}月`
-        );
-
-
-        const count =
-            participations.filter(
-                participation => {
-
-                    const training =
-                        trainings.find(
-                            item =>
-                                item.training_id ===
-                                participation.training_id
-                        );
-
-
-                    return isSameTrainingMonth(
-                        training?.training_date,
-                        year,
-                        month
-                    );
-
-                }
-            ).length;
-
-
-        values.push(
-            count
-        );
-
-    }
-
-
-    if (
-        monthlyChart
-    ) {
-
-        monthlyChart.destroy();
-
-    }
-
-
-    monthlyChart =
-        new Chart(
-            canvas,
-            {
-
-                type: "bar",
-
-                data: {
-
-                    labels,
-
-                    datasets: [
-
-                        {
-
-                            label:
-                                "延べ参加回数",
-
-                            data:
-                                values,
-
-                            borderWidth:
-                                1
-
-                        }
-
-                    ]
-
-                },
-
-                options: {
-
-                    responsive: true,
-
-                    maintainAspectRatio: false,
-
-                    plugins: {
-
-                        legend: {
-
-                            display: false
-
-                        }
-
-                    },
-
-                    scales: {
-
-                        y: {
-
-                            beginAtZero: true,
-
-                            ticks: {
-
-                                precision: 0
-
-                            }
-
-                        }
-
-                    }
-
-                }
-
-            }
-        );
-
-}
-
-
-/* ==================================================
-   参加者ランキング
-================================================== */
-
-function createParticipantRanking(
-    participants,
-    participations
-) {
-
-    const container =
-        document.getElementById(
-            "participationRanking"
-        );
-
-
-    if (!container) {
-
-        return;
-
-    }
-
-
-    const ranking =
-        participants
-            .map(
-                participant => {
-
-                    const count =
-                        participations.filter(
-                            item =>
-                                item.participant_id ===
-                                participant.participant_id
-                        ).length;
-
-
-                    return {
-
-                        participant,
-
-                        count
-
-                    };
-
-                }
-            )
-            .sort(
-                (a, b) =>
-                    b.count -
-                    a.count
-            )
-            .slice(
-                0,
-                10
-            );
-
-
-    container.innerHTML =
-        "";
-
-
-    if (
-        ranking.length === 0
-    ) {
-
-        container.innerHTML =
-            `<div class="empty-message">
-                参加者はいません。
-            </div>`;
-
-        return;
-
-    }
-
-
-    ranking.forEach(
-        (item, index) => {
-
-            const div =
-                document.createElement(
-                    "div"
-                );
-
-
-            div.className =
-                "ranking-item";
-
-
-            div.innerHTML = `
-
-                <span class="ranking-number">
-                    ${index + 1}
-                </span>
-
-                <span class="ranking-name">
-                    ${escapeHtml(
-                        item.participant.name ||
-                        "名前未登録"
-                    )}
-                </span>
-
-                <strong>
-                    ${item.count}回
-                </strong>
-
-            `;
-
-
-            container.appendChild(
-                div
-            );
-
-        }
-    );
-
-}
-
-
-/* ==================================================
-   訓練ランキング
-================================================== */
-
-function createTrainingRanking(
+function updateMostPopularTraining(
     trainings,
     participations
 ) {
-
-    const container =
-        document.getElementById(
-            "trainingRanking"
-        );
-
-
-    if (!container) {
-
-        return;
-
-    }
-
 
     const ranking =
         trainings
@@ -1111,152 +816,16 @@ function createTrainingRanking(
 
                 }
             )
-            .sort(
-                (a, b) =>
-                    b.count -
-                    a.count
-            )
-            .slice(
-                0,
-                10
-            );
-
-
-    container.innerHTML =
-        "";
-
-
-    if (
-        ranking.length === 0
-    ) {
-
-        setText(
-            "mostPopularTraining",
-            "-"
-        );
-
-
-        container.innerHTML =
-            `<div class="empty-message">
-                訓練・講座はありません。
-            </div>`;
-
-        return;
-
-    }
-
-
-    setText(
-        "mostPopularTraining",
-        ranking[0].training.title ||
-        ranking[0].training.training_id
-    );
-
-
-    ranking.forEach(
-        (item, index) => {
-
-            const div =
-                document.createElement(
-                    "div"
-                );
-
-
-            div.className =
-                "ranking-item";
-
-
-            div.innerHTML = `
-
-                <span class="ranking-number">
-                    ${index + 1}
-                </span>
-
-                <span class="ranking-name">
-                    ${escapeHtml(
-                        item.training.title ||
-                        item.training.training_id
-                    )}
-                </span>
-
-                <strong>
-                    ${item.count}人
-                </strong>
-
-            `;
-
-
-            container.appendChild(
-                div
-            );
-
-        }
-    );
-
-}
-
-
-/* ==================================================
-   訓練ランキング
-   ※ ダッシュボードのランキング表示は削除済み
-   ※ 「最多参加訓練」の集計だけ維持
-================================================== */
-
-function createTrainingRanking(
-    trainings,
-    participations
-) {
-
-    /* ------------------------------------------
-       訓練ごとの参加回数を集計
-    ------------------------------------------ */
-
-    const ranking =
-        trainings
-            .map(
-                training => {
-
-                    const count =
-                        participations.filter(
-                            item =>
-                                item.training_id ===
-                                training.training_id
-                        ).length;
-
-                    return {
-
-                        training,
-
-                        count
-
-                    };
-
-                }
-            )
-
-            /* ------------------------------------------
-               参加者0人の訓練は除外
-            ------------------------------------------ */
-
             .filter(
                 item =>
                     item.count > 0
             )
-
-            /* ------------------------------------------
-               参加者数の多い順
-            ------------------------------------------ */
-
             .sort(
                 (a, b) =>
                     b.count -
                     a.count
             );
 
-
-    /* ------------------------------------------
-       最多参加訓練
-    ------------------------------------------ */
 
     if (
         ranking.length === 0
@@ -1283,76 +852,8 @@ function createTrainingRanking(
         "-"
     );
 
-
-    /* ------------------------------------------
-       ダッシュボードのランキング表示が
-       残っている場合だけ表示
-       （現在は削除済みなので通常は実行されない）
-    ------------------------------------------ */
-
-    const container =
-        document.getElementById(
-            "trainingRanking"
-        );
-
-
-    if (!container) {
-
-        return;
-
-    }
-
-
-    container.innerHTML =
-        "";
-
-
-    ranking
-        .slice(
-            0,
-            10
-        )
-        .forEach(
-            (item, index) => {
-
-                const div =
-                    document.createElement(
-                        "div"
-                    );
-
-
-                div.className =
-                    "ranking-item";
-
-
-                div.innerHTML = `
-
-                    <span class="ranking-number">
-                        ${index + 1}
-                    </span>
-
-                    <span class="ranking-name">
-                        ${escapeHtml(
-                            item.training.title ||
-                            item.training.training_id
-                        )}
-                    </span>
-
-                    <strong>
-                        ${item.count}人
-                    </strong>
-
-                `;
-
-
-                container.appendChild(
-                    div
-                );
-
-            }
-        );
-
 }
+
 
 /* ==================================================
    参加者管理
@@ -1381,38 +882,20 @@ async function loadParticipants() {
         </tr>`;
 
 
-   const {
-    data,
-    error
-} =
-    await adminSupabaseClient
-        .from("participants")
-        .select("*")
-        .order(
-            "created_at",
-            {
-                ascending: false
-            }
-        );
+    const {
+        data,
+        error
+    } =
+        await adminSupabaseClient
+            .from("participants")
+            .select("*")
+            .order(
+                "created_at",
+                {
+                    ascending: false
+                }
+            );
 
-        console.log(
-            "===== PARTICIPANTS RESULT ====="
-        );
-
-        console.log(
-            "participants data:",
-            data
-        );
-
-        console.log(
-            "participants count:",
-            data?.length
-        );
-
-        console.log(
-            "participants error:",
-            error
-        );
 
     if (error) {
 
@@ -1517,7 +1000,7 @@ async function loadParticipants() {
                 </td>
 
                 <td>
-                    ${formatDate(
+                    ${formatDateTimeJst(
                         participant.created_at
                     )}
                 </td>
@@ -2102,7 +1585,7 @@ async function openParticipantHistory(
 
                     <div class="history-date">
 
-                     　実施日：
+                        実施日：
                         ${formatTrainingPeriod(
                             training?.training_date,
                             training?.training_end_date
@@ -2111,7 +1594,7 @@ async function openParticipantHistory(
                         <br>
 
                         登録：
-                        ${formatDate(
+                        ${formatDateTimeJst(
                             item.registered_at
                         )}
 
@@ -2237,6 +1720,8 @@ function generateTrainingId(
     /*
      * タイトル + 開始日 + 終了日から
      * 安定したハッシュ値を作成
+     *
+     * 日本語タイトルでも使用可能。
      */
 
     const source =
@@ -2332,9 +1817,18 @@ function openTrainingModal(
     }
 
 
+    /*
+     * DB上のID
+     */
+
     idInput.value =
         training?.id || "";
 
+
+    /*
+     * 既存訓練の場合のみ
+     * 現在のtraining_idを表示
+     */
 
     trainingIdInput.value =
         training?.training_id || "";
@@ -2356,17 +1850,21 @@ function openTrainingModal(
     }
 
 
+    /*
+     * training_idは自動生成のため手入力不可
+     */
+
     trainingIdInput.readOnly =
         true;
 
 
-    /*
-     * 新規登録時は
-     * タイトル・開始日・終了日から
-     * リアルタイムでIDを作成
-     */
-
     if (!training) {
+
+        /*
+         * 新規登録時は
+         * タイトル・開始日・終了日から
+         * リアルタイムでIDを作成
+         */
 
         const updateTrainingId =
             () => {
@@ -2434,7 +1932,12 @@ function openTrainingModal(
 
         updateTrainingId();
 
+
     } else {
+
+        /*
+         * 編集時は既存IDを維持
+         */
 
         titleInput.oninput =
             null;
@@ -2484,6 +1987,7 @@ function openTrainingModal(
         );
 
 }
+
 
 /* ==================================================
    訓練モーダルを閉じる
@@ -2539,24 +2043,7 @@ async function saveTraining() {
             .value;
 
 
-    /*
-     * 入力チェック
-     */
-
-    if (
-        !title ||
-        !trainingDate
-    ) {
-
-        alert(
-            "タイトルと実施日を入力してください。"
-        );
-
-        return;
-
-    }
-
-       const endDateInput =
+    const endDateInput =
         document.getElementById(
             "editTrainingEndDate"
         );
@@ -2569,7 +2056,7 @@ async function saveTraining() {
 
 
     /*
-     * 終了日が開始日と同じ、または空欄なら
+     * 終了日が空欄、または開始日と同じ場合は
      * 1日開催としてnullで保存する
      */
 
@@ -2580,6 +2067,24 @@ async function saveTraining() {
         )
             ? trainingEndDateRaw
             : null;
+
+
+    /*
+     * 入力チェック
+     */
+
+    if (
+        !title ||
+        !trainingDate
+    ) {
+
+        alert(
+            "タイトルと開始日を入力してください。"
+        );
+
+        return;
+
+    }
 
 
     if (
@@ -2597,8 +2102,8 @@ async function saveTraining() {
 
 
     /*
-     * 新規登録の場合は
-     * タイトル + 実施日からIDを再生成
+     * 新規登録の場合はIDを再生成
+     * 編集の場合は既存IDをそのまま使用
      */
 
     let trainingId;
@@ -2606,17 +2111,13 @@ async function saveTraining() {
 
     if (!id) {
 
-                trainingId =
+        trainingId =
             generateTrainingId(
                 title,
                 trainingDate,
                 trainingEndDate
             );
 
-
-        /*
-         * 画面にも表示
-         */
 
         if (trainingIdInput) {
 
@@ -2626,10 +2127,6 @@ async function saveTraining() {
         }
 
     } else {
-
-        /*
-         * 編集時は既存IDをそのまま使用
-         */
 
         trainingId =
             trainingIdInput.value.trim();
@@ -2647,24 +2144,35 @@ async function saveTraining() {
 
     }
 
-const {
-    data: sessionData,
-    error: sessionError
-} =
-    await adminSupabaseClient.auth.getSession();
 
-if (
-    sessionError ||
-    !sessionData?.session
-) {
-    alert(
-        "管理者ログインのセッションを確認できませんでした。\n\n" +
-        "一度ログアウトして、もう一度ログインしてください。"
-    );
+    /*
+     * セッション確認
+     */
 
-    return;
-}
-   
+    const {
+        data: sessionData,
+        error: sessionError
+    } =
+        await adminSupabaseClient
+            .auth
+            .getSession();
+
+
+    if (
+        sessionError ||
+        !sessionData?.session
+    ) {
+
+        alert(
+            "管理者ログインのセッションを確認できませんでした。\n\n" +
+            "一度ログアウトして、もう一度ログインしてください。"
+        );
+
+        return;
+
+    }
+
+
     try {
 
         let result;
@@ -2684,9 +2192,9 @@ if (
                         title,
 
                         training_date:
-                            trainingDate
+                            trainingDate,
 
-                       training_end_date:
+                        training_end_date:
                             trainingEndDate
 
                     })
@@ -2703,10 +2211,6 @@ if (
         ================================================== */
 
         else {
-
-            /*
-             * 同じtraining_idが存在するか確認
-             */
 
             const existing =
                 await adminSupabaseClient
@@ -2731,13 +2235,8 @@ if (
 
 
             /*
-             * 万が一同じIDが存在する場合
-             *
-             * -2
-             * -3
-             * ...
-             *
-             * として重複を回避
+             * 万が一同じIDが存在する場合は
+             * -2 / -3 ... として重複を回避
              */
 
             if (
@@ -2809,10 +2308,6 @@ if (
             }
 
 
-            /*
-             * DBへ登録
-             */
-
             result =
                 await adminSupabaseClient
                     .from("trainings")
@@ -2824,19 +2319,15 @@ if (
                         title,
 
                         training_date:
-                            trainingDate
+                            trainingDate,
 
-                       training_end_date:
+                        training_end_date:
                             trainingEndDate
 
                     });
 
         }
 
-
-        /*
-         * Supabaseエラー
-         */
 
         if (
             result.error
@@ -2847,23 +2338,11 @@ if (
         }
 
 
-        /*
-         * モーダルを閉じる
-         */
-
         closeTrainingModal();
 
 
-        /*
-         * データ再読み込み
-         */
-
         await loadAllData();
 
-
-        /*
-         * 完了メッセージ
-         */
 
         alert(
             id
@@ -3032,7 +2511,7 @@ async function loadTrainings() {
                     </strong>
                 </td>
 
-                                <td>
+                <td>
                     ${
                         training.training_date
                             ? formatTrainingPeriod(
@@ -3050,131 +2529,124 @@ async function loadTrainings() {
                 </td>
 
                 <td>
-                    ${formatDate(
+                    ${formatDateTimeJst(
                         training.created_at
                     )}
                 </td>
 
                 <td>
 
-    <button
-        type="button"
-        class="action-button view-button"
-    >
-        参加者を見る
-    </button>
+                    <button
+                        type="button"
+                        class="action-button view-button"
+                    >
+                        参加者を見る
+                    </button>
 
-    <button
-        type="button"
-        class="action-button qr-button"
-        data-action="training-qr"
-    >
-        QRコード
-    </button>
+                    <button
+                        type="button"
+                        class="action-button qr-button"
+                        data-action="training-qr"
+                    >
+                        QRコード
+                    </button>
 
-    <button
-        type="button"
-        class="action-button edit-button"
-    >
-        編集
-    </button>
+                    <button
+                        type="button"
+                        class="action-button edit-button"
+                    >
+                        編集
+                    </button>
 
-    <button
-        type="button"
-        class="action-button delete-button"
-    >
-        削除
-    </button>
+                    <button
+                        type="button"
+                        class="action-button delete-button"
+                    >
+                        削除
+                    </button>
 
-</td>
+                </td>
+
             `;
 
 
             const buttons =
-    tr.querySelectorAll(
-        "button"
-    );
-
-
-/* ==========================================
-   参加者を見る
-========================================== */
-
-buttons[0]
-    ?.addEventListener(
-        "click",
-        () => {
-
-            openTrainingParticipants(
-                training
-            );
-
-        }
-    );
-
-
-/* ==========================================
-   QRコード
-========================================== */
-
-buttons[1]
-    ?.addEventListener(
-        "click",
-        () => {
-
-            if (
-                typeof window.openTrainingQrModal ===
-                "function"
-            ) {
-
-                window.openTrainingQrModal(
-                    training
+                tr.querySelectorAll(
+                    "button"
                 );
 
-            } else {
 
-                alert(
-                    "QRコード機能を読み込めませんでした。"
+            /* 参加者を見る */
+
+            buttons[0]
+                ?.addEventListener(
+                    "click",
+                    () => {
+
+                        openTrainingParticipants(
+                            training
+                        );
+
+                    }
                 );
 
-            }
 
-        }
-    );
+            /* QRコード */
+
+            buttons[1]
+                ?.addEventListener(
+                    "click",
+                    () => {
+
+                        if (
+                            typeof window.openTrainingQrModal ===
+                            "function"
+                        ) {
+
+                            window.openTrainingQrModal(
+                                training
+                            );
+
+                        } else {
+
+                            alert(
+                                "QRコード機能を読み込めませんでした。"
+                            );
+
+                        }
+
+                    }
+                );
 
 
-/* ==========================================
-   編集
-========================================== */
+            /* 編集 */
 
-buttons[2]
-    ?.addEventListener(
-        "click",
-        () => {
+            buttons[2]
+                ?.addEventListener(
+                    "click",
+                    () => {
 
-            openTrainingModal(
-                training
-            );
+                        openTrainingModal(
+                            training
+                        );
 
-        }
-    );
+                    }
+                );
 
 
-/* ==========================================
-   削除
-========================================== */
+            /* 削除 */
 
-buttons[3]
-    ?.addEventListener(
-        "click",
-        () => {
+            buttons[3]
+                ?.addEventListener(
+                    "click",
+                    () => {
 
-            deleteTraining(
-                training.id
-            );
+                        deleteTraining(
+                            training.id
+                        );
 
-        }
-    );
+                    }
+                );
 
 
             tbody.appendChild(
@@ -3381,7 +2853,7 @@ async function openTrainingParticipants(
 
             <br>
 
-                        実施日：
+            実施日：
             ${formatTrainingPeriod(
                 training.training_date,
                 training.training_end_date
@@ -3531,7 +3003,7 @@ async function openTrainingParticipants(
                             <div class="history-date">
 
                                 登録：
-                                ${formatDate(
+                                ${formatDateTimeJst(
                                     item.registered_at
                                 )}
 
@@ -3779,16 +3251,8 @@ async function addSelectedParticipants() {
         );
 
 
-        /*
-         * 最新状態に更新
-         */
-
         await loadAllData();
 
-
-        /*
-         * モーダルも更新
-         */
 
         const training =
             await getTrainingByTrainingId(
@@ -4045,7 +3509,7 @@ async function loadParticipations() {
                     "participant_id, name"
                 ),
 
-                        adminSupabaseClient
+            adminSupabaseClient
                 .from("trainings")
                 .select(
                     "training_id, title, training_date, training_end_date"
@@ -4124,7 +3588,7 @@ async function loadParticipations() {
                     )}
                 </td>
 
-                                <td>
+                <td>
                     ${
                         training?.training_date
                             ? formatTrainingPeriod(
@@ -4134,9 +3598,9 @@ async function loadParticipations() {
                             : "未設定"
                     }
                 </td>
-                
+
                 <td>
-                    ${formatDate(
+                    ${formatDateTimeJst(
                         item.registered_at
                     )}
                 </td>
@@ -4249,801 +3713,6 @@ async function deleteParticipation(
 
 
 /* ==================================================
-   Step 2
-   参加者分析
-================================================== */
-
-async function loadParticipantAnalysis() {
-
-    try {
-
-        const [
-            participantsResult,
-            participationsResult
-        ] =
-            await Promise.all([
-
-                adminSupabaseClient
-                    .from("participants")
-                    .select(
-                        "participant_id, name"
-                    ),
-
-                adminSupabaseClient
-                    .from("participations")
-                    .select(
-                        "id, participant_id, training_id, registered_at"
-                    )
-
-            ]);
-
-
-        if (
-            participantsResult.error
-        ) {
-
-            throw participantsResult.error;
-
-        }
-
-
-        if (
-            participationsResult.error
-        ) {
-
-            throw participationsResult.error;
-
-        }
-
-
-        const participants =
-            participantsResult.data || [];
-
-
-        const participations =
-            participationsResult.data || [];
-
-
-        const participationMap =
-            {};
-
-
-        participants.forEach(
-            participant => {
-
-                participationMap[
-                    participant.participant_id
-                ] = 0;
-
-            }
-        );
-
-
-        participations.forEach(
-            participation => {
-
-                if (
-                    Object.prototype.hasOwnProperty.call(
-                        participationMap,
-                        participation.participant_id
-                    )
-                ) {
-
-                    participationMap[
-                        participation.participant_id
-                    ]++;
-
-                }
-
-            }
-        );
-
-
-        const total =
-            participants.length;
-
-
-        const active =
-            participants.filter(
-                participant =>
-                    (
-                        participationMap[
-                            participant.participant_id
-                        ] || 0
-                    ) >= 1
-            ).length;
-
-
-        const inactive =
-            total -
-            active;
-
-
-        const repeat =
-            participants.filter(
-                participant =>
-                    (
-                        participationMap[
-                            participant.participant_id
-                        ] || 0
-                    ) >= 2
-            ).length;
-
-
-        const master =
-            participants.filter(
-                participant =>
-                    (
-                        participationMap[
-                            participant.participant_id
-                        ] || 0
-                    ) >= 5
-            ).length;
-
-
-        const rate =
-            total > 0
-                ? (
-                    active /
-                    total *
-                    100
-                )
-                : 0;
-
-
-        const average =
-            total > 0
-                ? (
-                    participations.length /
-                    total
-                )
-                : 0;
-
-
-        const masterRate =
-            total > 0
-                ? (
-                    master /
-                    total *
-                    100
-                )
-                : 0;
-
-
-        setText(
-            "analysisTotalParticipants",
-            total
-        );
-
-
-        setText(
-            "analysisActiveParticipants",
-            active
-        );
-
-
-        setText(
-            "analysisInactiveParticipants",
-            inactive
-        );
-
-
-        setText(
-            "analysisParticipationRate",
-            rate.toFixed(1)
-        );
-
-
-        setText(
-            "analysisAverageParticipation",
-            average.toFixed(1)
-        );
-
-
-        setText(
-            "analysisRepeatParticipants",
-            repeat
-        );
-
-
-        setText(
-            "analysisMasterParticipants",
-            master
-        );
-
-
-        setText(
-            "analysisMasterRate",
-            masterRate.toFixed(1)
-        );
-
-
-        createParticipantDistributionChart(
-            participationMap
-        );
-
-
-        createAnalysisRanking(
-            participants,
-            participationMap
-        );
-
-
-        createInactiveParticipantList(
-            participants,
-            participationMap
-        );
-
-
-        createParticipantAnalysisTable(
-            participants,
-            participationMap
-        );
-
-
-    } catch (error) {
-
-        console.error(
-            "Participant analysis error:",
-            error
-        );
-
-    }
-
-}
-
-
-/* ==================================================
-   参加回数分布
-================================================== */
-
-function createParticipantDistributionChart(
-    participationMap
-) {
-
-    const canvas =
-        document.getElementById(
-            "participantDistributionChart"
-        );
-
-
-    if (!canvas) {
-
-        return;
-
-    }
-
-
-    if (
-        typeof Chart ===
-        "undefined"
-    ) {
-
-        return;
-
-    }
-
-
-    const distribution = {
-
-        zero: 0,
-
-        one: 0,
-
-        twoThree: 0,
-
-        four: 0,
-
-        fivePlus: 0
-
-    };
-
-
-    Object.values(
-        participationMap
-    ).forEach(
-        count => {
-
-            if (
-                count === 0
-            ) {
-
-                distribution.zero++;
-
-            } else if (
-                count === 1
-            ) {
-
-                distribution.one++;
-
-            } else if (
-                count <= 3
-            ) {
-
-                distribution.twoThree++;
-
-            } else if (
-                count === 4
-            ) {
-
-                distribution.four++;
-
-            } else {
-
-                distribution.fivePlus++;
-
-            }
-
-        }
-    );
-
-
-    if (
-        participantDistributionChart
-    ) {
-
-        participantDistributionChart.destroy();
-
-    }
-
-
-    participantDistributionChart =
-        new Chart(
-            canvas,
-            {
-
-                type: "bar",
-
-                data: {
-
-                    labels: [
-
-                        "0回",
-
-                        "1回",
-
-                        "2～3回",
-
-                        "4回",
-
-                        "5回以上"
-
-                    ],
-
-                    datasets: [
-
-                        {
-
-                            label:
-                                "参加者数",
-
-                            data: [
-
-                                distribution.zero,
-
-                                distribution.one,
-
-                                distribution.twoThree,
-
-                                distribution.four,
-
-                                distribution.fivePlus
-
-                            ],
-
-                            borderWidth:
-                                1
-
-                        }
-
-                    ]
-
-                },
-
-                options: {
-
-                    responsive: true,
-
-                    maintainAspectRatio: false,
-
-                    plugins: {
-
-                        legend: {
-
-                            display: false
-
-                        }
-
-                    },
-
-                    scales: {
-
-                        y: {
-
-                            beginAtZero: true,
-
-                            ticks: {
-
-                                precision: 0
-
-                            }
-
-                        }
-
-                    }
-
-                }
-
-            }
-        );
-
-}
-
-
-/* ==================================================
-   分析ランキング
-================================================== */
-
-function createAnalysisRanking(
-    participants,
-    participationMap
-) {
-
-    const container =
-        document.getElementById(
-            "analysisRanking"
-        );
-
-
-    if (!container) {
-
-        return;
-
-    }
-
-
-    const ranking =
-        participants
-            .map(
-                participant => ({
-
-                    participant,
-
-                    count:
-                        participationMap[
-                            participant.participant_id
-                        ] || 0
-
-                })
-            )
-            .sort(
-                (a, b) =>
-                    b.count -
-                    a.count
-            )
-            .slice(
-                0,
-                10
-            );
-
-
-    container.innerHTML =
-        "";
-
-
-    if (
-        ranking.length === 0
-    ) {
-
-        container.innerHTML =
-            `<div class="empty-message">
-                参加者はいません。
-            </div>`;
-
-        return;
-
-    }
-
-
-    ranking.forEach(
-        (item, index) => {
-
-            const div =
-                document.createElement(
-                    "div"
-                );
-
-
-            div.className =
-                "ranking-item";
-
-
-            div.innerHTML = `
-
-                <span class="ranking-number">
-                    ${index + 1}
-                </span>
-
-                <span class="ranking-name">
-                    ${escapeHtml(
-                        item.participant.name ||
-                        "名前未登録"
-                    )}
-                </span>
-
-                <strong>
-                    ${item.count}回
-                </strong>
-
-            `;
-
-
-            container.appendChild(
-                div
-            );
-
-        }
-    );
-
-}
-
-
-/* ==================================================
-   未参加者
-================================================== */
-
-function createInactiveParticipantList(
-    participants,
-    participationMap
-) {
-
-    const container =
-        document.getElementById(
-            "analysisInactiveList"
-        );
-
-
-    if (!container) {
-
-        return;
-
-    }
-
-
-    const inactive =
-        participants.filter(
-            participant =>
-                (
-                    participationMap[
-                        participant.participant_id
-                    ] || 0
-                ) === 0
-        );
-
-
-    container.innerHTML =
-        "";
-
-
-    if (
-        inactive.length === 0
-    ) {
-
-        container.innerHTML =
-            `<div class="empty-message">
-                全員が1回以上参加しています。
-            </div>`;
-
-        return;
-
-    }
-
-
-    inactive.forEach(
-        participant => {
-
-            const div =
-                document.createElement(
-                    "div"
-                );
-
-
-            div.className =
-                "ranking-item";
-
-
-            div.innerHTML = `
-
-                <span class="ranking-name">
-                    ${escapeHtml(
-                        participant.name ||
-                        "名前未登録"
-                    )}
-                </span>
-
-                <span>
-                    未参加
-                </span>
-
-            `;
-
-
-            container.appendChild(
-                div
-            );
-
-        }
-    );
-
-}
-
-
-/* ==================================================
-   参加者分析テーブル
-================================================== */
-
-function createParticipantAnalysisTable(
-    participants,
-    participationMap
-) {
-
-    const tbody =
-        document.getElementById(
-            "participantAnalysisTable"
-        );
-
-
-    if (!tbody) {
-
-        return;
-
-    }
-
-
-    const ranking =
-        participants
-            .map(
-                participant => ({
-
-                    participant,
-
-                    count:
-                        participationMap[
-                            participant.participant_id
-                        ] || 0
-
-                })
-            )
-            .sort(
-                (a, b) => {
-
-                    if (
-                        b.count !==
-                        a.count
-                    ) {
-
-                        return (
-                            b.count -
-                            a.count
-                        );
-
-                    }
-
-
-                    return String(
-                        a.participant.name ||
-                        ""
-                    ).localeCompare(
-                        String(
-                            b.participant.name ||
-                            ""
-                        ),
-                        "ja"
-                    );
-
-                }
-            );
-
-
-    tbody.innerHTML =
-        "";
-
-
-    if (
-        ranking.length === 0
-    ) {
-
-        tbody.innerHTML =
-            `<tr>
-                <td colspan="4">
-                    参加者はいません。
-                </td>
-            </tr>`;
-
-        return;
-
-    }
-
-
-    ranking.forEach(
-        (item, index) => {
-
-            let status;
-
-
-            if (
-                item.count === 0
-            ) {
-
-                status =
-                    "未参加";
-
-            } else if (
-                item.count >= 5
-            ) {
-
-                status =
-                    "5回以上";
-
-            } else if (
-                item.count >= 2
-            ) {
-
-                status =
-                    "リピーター";
-
-            } else {
-
-                status =
-                    "参加経験あり";
-
-            }
-
-
-            const tr =
-                document.createElement(
-                    "tr"
-                );
-
-
-            tr.innerHTML = `
-
-                <td>
-                    ${index + 1}
-                </td>
-
-                <td>
-                    ${escapeHtml(
-                        item.participant.name ||
-                        "名前未登録"
-                    )}
-                </td>
-
-                <td>
-                    <strong>
-                        ${item.count}
-                    </strong>
-                    回
-                </td>
-
-                <td>
-                    ${status}
-                </td>
-
-            `;
-
-
-            tbody.appendChild(
-                tr
-            );
-
-        }
-    );
-
-}
-
-
-/* ==================================================
    共通テキスト
 ================================================== */
 
@@ -5070,6 +3739,7 @@ function setText(
 
 /* ==================================================
    訓練月判定
+   訓練開始日を基準に判定する
 ================================================== */
 
 function isSameTrainingMonth(
@@ -5114,9 +3784,9 @@ function isSameTrainingMonth(
    タイムスタンプ解析
 
    Supabaseの列型が
-   timestamptz  → そのままUTCとして解釈される
-   timestamp    → タイムゾーン情報がないため
-                  UTCとみなして補正する
+   timestamptz → そのままUTCとして解釈される
+   timestamp   → タイムゾーン情報がないため
+                 UTCとみなして補正する
 ================================================== */
 
 function parseTimestamp(
@@ -5133,12 +3803,6 @@ function parseTimestamp(
     let text =
         String(value).trim();
 
-
-    /*
-     * 末尾に Z または +09:00 のような
-     * タイムゾーン情報がない場合は
-     * UTCとして扱う
-     */
 
     const hasTimezone =
         /(Z|z|[+-]\d{2}:?\d{2})$/.test(
@@ -5175,11 +3839,14 @@ function parseTimestamp(
 
 
 /* ==================================================
-   通常日時
+   登録日時
    日本時間（Asia/Tokyo）で表示
+
+   ※他のJSファイルにも formatDate があるため
+     名前を分けて衝突を避けている
 ================================================== */
 
-function formatDate(
+function formatDateTimeJst(
     value
 ) {
 
@@ -5214,6 +3881,7 @@ function formatDate(
     ).format(date);
 
 }
+
 
 /* ==================================================
    訓練実施日
@@ -5258,6 +3926,7 @@ function formatTrainingDate(
     );
 
 }
+
 
 /* ==================================================
    訓練開催期間
@@ -5360,6 +4029,7 @@ function formatTrainingPeriod(
 
 }
 
+
 /* ==================================================
    HTMLエスケープ
 ================================================== */
@@ -5403,6 +4073,7 @@ function escapeHtml(
         );
 
 }
+
 
 /* ==================================================
    訓練QRコード機能
@@ -5546,7 +4217,7 @@ function escapeHtml(
                 "click",
                 () => {
 
-                    openTrainingQrModal(
+                    window.openTrainingQrModal(
                         training
                     );
 
@@ -5610,18 +4281,10 @@ function escapeHtml(
             }
 
 
-            /* ==================================================
-               training_idを取得
-            ================================================== */
-
             const trainingId =
                 training?.training_id ||
                 "";
 
-
-            /* ==================================================
-               訓練名
-            ================================================== */
 
             const title =
                 training?.title ||
@@ -5629,11 +4292,12 @@ function escapeHtml(
                 "訓練・講座";
 
 
-            /* ==================================================
-               実施日
-            ================================================== */
+            /*
+             * 実施日
+             * 複数日開催に対応
+             */
 
-                        const date =
+            const date =
                 training?.training_date
                     ? formatTrainingPeriod(
                         training.training_date,
@@ -5641,10 +4305,6 @@ function escapeHtml(
                     )
                     : "";
 
-
-            /* ==================================================
-               training_id確認
-            ================================================== */
 
             if (!trainingId) {
 
@@ -5677,17 +4337,9 @@ function escapeHtml(
             }
 
 
-            /* ==================================================
-               QRコードをクリア
-            ================================================== */
-
             qrContainer.innerHTML =
                 "";
 
-
-            /* ==================================================
-               訓練情報表示
-            ================================================== */
 
             summary.innerHTML = `
 
@@ -5712,10 +4364,6 @@ function escapeHtml(
             `;
 
 
-            /* ==================================================
-               QR参照URL
-            ================================================== */
-
             const trainingUrl =
                 createTrainingUrl(
                     trainingId
@@ -5725,10 +4373,6 @@ function escapeHtml(
             urlContainer.textContent =
                 trainingUrl;
 
-
-            /* ==================================================
-               QRライブラリ確認
-            ================================================== */
 
             if (
                 typeof QRCode ===
@@ -5752,10 +4396,6 @@ function escapeHtml(
             }
 
 
-            /* ==================================================
-               QRコード生成
-            ================================================== */
-
             new QRCode(
                 qrContainer,
                 {
@@ -5776,10 +4416,6 @@ function escapeHtml(
             );
 
 
-            /* ==================================================
-               モーダル表示
-            ================================================== */
-
             modal.classList.remove(
                 "hidden"
             );
@@ -5789,7 +4425,7 @@ function escapeHtml(
 
     /* ==================================================
        training.html URL生成
-       
+
        ★重要
        event/date方式ではなく
        training_idを直接渡す
@@ -5807,10 +4443,6 @@ function escapeHtml(
                     window.location.href
                 );
 
-
-            /* ==================================================
-               training_idを直接指定
-            ================================================== */
 
             url.searchParams.set(
                 "training_id",
@@ -5946,40 +4578,32 @@ function escapeHtml(
 
     function printTrainingQr() {
 
-    const modal =
-        document.getElementById(
-            "trainingQrModal"
+        const modal =
+            document.getElementById(
+                "trainingQrModal"
+            );
+
+
+        if (!modal) {
+
+            return;
+
+        }
+
+
+        document.body.classList.add(
+            "qr-print-mode"
         );
 
 
-    if (!modal) {
+        modal.classList.remove(
+            "hidden"
+        );
 
-        return;
+
+        window.print();
 
     }
-
-
-    /*
-     * QR印刷モード
-     */
-
-    document.body.classList.add(
-        "qr-print-mode"
-    );
-
-
-    /*
-     * モーダルを強制表示
-     */
-
-    modal.classList.remove(
-        "hidden"
-    );
-
-
-    window.print();
-
-}
 
 
     /* ==================================================
@@ -6059,6 +4683,7 @@ function escapeHtml(
 
 })();
 
+
 /* ==================================================
    ブラウザ印刷
    Ctrl + P / QRコード印刷対応
@@ -6066,12 +4691,16 @@ function escapeHtml(
 
 (function setupBrowserPrint() {
 
+    "use strict";
+
+
     function getCurrentPrintSection() {
 
         const sections =
             document.querySelectorAll(
                 ".content-section"
             );
+
 
         for (const section of sections) {
 
@@ -6087,7 +4716,71 @@ function escapeHtml(
 
         }
 
+
         return null;
+
+    }
+
+
+    /* ==================================================
+       グラフの再描画
+
+       Chart.jsのcanvasは画面幅で実サイズが
+       決まっているため、印刷レイアウトに
+       合わせて計算し直さないと
+       次の要素に重なって表示される
+    ================================================== */
+
+    function resizeCharts(
+        root
+    ) {
+
+        if (
+            typeof Chart ===
+            "undefined"
+        ) {
+
+            return;
+
+        }
+
+
+        const target =
+            root || document;
+
+
+        target
+            .querySelectorAll(
+                ".chart-container canvas"
+            )
+            .forEach(
+                canvas => {
+
+                    try {
+
+                        const chart =
+                            Chart.getChart(
+                                canvas
+                            );
+
+
+                        if (chart) {
+
+                            chart.resize();
+
+                        }
+
+                    } catch (error) {
+
+                        console.warn(
+                            "Chart resize error:",
+                            error
+                        );
+
+                    }
+
+                }
+            );
 
     }
 
@@ -6135,6 +4828,11 @@ function escapeHtml(
                 "print-target"
             );
 
+
+            resizeCharts(
+                section
+            );
+
         }
     );
 
@@ -6147,19 +4845,10 @@ function escapeHtml(
         "afterprint",
         () => {
 
-            /*
-             * QRコード印刷モードを解除
-             */
-
             document.body.classList.remove(
                 "qr-print-mode"
             );
 
-
-            /*
-             * 通常印刷用の
-             * print-targetを解除
-             */
 
             document
                 .querySelectorAll(
@@ -6172,45 +4861,15 @@ function escapeHtml(
                             "print-target"
                         );
 
-                                   /*
-             * 印刷用にグラフを再描画する
-             *
-             * Chart.jsのcanvasは画面幅で
-             * 実サイズが決まっているため、
-             * 印刷レイアウトに合わせて
-             * サイズを計算し直す
-             */
-
-            if (
-                typeof Chart !== "undefined"
-            ) {
-
-                section
-                    .querySelectorAll(
-                        ".chart-container canvas"
-                    )
-                    .forEach(
-                        canvas => {
-
-                            const chart =
-                                Chart.getChart(
-                                    canvas
-                                );
-
-
-                            if (chart) {
-
-                                chart.resize();
-
-                            }
-
-                        }
-                    );
-
-            }
-
                     }
                 );
+
+
+            /*
+             * 画面表示用にサイズを戻す
+             */
+
+            resizeCharts();
 
         }
     );
