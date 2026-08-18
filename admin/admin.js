@@ -2016,7 +2016,7 @@ async function openParticipantHistory(
         await adminSupabaseClient
             .from("trainings")
             .select(
-                "training_id, title, training_date"
+                "training_id, title, training_date, training_end_date"
             );
 
 
@@ -2102,9 +2102,10 @@ async function openParticipantHistory(
 
                     <div class="history-date">
 
-                        実施日：
-                        ${formatTrainingDate(
-                            training?.training_date
+                     　実施日：
+                        ${formatTrainingPeriod(
+                            training?.training_date,
+                            training?.training_end_date
                         )}
 
                         <br>
@@ -2209,16 +2210,17 @@ function setupTrainingModal() {
 
 /* ==================================================
    訓練ID自動生成
-   タイトル + 実施日から一意のIDを作成
+   タイトル + 開始日 + 終了日から一意のIDを作成
 ================================================== */
 
 function generateTrainingId(
     title,
-    trainingDate
+    trainingDate,
+    trainingEndDate
 ) {
 
     /*
-     * 実施日
+     * 開始日
      * 2026-09-06
      * ↓
      * 20260906
@@ -2233,14 +2235,12 @@ function generateTrainingId(
 
 
     /*
-     * タイトル + 実施日から
+     * タイトル + 開始日 + 終了日から
      * 安定したハッシュ値を作成
-     *
-     * 日本語タイトルでも使用可能。
      */
 
     const source =
-        `${title}|${trainingDate}`;
+        `${title}|${trainingDate}|${trainingEndDate || ""}`;
 
 
     let hash = 0;
@@ -2264,10 +2264,6 @@ function generateTrainingId(
 
     }
 
-
-    /*
-     * 負の値を防止
-     */
 
     const hashValue =
         Math.abs(hash)
@@ -2318,6 +2314,12 @@ function openTrainingModal(
         );
 
 
+    const endDateInput =
+        document.getElementById(
+            "editTrainingEndDate"
+        );
+
+
     if (
         !idInput ||
         !trainingIdInput ||
@@ -2330,45 +2332,29 @@ function openTrainingModal(
     }
 
 
-    /*
-     * DB上のID
-     */
-
     idInput.value =
         training?.id || "";
 
-
-    /*
-     * 既存訓練の場合のみ
-     * 現在のtraining_idを表示
-     */
 
     trainingIdInput.value =
         training?.training_id || "";
 
 
-    /*
-     * タイトル
-     */
-
     titleInput.value =
         training?.title || "";
 
-
-    /*
-     * 実施日
-     */
 
     dateInput.value =
         training?.training_date || "";
 
 
-    /*
-     * 新規登録時
-     *
-     * training_idは自動生成するため
-     * 手入力不可
-     */
+    if (endDateInput) {
+
+        endDateInput.value =
+            training?.training_end_date || "";
+
+    }
+
 
     trainingIdInput.readOnly =
         true;
@@ -2376,7 +2362,7 @@ function openTrainingModal(
 
     /*
      * 新規登録時は
-     * タイトル・実施日から
+     * タイトル・開始日・終了日から
      * リアルタイムでIDを作成
      */
 
@@ -2391,6 +2377,12 @@ function openTrainingModal(
 
                 const trainingDate =
                     dateInput.value;
+
+
+                const trainingEndDate =
+                    endDateInput
+                        ? endDateInput.value
+                        : "";
 
 
                 if (
@@ -2409,16 +2401,13 @@ function openTrainingModal(
                 trainingIdInput.value =
                     generateTrainingId(
                         title,
-                        trainingDate
+                        trainingDate,
+                        trainingEndDate
                     );
 
             };
 
 
-        /*
-         * 入力時に自動更新
-         */
-
         titleInput.oninput =
             updateTrainingId;
 
@@ -2431,18 +2420,22 @@ function openTrainingModal(
             updateTrainingId;
 
 
-        /*
-         * 初期値
-         */
+        if (endDateInput) {
+
+            endDateInput.oninput =
+                updateTrainingId;
+
+
+            endDateInput.onchange =
+                updateTrainingId;
+
+        }
+
 
         updateTrainingId();
 
     } else {
 
-        /*
-         * 編集時は既存IDを維持
-         */
-
         titleInput.oninput =
             null;
 
@@ -2452,24 +2445,27 @@ function openTrainingModal(
         dateInput.onchange =
             null;
 
+
+        if (endDateInput) {
+
+            endDateInput.oninput =
+                null;
+
+            endDateInput.onchange =
+                null;
+
+        }
+
     }
 
-
-    /*
-     * 説明文
-     */
 
     setText(
         "trainingIdEditNote",
         training
             ? "※既存の訓練を編集する場合、訓練IDは変更されません。"
-            : "※訓練IDはタイトルと実施日から自動生成されます。"
+            : "※訓練IDはタイトルと開催日から自動生成されます。"
     );
 
-
-    /*
-     * モーダルタイトル
-     */
 
     setText(
         "trainingModalTitle",
@@ -2478,10 +2474,6 @@ function openTrainingModal(
             : "訓練・講座を登録"
     );
 
-
-    /*
-     * モーダル表示
-     */
 
     document
         .getElementById(
@@ -2492,7 +2484,6 @@ function openTrainingModal(
         );
 
 }
-
 
 /* ==================================================
    訓練モーダルを閉じる
@@ -2565,6 +2556,45 @@ async function saveTraining() {
 
     }
 
+       const endDateInput =
+        document.getElementById(
+            "editTrainingEndDate"
+        );
+
+
+    const trainingEndDateRaw =
+        endDateInput
+            ? endDateInput.value
+            : "";
+
+
+    /*
+     * 終了日が開始日と同じ、または空欄なら
+     * 1日開催としてnullで保存する
+     */
+
+    const trainingEndDate =
+        (
+            trainingEndDateRaw &&
+            trainingEndDateRaw !== trainingDate
+        )
+            ? trainingEndDateRaw
+            : null;
+
+
+    if (
+        trainingEndDate &&
+        trainingEndDate < trainingDate
+    ) {
+
+        alert(
+            "終了日は開始日以降の日付を指定してください。"
+        );
+
+        return;
+
+    }
+
 
     /*
      * 新規登録の場合は
@@ -2576,10 +2606,11 @@ async function saveTraining() {
 
     if (!id) {
 
-        trainingId =
+                trainingId =
             generateTrainingId(
                 title,
-                trainingDate
+                trainingDate,
+                trainingEndDate
             );
 
 
@@ -2654,6 +2685,9 @@ if (
 
                         training_date:
                             trainingDate
+
+                       training_end_date:
+                            trainingEndDate
 
                     })
                     .eq(
@@ -2791,6 +2825,9 @@ if (
 
                         training_date:
                             trainingDate
+
+                       training_end_date:
+                            trainingEndDate
 
                     });
 
@@ -2995,11 +3032,12 @@ async function loadTrainings() {
                     </strong>
                 </td>
 
-                <td>
+                                <td>
                     ${
                         training.training_date
-                            ? formatTrainingDate(
-                                training.training_date
+                            ? formatTrainingPeriod(
+                                training.training_date,
+                                training.training_end_date
                             )
                             : "未設定"
                     }
@@ -3343,9 +3381,10 @@ async function openTrainingParticipants(
 
             <br>
 
-            実施日：
-            ${formatTrainingDate(
-                training.training_date
+                        実施日：
+            ${formatTrainingPeriod(
+                training.training_date,
+                training.training_end_date
             )}
 
             <br>
@@ -4006,10 +4045,10 @@ async function loadParticipations() {
                     "participant_id, name"
                 ),
 
-            adminSupabaseClient
+                        adminSupabaseClient
                 .from("trainings")
                 .select(
-                    "training_id, title, training_date"
+                    "training_id, title, training_date, training_end_date"
                 )
 
         ]);
@@ -4085,16 +4124,17 @@ async function loadParticipations() {
                     )}
                 </td>
 
-                <td>
+                                <td>
                     ${
                         training?.training_date
-                            ? formatTrainingDate(
-                                training.training_date
+                            ? formatTrainingPeriod(
+                                training.training_date,
+                                training.training_end_date
                             )
                             : "未設定"
                     }
                 </td>
-
+                
                 <td>
                     ${formatDate(
                         item.registered_at
@@ -5219,6 +5259,106 @@ function formatTrainingDate(
 
 }
 
+/* ==================================================
+   訓練開催期間
+   複数日開催に対応
+================================================== */
+
+function formatTrainingPeriod(
+    startDate,
+    endDate
+) {
+
+    if (!startDate) {
+
+        return "-";
+
+    }
+
+
+    if (
+        !endDate ||
+        endDate === startDate
+    ) {
+
+        return formatTrainingDate(
+            startDate
+        );
+
+    }
+
+
+    const start =
+        String(startDate).split("-");
+
+
+    const end =
+        String(endDate).split("-");
+
+
+    if (
+        start.length !== 3 ||
+        end.length !== 3
+    ) {
+
+        return formatTrainingDate(
+            startDate
+        );
+
+    }
+
+
+    /*
+     * 同じ年・同じ月
+     * 2026年9月6日〜8日
+     */
+
+    if (
+        start[0] === end[0] &&
+        start[1] === end[1]
+    ) {
+
+        return (
+            Number(start[0]) + "年" +
+            Number(start[1]) + "月" +
+            Number(start[2]) + "日〜" +
+            Number(end[2]) + "日"
+        );
+
+    }
+
+
+    /*
+     * 同じ年・違う月
+     * 2026年9月30日〜10月2日
+     */
+
+    if (
+        start[0] === end[0]
+    ) {
+
+        return (
+            Number(start[0]) + "年" +
+            Number(start[1]) + "月" +
+            Number(start[2]) + "日〜" +
+            Number(end[1]) + "月" +
+            Number(end[2]) + "日"
+        );
+
+    }
+
+
+    /*
+     * 年をまたぐ場合
+     */
+
+    return (
+        formatTrainingDate(startDate) +
+        "〜" +
+        formatTrainingDate(endDate)
+    );
+
+}
 
 /* ==================================================
    HTMLエスケープ
@@ -5493,10 +5633,13 @@ function escapeHtml(
                実施日
             ================================================== */
 
-            const date =
-                training?.training_date ||
-                training?.date ||
-                "";
+                        const date =
+                training?.training_date
+                    ? formatTrainingPeriod(
+                        training.training_date,
+                        training.training_end_date
+                    )
+                    : "";
 
 
             /* ==================================================
@@ -6028,6 +6171,43 @@ function escapeHtml(
                         section.classList.remove(
                             "print-target"
                         );
+
+                                   /*
+             * 印刷用にグラフを再描画する
+             *
+             * Chart.jsのcanvasは画面幅で
+             * 実サイズが決まっているため、
+             * 印刷レイアウトに合わせて
+             * サイズを計算し直す
+             */
+
+            if (
+                typeof Chart !== "undefined"
+            ) {
+
+                section
+                    .querySelectorAll(
+                        ".chart-container canvas"
+                    )
+                    .forEach(
+                        canvas => {
+
+                            const chart =
+                                Chart.getChart(
+                                    canvas
+                                );
+
+
+                            if (chart) {
+
+                                chart.resize();
+
+                            }
+
+                        }
+                    );
+
+            }
 
                     }
                 );
