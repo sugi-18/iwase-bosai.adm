@@ -10,9 +10,12 @@
    ・参加者カルテに詳細な参加状態を追加
 
    判定基準
-   90日以上参加なし → 最近不参加
-   180日以上参加なし → 長期不参加
-   直近3回すべて不参加 → 最近不参加
+   180日以上参加なし → 最近不参加
+   365日以上参加なし → 長期不参加
+   参加履歴なし       → 訓練未参加
+
+   要フォロー
+   最近不参加 + 長期不参加 + 訓練未参加
 ================================================== */
 
 (function () {
@@ -24,11 +27,9 @@
    設定
 ================================================== */
 
-const RECENT_INACTIVE_DAYS = 90;
+const RECENT_INACTIVE_DAYS = 180;
 
-const LONG_INACTIVE_DAYS = 180;
-
-const RECENT_TRAINING_COUNT = 3;
+const LONG_INACTIVE_DAYS = 365;
 
 
 /* ==================================================
@@ -93,6 +94,7 @@ function createFollowupArea() {
             "participantAnalysisSection"
         );
 
+
     if (!section) {
 
         return;
@@ -128,11 +130,11 @@ function createFollowupArea() {
             <div>
 
                 <h3>
-                    最近参加していない人
+                    要フォローの参加者
                 </h3>
 
                 <p>
-                    過去の参加履歴から自動判定しています。
+                    最近不参加・長期不参加・訓練未参加者を自動抽出しています。
                 </p>
 
             </div>
@@ -161,7 +163,7 @@ function createFollowupArea() {
                     0
                 </strong>
                 <small>
-                    90日以上
+                    180日以上
                 </small>
             </div>
 
@@ -174,7 +176,20 @@ function createFollowupArea() {
                     0
                 </strong>
                 <small>
-                    180日以上
+                    365日以上
+                </small>
+            </div>
+
+
+            <div class="followup-stat">
+                <span>
+                    訓練未参加
+                </span>
+                <strong id="neverParticipatedCount">
+                    0
+                </strong>
+                <small>
+                    参加履歴なし
                 </small>
             </div>
 
@@ -187,7 +202,7 @@ function createFollowupArea() {
                     0
                 </strong>
                 <small>
-                    自動抽出
+                    3区分の合計
                 </small>
             </div>
 
@@ -249,6 +264,7 @@ function observeAnalysisSection() {
         document.getElementById(
             "participantAnalysisSection"
         );
+
 
     if (!section) {
 
@@ -599,6 +615,12 @@ function createParticipantRecords(
 
 /* ==================================================
    状態判定
+
+   priority
+   3 長期不参加
+   2 最近不参加
+   1 訓練未参加
+   0 継続参加
 ================================================== */
 
 function determineStatus(
@@ -614,11 +636,11 @@ function determineStatus(
 
             key: "never",
 
-            label: "未参加",
+            label: "訓練未参加",
 
             className: "never",
 
-            priority: 0
+            priority: 1
 
         };
 
@@ -675,7 +697,7 @@ function determineStatus(
 
         className: "active",
 
-        priority: 1
+        priority: 0
 
     };
 
@@ -684,6 +706,11 @@ function determineStatus(
 
 /* ==================================================
    表示
+
+   要フォロー対象
+   ・最近不参加（180日以上）
+   ・長期不参加（365日以上）
+   ・訓練未参加（参加履歴なし）
 ================================================== */
 
 function renderFollowup(
@@ -703,55 +730,71 @@ function renderFollowup(
     }
 
 
-    const recentInactive =
+    const recentCount =
         records.filter(
             record =>
                 record.status.key ===
-                    "recent" ||
-                record.status.key ===
-                    "long"
-        );
+                "recent"
+        ).length;
 
 
-    const longInactive =
+    const longCount =
         records.filter(
             record =>
                 record.status.key ===
                 "long"
+        ).length;
+
+
+    const neverCount =
+        records.filter(
+            record =>
+                record.status.key ===
+                "never"
+        ).length;
+
+
+    const followupTargets =
+        records.filter(
+            record =>
+                record.status.key === "recent" ||
+                record.status.key === "long" ||
+                record.status.key === "never"
         );
 
 
     setText(
         "recentInactiveCount",
-        records.filter(
-            record =>
-                record.status.key ===
-                "recent"
-        ).length
+        recentCount
     );
 
 
     setText(
         "longInactiveCount",
-        longInactive.length
+        longCount
+    );
+
+
+    setText(
+        "neverParticipatedCount",
+        neverCount
     );
 
 
     setText(
         "followupTargetCount",
-        recentInactive.length
+        followupTargets.length
     );
 
 
     if (
-        recentInactive.length === 0
+        followupTargets.length === 0
     ) {
 
         list.innerHTML = `
             <div class="followup-empty">
                 <strong>
-                    🎉 現在、長期間参加していない
-                    参加者はいません。
+                    🎉 現在、フォローが必要な参加者はいません。
                 </strong>
             </div>
         `;
@@ -761,20 +804,55 @@ function renderFollowup(
     }
 
 
-    recentInactive.sort(
+    /*
+     * 並び順
+     *
+     * 長期不参加 → 最近不参加 → 訓練未参加
+     * 同じ区分の中では経過日数の長い順
+     * 訓練未参加は登録が古い順
+     */
+
+    followupTargets.sort(
         (a, b) => {
 
+            if (
+                a.status.priority !==
+                b.status.priority
+            ) {
+
+                return (
+                    b.status.priority -
+                    a.status.priority
+                );
+
+            }
+
+
             const aDays =
-                a.daysSinceLast ??
-                999999;
+                a.daysSinceLast ?? -1;
 
 
             const bDays =
-                b.daysSinceLast ??
-                999999;
+                b.daysSinceLast ?? -1;
 
 
-            return bDays - aDays;
+            if (
+                aDays !== bDays
+            ) {
+
+                return bDays - aDays;
+
+            }
+
+
+            return (
+                getTimestamp(
+                    a.participant.created_at
+                ) -
+                getTimestamp(
+                    b.participant.created_at
+                )
+            );
 
         }
     );
@@ -783,7 +861,7 @@ function renderFollowup(
     list.innerHTML = "";
 
 
-    recentInactive.forEach(
+    followupTargets.forEach(
         record => {
 
             const item =
@@ -801,24 +879,45 @@ function renderFollowup(
                     .participant_id;
 
 
+            const isNever =
+                record.status.key ===
+                "never";
+
+
             const daysText =
-                record.daysSinceLast === null
-                    ? "参加履歴なし"
+                isNever
+                    ? "-"
                     : `${record.daysSinceLast}日`;
 
 
-            const latestDate =
-                record.latest
+            const mainDateLabel =
+                isNever
+                    ? "登録日"
+                    : "最終参加";
+
+
+            const mainDateValue =
+                isNever
                     ? formatDate(
-                        record.latest.eventDate
+                        record.participant.created_at
                     )
-                    : "-";
+                    : (
+                        record.latest
+                            ? formatDate(
+                                record.latest.eventDate
+                            )
+                            : "-"
+                    );
 
 
             const trainingTitle =
-                record.latest?.training?.title ||
-                record.latest?.training_id ||
-                "-";
+                isNever
+                    ? "参加履歴なし"
+                    : (
+                        record.latest?.training?.title ||
+                        record.latest?.training_id ||
+                        "-"
+                    );
 
 
             item.innerHTML = `
@@ -865,11 +964,11 @@ function renderFollowup(
                     <div>
 
                         <span>
-                            最終参加
+                            ${mainDateLabel}
                         </span>
 
                         <strong>
-                            ${latestDate}
+                            ${mainDateValue}
                         </strong>
 
                     </div>
@@ -1044,7 +1143,7 @@ async function enhanceParticipantCard() {
 
     const idMatch =
         profileText.match(
-            /参加者ID：\s*([^\s]+)/ 
+            /参加者ID：\s*([^\s]+)/
         );
 
 
@@ -1386,7 +1485,7 @@ function createFollowupMessage(
     ) {
 
         return `
-            ⚠️ 長期間参加していません。
+            ⚠️ 1年以上参加していません。
             自治会からの案内・声かけなど、
             フォローアップを検討してください。
         `;
@@ -1400,7 +1499,7 @@ function createFollowupMessage(
     ) {
 
         return `
-            最近の訓練・講座への参加がありません。
+            半年以上、訓練・講座への参加がありません。
             次回訓練の案内対象として確認できます。
         `;
 
@@ -1416,7 +1515,10 @@ function createFollowupMessage(
 
 
 /* ==================================================
-   training_date取得
+   訓練実施日取得
+
+   複数日開催の場合は
+   終了日を基準に経過日数を計算する
 ================================================== */
 
 function getTrainingDate(
@@ -1426,13 +1528,20 @@ function getTrainingDate(
 
     if (training) {
 
-        const value =
-            training.training_date;
+        if (
+            training.training_end_date
+        ) {
+
+            return training.training_end_date;
+
+        }
 
 
-        if (value) {
+        if (
+            training.training_date
+        ) {
 
-            return value;
+            return training.training_date;
 
         }
 
