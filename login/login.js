@@ -1,28 +1,27 @@
-// =====================================
+// ==================================================
 // 岩瀬自治会 防災アプリ
-// 一般利用者 初回登録
+// 利用者登録 ／ 再ログイン
 //
-// 自治会コード＋氏名
-// ↓
-// participants登録
-// ↓
-// 利用者ID保存
-// ↓
-// アプリ開始
+// 変更点
 //
-// 一般利用者にはSupabase Authを使用しない
+//   ・利用者IDを端末で生成しない
+//     → Supabase の register_or_login_participant が発行する
 //
-// ・24時間ログイン期限なし
-// ・iwaseStampを利用者情報として使用
-// ・通信エラーでは利用者情報を削除しない
-// =====================================
+//   ・氏名＋暗証番号が一致すれば既存IDを返すため、
+//     ブラウザを変えても端末データが消えても
+//     同じ利用者として復帰できる
+//
+//   ・participants への直接INSERTを廃止
+//
+//   ・照合できない場合でも端末の利用者情報は消さない
+// ==================================================
 
 "use strict";
 
 
-// =====================================
-// ページ読み込み
-// =====================================
+// ==================================================
+// 画面読み込み
+// ==================================================
 
 window.addEventListener(
     "load",
@@ -30,96 +29,35 @@ window.addEventListener(
 );
 
 
-// =====================================
-// 既存利用者確認
-// =====================================
+// ==================================================
+// 既存利用者の確認
+//
+// 端末に利用者情報が残っていれば、そのままアプリへ。
+// 残っていない、または照合できない場合はこの画面に留まる。
+// ==================================================
 
 async function checkLogin() {
 
     try {
 
-        const saved =
-            localStorage.getItem(
-                "iwaseStamp"
-            );
+        const userData =
+            await IwaseIdentity.load();
 
 
         /*
-         * 利用者情報がない
-         * → 初回登録画面のまま
+         * 端末に利用者情報がない
+         * → 登録／再ログイン画面のまま
          */
 
-        if (!saved) {
+        if (!userData) {
             return;
         }
 
 
-        let userData;
-
-
         /*
-         * JSON解析
-         */
-
-        try {
-
-            userData =
-                JSON.parse(saved);
-
-        }
-        catch (parseError) {
-
-            console.error(
-                "利用者データ解析エラー:",
-                parseError
-            );
-
-
-            /*
-             * 明らかに壊れたデータだけ削除
-             */
-
-            localStorage.removeItem(
-                "iwaseStamp"
-            );
-
-
-            return;
-
-        }
-
-
-        /*
-         * ID・氏名確認
-         */
-
-        if (
-            !userData ||
-            !userData.id ||
-            !userData.name
-        ) {
-
-            console.warn(
-                "利用者情報が不完全です。"
-            );
-
-
-            localStorage.removeItem(
-                "iwaseStamp"
-            );
-
-
-            return;
-
-        }
-
-
-        /*
-         * ==================================================
-         * Supabase上に利用者が存在するか確認
+         * Supabaseに存在するか確認
          *
-         * 通信エラーでは削除しない。
-         * ==================================================
+         * 通信エラーでは利用者情報を消さない。
          */
 
         const {
@@ -135,45 +73,20 @@ async function checkLogin() {
         );
 
 
-        /*
-         * ==================================================
-         * RPCエラー
-         *
-         * → 利用者情報を削除しない
-         * → 既存利用者としてアプリへ進む
-         * ==================================================
-         */
-
         if (error) {
 
             console.warn(
-                "利用者確認RPCエラー。",
+                "利用者確認RPCエラー。既存情報のままアプリを起動します。",
                 error
             );
 
-
-            console.log(
-                "既存利用者情報を維持してアプリを起動します:",
-                userData.id
-            );
-
-
             location.href =
                 "../index.html";
-
 
             return;
 
         }
 
-
-        /*
-         * ==================================================
-         * Supabase確認成功
-         *
-         * 登録済み
-         * ==================================================
-         */
 
         if (data === true) {
 
@@ -182,10 +95,8 @@ async function checkLogin() {
                 userData.id
             );
 
-
             location.href =
                 "../index.html";
-
 
             return;
 
@@ -193,135 +104,103 @@ async function checkLogin() {
 
 
         /*
-         * ==================================================
-         * Supabaseから正常にfalseが返った
+         * Supabaseに存在しない
          *
-         * → 本当に存在しない場合だけ
-         *   ローカル情報を削除
-         * ==================================================
+         * 旧実装ではここで端末データを削除していたが、
+         * 削除すると復旧手段が無くなるため残す。
+         * 氏名＋暗証番号で再ログインしてもらう。
          */
 
         console.warn(
-            "Supabase上に利用者が存在しません:",
+            "Supabase上に利用者が見つかりません:",
             userData.id
         );
 
-
-        localStorage.removeItem(
-            "iwaseStamp"
+        showNotice(
+            "この端末の利用者情報が、データベースと一致しませんでした。\n\n" +
+            "お手数ですが、氏名と暗証番号を入力してご利用を再開してください。"
         );
 
+        const nameInput =
+            document.getElementById("username");
 
-        return;
-
+        if (nameInput && !nameInput.value) {
+            nameInput.value = userData.name;
+        }
 
     }
     catch (error) {
-
-        /*
-         * ==================================================
-         * 予期しないエラー
-         *
-         * 絶対にiwaseStampを削除しない。
-         * ==================================================
-         */
 
         console.error(
             "利用者確認エラー:",
             error
         );
 
-
         /*
-         * 既存利用者情報を維持
+         * 予期しないエラーでも利用者情報は消さない
          */
 
-        console.warn(
-            "既存の利用者情報を維持します。"
-        );
+        const fallback =
+            IwaseIdentity.read();
 
+        if (fallback) {
 
-        location.href =
-            "../index.html";
+            location.href =
+                "../index.html";
+
+        }
 
     }
 
 }
 
 
-// =====================================
-// 利用者ID生成
-// =====================================
+// ==================================================
+// 登録 ／ 再ログイン
+// ==================================================
 
-function createParticipantId() {
-
-    const timestamp =
-        Date.now();
-
-
-    const random =
-        Math.random()
-            .toString(36)
-            .substring(2, 8)
-            .toUpperCase();
-
-
-    return (
-        "IWASE-" +
-        timestamp +
-        "-" +
-        random
-    );
-
-}
-
-
-// =====================================
-// 利用登録
-// =====================================
-
-async function login() {
+async function login(forceNew) {
 
     const codeInput =
-        document.getElementById(
-            "access-code"
-        );
-
+        document.getElementById("access-code");
 
     const nameInput =
-        document.getElementById(
-            "username"
-        );
+        document.getElementById("username");
 
+    const pinInput =
+        document.getElementById("pin-code");
 
     const button =
-        document.getElementById(
-            "login-button"
-        );
+        document.getElementById("login-button");
 
-
-    const errorElement =
-        document.getElementById(
-            "error-message"
-        );
+    const forceNewArea =
+        document.getElementById("force-new-area");
 
 
     const code =
         codeInput.value.trim();
 
-
     const name =
         nameInput.value.trim();
 
+    const pin =
+        pinInput.value.trim();
 
-    // ==================================
+
+    clearMessage();
+
+    if (forceNewArea) {
+        forceNewArea.style.display = "none";
+    }
+
+
+    // ----------------------------------------------
     // 入力チェック
-    // ==================================
+    // ----------------------------------------------
 
     if (!code) {
 
-        errorElement.textContent =
-            "自治会コードを入力してください。";
+        showNotice("自治会コードを入力してください。");
 
         codeInput.focus();
 
@@ -332,8 +211,7 @@ async function login() {
 
     if (!name) {
 
-        errorElement.textContent =
-            "氏名を入力してください。";
+        showNotice("氏名を入力してください。");
 
         nameInput.focus();
 
@@ -344,8 +222,7 @@ async function login() {
 
     if (name.length > 100) {
 
-        errorElement.textContent =
-            "氏名が長すぎます。";
+        showNotice("氏名が長すぎます。");
 
         nameInput.focus();
 
@@ -354,177 +231,147 @@ async function login() {
     }
 
 
+    if (!/^[0-9]{4}$/.test(pin)) {
+
+        showNotice("暗証番号は数字4桁で入力してください。");
+
+        pinInput.focus();
+
+        return;
+
+    }
+
+
     try {
 
-        button.disabled =
-            true;
+        button.disabled = true;
+
+        button.textContent = "確認中...";
 
 
-        button.textContent =
-            "確認中...";
-
-
-        errorElement.textContent =
-            "";
-
-
-        // ==================================
-        // 自治会コード確認
-        // ==================================
+        // ----------------------------------------------
+        // 登録／再ログイン RPC
+        //
+        // 既存の利用者であれば既存IDが返るため、
+        // 重複したアカウントは作られない。
+        // ----------------------------------------------
 
         const {
             data,
             error
         } =
-        await supabaseClient.functions.invoke(
-            "verify-access-code",
+        await supabaseClient.rpc(
+            "register_or_login_participant",
             {
-                body: {
-                    code: code
-                }
+                p_code:      code,
+                p_name:      name,
+                p_pin:       pin,
+                p_force_new: forceNew === true
             }
         );
 
 
         if (error) {
 
-            console.error(
-                "自治会コード認証エラー:",
-                error
-            );
+            console.error("登録RPCエラー:", error);
 
             throw new Error(
-                "自治会コードの確認に失敗しました。"
+                "サーバーとの通信に失敗しました。"
             );
 
         }
 
 
-        // ==================================
-        // コード不正
-        // ==================================
+        if (!data) {
 
-        if (
-            !data ||
-            data.success !== true
-        ) {
+            throw new Error(
+                "サーバーから応答がありませんでした。"
+            );
 
-            errorElement.textContent =
-                data?.message ||
-                "自治会コードが正しくありません。";
+        }
 
 
-            button.disabled =
-                false;
+        // ----------------------------------------------
+        // 失敗
+        // ----------------------------------------------
 
+        if (data.success !== true) {
 
-            button.textContent =
-                "利用登録して開始";
+            handleLoginError(data);
 
+            button.disabled = false;
+
+            button.textContent = "登録して開始";
 
             return;
 
         }
 
 
-        // ==================================
-        // 利用者ID生成
-        // ==================================
+        // ----------------------------------------------
+        // 成功
+        // ----------------------------------------------
 
-        const participantId =
-            createParticipantId();
-
-
-        button.textContent =
-            "利用登録中...";
+        button.textContent = "準備中...";
 
 
-        // ==================================
-        // participants登録
-        // ==================================
-
-        const {
-            error:
-                insertError
-        } =
-        await supabaseClient
-            .from("participants")
-            .insert({
-
-                participant_id:
-                    participantId,
-
-                name:
-                    name
-
-            });
+        const existing =
+            IwaseIdentity.read();
 
 
-        if (insertError) {
+        /*
+         * 同じ利用者であればスタンプ履歴を引き継ぐ。
+         * 別の利用者なら空で始める。
+         */
 
-            console.error(
-                "participants INSERT error:",
-                insertError
-            );
+        const stamps =
+            existing && existing.id === data.participant_id
+                ? existing.stamps
+                : [];
 
-            throw insertError;
-
-        }
-
-
-        // ==================================
-        // 端末保存
-        //
-        // 新規登録時だけ新しいIDを作成する。
-        // 既存iwaseStampはここでは上書きしない。
-        // ==================================
-
-        const userData = {
-
-            id:
-                participantId,
-
-            name:
-                name,
-
-            stamps:
-                []
-
-        };
-
-
-        localStorage.setItem(
-            "iwaseStamp",
-            JSON.stringify(
-                userData
-            )
-        );
-
-
-        // ==================================
-        // 保存確認
-        // ==================================
 
         const saved =
-            localStorage.getItem(
-                "iwaseStamp"
-            );
+            await IwaseIdentity.save({
+                id:     data.participant_id,
+                name:   data.name,
+                stamps: stamps
+            });
 
 
         if (!saved) {
 
             throw new Error(
-                "端末への利用者情報保存を確認できませんでした。"
+                "端末への利用者情報の保存を確認できませんでした。"
             );
 
         }
 
 
+        if (data.mode === "login") {
 
+            console.log(
+                "既存利用者として再開:",
+                data.participant_id
+            );
 
-        // ==================================
-        // アプリ開始
-        // ==================================
+        }
+        else if (data.mode === "claim") {
+
+            console.log(
+                "既存の登録に暗証番号を設定:",
+                data.participant_id
+            );
+
+        }
+        else {
+
+            console.log(
+                "新規登録:",
+                data.participant_id
+            );
+
+        }
+
 
         location.href =
             "../index.html";
@@ -533,43 +380,270 @@ async function login() {
     }
     catch (error) {
 
-        console.error(
-            "利用登録エラー:",
-            error
+        console.error("利用登録エラー:", error);
+
+        showNotice(
+            (error && error.message
+                ? error.message
+                : "利用登録に失敗しました。") +
+            "\n\n通信状態を確認して、もう一度お試しください。"
         );
 
+        button.disabled = false;
 
-        let message =
-            "利用登録に失敗しました。";
-
-
-        if (
-            error?.message
-        ) {
-
-            message +=
-                "\n\n" +
-                error.message;
-
-        }
-
-
-        message +=
-            "\n\n" +
-            "通信状態を確認して、もう一度お試しください。";
-
-
-        errorElement.textContent =
-            message;
-
-
-        button.disabled =
-            false;
-
-
-        button.textContent =
-            "利用登録して開始";
+        button.textContent = "登録して開始";
 
     }
 
 }
+
+
+// ==================================================
+// RPCが返したエラーの表示
+// ==================================================
+
+function handleLoginError(data) {
+
+    const forceNewArea =
+        document.getElementById("force-new-area");
+
+
+    switch (data.error) {
+
+        case "invalid_code":
+
+            showNotice(
+                "自治会コードが正しくありません。"
+            );
+
+            break;
+
+
+        case "invalid_name":
+
+            showNotice(
+                "氏名を正しく入力してください。"
+            );
+
+            break;
+
+
+        case "invalid_pin":
+
+            showNotice(
+                "暗証番号は数字4桁で入力してください。"
+            );
+
+            break;
+
+
+        case "pin_mismatch":
+
+            showNotice(
+                "氏名は登録されていますが、暗証番号が一致しません。"
+            );
+
+            if (forceNewArea) {
+                forceNewArea.style.display = "block";
+            }
+
+            break;
+
+
+        case "pin_duplicate":
+
+            showNotice(
+                "同じ氏名・同じ暗証番号がすでに使われています。\n\n" +
+                "別の暗証番号を設定してください。"
+            );
+
+            break;
+
+
+        case "locked":
+
+            showNotice(
+                "暗証番号の入力を続けて誤ったため、しばらく登録できません。\n\n" +
+                "15分ほど時間をおいてからお試しください。"
+            );
+
+            break;
+
+
+        default:
+
+            showNotice(
+                "登録処理を完了できませんでした。\n\n" +
+                "しばらくしてからもう一度お試しください。"
+            );
+
+    }
+
+}
+
+
+// ==================================================
+// 同姓同名の別人として登録
+// ==================================================
+
+async function registerAsNewPerson() {
+
+    const result =
+        confirm(
+            "同姓同名の別の方として、新しく登録します。\n\n" +
+            "ご自身の過去の訓練記録は引き継がれません。\n" +
+            "よろしいですか？"
+        );
+
+    if (!result) {
+        return;
+    }
+
+    await login(true);
+
+}
+
+
+// ==================================================
+// 利用者IDでの復元
+// ==================================================
+
+async function restoreById() {
+
+    const input =
+        document.getElementById("restore-id");
+
+    const button =
+        document.getElementById("restore-button");
+
+    const message =
+        document.getElementById("restore-message");
+
+
+    const participantId =
+        input.value.trim();
+
+
+    message.textContent = "";
+
+
+    if (!participantId) {
+
+        message.textContent =
+            "利用者IDを入力してください。";
+
+        input.focus();
+
+        return;
+
+    }
+
+
+    try {
+
+        button.disabled = true;
+
+        button.textContent = "確認中...";
+
+
+        const {
+            data,
+            error
+        } =
+        await supabaseClient.rpc(
+            "restore_participant",
+            {
+                p_participant_id: participantId
+            }
+        );
+
+
+        if (error) {
+
+            console.error("復元RPCエラー:", error);
+
+            throw new Error(
+                "サーバーとの通信に失敗しました。"
+            );
+
+        }
+
+
+        if (!data || data.success !== true) {
+
+            message.textContent =
+                "この利用者IDは登録されていません。\n" +
+                "IDを確認してください。";
+
+            button.disabled = false;
+
+            button.textContent = "利用者IDで再開する";
+
+            return;
+
+        }
+
+
+        await IwaseIdentity.save({
+            id:     data.participant_id,
+            name:   data.name,
+            stamps: []
+        });
+
+
+        location.href =
+            "../index.html";
+
+
+    }
+    catch (error) {
+
+        console.error("復元エラー:", error);
+
+        message.textContent =
+            (error && error.message
+                ? error.message
+                : "復元に失敗しました。") +
+            "\n通信状態を確認して、もう一度お試しください。";
+
+        button.disabled = false;
+
+        button.textContent = "利用者IDで再開する";
+
+    }
+
+}
+
+
+// ==================================================
+// メッセージ表示
+// ==================================================
+
+function showNotice(text) {
+
+    const element =
+        document.getElementById("error-message");
+
+    if (element) {
+        element.textContent = text;
+    }
+
+}
+
+
+function clearMessage() {
+
+    showNotice("");
+
+}
+
+
+// ==================================================
+// グローバル公開
+// ==================================================
+
+window.login = login;
+
+window.registerAsNewPerson = registerAsNewPerson;
+
+window.restoreById = restoreById;
