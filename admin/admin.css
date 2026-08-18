@@ -4252,9 +4252,9 @@ opacity: 1 !important;
 
 @media print {
 
-    @page {
+        @page {
         size: A4;
-        margin: 12mm;
+        margin: 0;
     }
 
 
@@ -4512,5 +4512,150 @@ opacity: 1 !important;
     }
 
 }
+
+}
+
+/* ==================================================
+   印刷レイアウト調整
+   参加者分析の重なり対策
+================================================== */
+
+@media print {
+
+    /*
+     * @page margin: 0 の代わりに
+     * 内容側で余白を確保する
+     */
+
+    .content-section.print-target {
+        padding: 12mm !important;
+    }
+
+
+    /*
+     * 2カラムは1カラムに展開する
+     * 「月別参加状況」と「参加回数ランキング」が
+     * 重なる原因になるため
+     */
+
+    .print-target .dashboard-two-column {
+        display: block !important;
+    }
+
+
+    .print-target .dashboard-two-column
+    > .dashboard-card {
+        width: 100% !important;
+        margin-bottom: 10mm !important;
+    }
+
+
+    /*
+     * カードは必ずブロックとして扱い
+     * ページ内で分割されないようにする
+     */
+
+    .print-target .dashboard-card {
+        display: block !important;
+
+        width: 100% !important;
+
+        overflow: visible !important;
+
+        margin-bottom: 10mm !important;
+
+        box-shadow: none !important;
+
+        border: 1px solid #ddd !important;
+
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+
+    /*
+     * グラフ
+     *
+     * canvasが実サイズのまま描画され
+     * 次のカードにかぶるのを防ぐ
+     */
+
+    .print-target .chart-card {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+
+    .print-target .chart-container {
+        position: relative !important;
+
+        width: 100% !important;
+
+        height: 70mm !important;
+        max-height: 70mm !important;
+
+        overflow: hidden !important;
+
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+
+    .print-target .chart-container canvas {
+        display: block !important;
+
+        width: 100% !important;
+        max-width: 100% !important;
+
+        height: 70mm !important;
+        max-height: 70mm !important;
+    }
+
+
+    /*
+     * ランキング・未参加者リスト
+     * 画面用のスクロール制限を解除する
+     */
+
+    .print-target .ranking-list,
+    .print-target .analysis-inactive-list {
+        max-height: none !important;
+        overflow: visible !important;
+    }
+
+
+    /*
+     * 統計カード
+     */
+
+    .print-target .stats-grid {
+        display: grid !important;
+
+        grid-template-columns:
+            repeat(4, 1fr) !important;
+
+        gap: 5mm !important;
+
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+
+    .print-target .stat-card {
+        box-shadow: none !important;
+
+        border: 1px solid #ddd !important;
+    }
+
+
+    /*
+     * セクション見出し
+     */
+
+    .print-target .section-header {
+        display: block !important;
+
+        margin-bottom: 8mm !important;
+    }
 
 }
