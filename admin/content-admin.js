@@ -1,10 +1,20 @@
 /* ==================================================
    岩瀬自治会 防災アプリ
    掲載コンテンツ管理
+
    ・次回訓練 最大3枚
    ・年間計画 最大3枚
    ・活動実績 最大3枚
+
+   更新内容
+   ・活動実績の写真を削除できるようにした
+   ・画像の差し替え・削除時に
+     ストレージ上の実ファイルも削除する
+   ・他ファイルとの関数名衝突を避けるため
+     全体をIIFEで囲んだ
 ================================================== */
+
+(function () {
 
 "use strict";
 
@@ -45,8 +55,11 @@ function setupContentManagement() {
             '[data-target="contentManagementSection"]'
         );
 
+
     if (!contentNavButton) {
+
         return;
+
     }
 
 
@@ -65,6 +78,7 @@ function setupContentManagement() {
             "addActivityButton"
         );
 
+
     if (addActivityButton) {
 
         addActivityButton.addEventListener(
@@ -82,16 +96,34 @@ function setupContentManagement() {
 
 
 /* ==================================================
+   Supabase
+================================================== */
+
+function getClient() {
+
+    if (
+        typeof adminSupabaseClient !==
+        "undefined" &&
+        adminSupabaseClient
+    ) {
+
+        return adminSupabaseClient;
+
+    }
+
+
+    return null;
+
+}
+
+
+/* ==================================================
    全体読み込み
 ================================================== */
 
 async function loadContentManagement() {
 
-    if (
-        typeof adminSupabaseClient ===
-        "undefined" ||
-        !adminSupabaseClient
-    ) {
+    if (!getClient()) {
 
         console.error(
             "Supabaseクライアントが利用できません。"
@@ -141,7 +173,9 @@ async function loadSiteContent(
 
 
     if (!container) {
+
         return;
+
     }
 
 
@@ -153,7 +187,7 @@ async function loadSiteContent(
         data,
         error
     } =
-        await adminSupabaseClient
+        await getClient()
             .from(
                 "site_contents"
             )
@@ -171,6 +205,7 @@ async function loadSiteContent(
             "コンテンツ取得エラー:",
             error
         );
+
 
         container.innerHTML =
             `<p class="content-error">
@@ -338,15 +373,19 @@ function renderSiteContent(
                 const file =
                     fileInput.files?.[0];
 
+
                 if (!file) {
+
                     return;
+
                 }
 
 
                 await uploadSiteImage(
                     contentType,
                     i,
-                    file
+                    file,
+                    url
                 );
 
             }
@@ -411,37 +450,22 @@ function renderSiteContent(
 
 /* ==================================================
    固定コンテンツ画像アップロード
+
+   previousUrl
+   差し替え前の画像URL
+   ストレージから削除するために使用
 ================================================== */
 
 async function uploadSiteImage(
     contentType,
     imageNumber,
-    file
+    file,
+    previousUrl
 ) {
 
     if (
-        !file.type.startsWith(
-            "image/"
-        )
+        !validateImageFile(file)
     ) {
-
-        alert(
-            "画像ファイルを選択してください。"
-        );
-
-        return;
-
-    }
-
-
-    if (
-        file.size >
-        10 * 1024 * 1024
-    ) {
-
-        alert(
-            "画像サイズは10MB以下にしてください。"
-        );
 
         return;
 
@@ -463,7 +487,7 @@ async function uploadSiteImage(
         const {
             error: uploadError
         } =
-            await adminSupabaseClient
+            await getClient()
                 .storage
                 .from(
                     CONTENT_BUCKET
@@ -480,14 +504,16 @@ async function uploadSiteImage(
 
 
         if (uploadError) {
+
             throw uploadError;
+
         }
 
 
         const {
             data: publicData
         } =
-            adminSupabaseClient
+            getClient()
                 .storage
                 .from(
                     CONTENT_BUCKET
@@ -508,7 +534,7 @@ async function uploadSiteImage(
         const {
             data: existing
         } =
-            await adminSupabaseClient
+            await getClient()
                 .from(
                     "site_contents"
                 )
@@ -526,7 +552,7 @@ async function uploadSiteImage(
         if (existing?.id) {
 
             const result =
-                await adminSupabaseClient
+                await getClient()
                     .from(
                         "site_contents"
                     )
@@ -547,7 +573,7 @@ async function uploadSiteImage(
         } else {
 
             const result =
-                await adminSupabaseClient
+                await getClient()
                     .from(
                         "site_contents"
                     )
@@ -565,7 +591,23 @@ async function uploadSiteImage(
 
 
         if (updateError) {
+
             throw updateError;
+
+        }
+
+
+        /*
+         * 差し替え前の画像を
+         * ストレージから削除
+         */
+
+        if (previousUrl) {
+
+            await removeStorageFile(
+                previousUrl
+            );
+
         }
 
 
@@ -585,6 +627,7 @@ async function uploadSiteImage(
             "画像アップロードエラー:",
             error
         );
+
 
         alert(
             "画像のアップロードに失敗しました。\n" +
@@ -608,7 +651,8 @@ async function deleteSiteImage(
 
     if (
         !confirm(
-            `画像${imageNumber}を削除しますか？`
+            `画像${imageNumber}を削除しますか？\n\n` +
+            "この操作は元に戻せません。"
         )
     ) {
 
@@ -623,10 +667,17 @@ async function deleteSiteImage(
             `image${imageNumber}_url`;
 
 
+        /*
+         * 先にDBの参照を消す
+         *
+         * ストレージ削除に失敗しても
+         * 画面には残らないようにする
+         */
+
         const {
             error
         } =
-            await adminSupabaseClient
+            await getClient()
                 .from(
                     "site_contents"
                 )
@@ -643,8 +694,15 @@ async function deleteSiteImage(
 
 
         if (error) {
+
             throw error;
+
         }
+
+
+        await removeStorageFile(
+            url
+        );
 
 
         alert(
@@ -664,8 +722,13 @@ async function deleteSiteImage(
             error
         );
 
+
         alert(
-            "画像の削除に失敗しました。"
+            "画像の削除に失敗しました。\n" +
+            (
+                error.message ||
+                "不明なエラー"
+            )
         );
 
     }
@@ -686,7 +749,9 @@ async function loadActivities() {
 
 
     if (!container) {
+
         return;
+
     }
 
 
@@ -698,7 +763,7 @@ async function loadActivities() {
         data,
         error
     } =
-        await adminSupabaseClient
+        await getClient()
             .from(
                 "activities"
             )
@@ -723,6 +788,7 @@ async function loadActivities() {
             "活動実績取得エラー:",
             error
         );
+
 
         container.innerHTML =
             `<p class="content-error">
@@ -846,7 +912,7 @@ function renderActivity(
             "activity-date";
 
         date.textContent =
-            formatDate(
+            formatActivityDate(
                 activity.activity_date
             );
 
@@ -878,6 +944,10 @@ function renderActivity(
 
     }
 
+
+    /* ==================================================
+       写真
+    ================================================== */
 
     const gallery =
         document.createElement(
@@ -995,8 +1065,11 @@ function renderActivity(
                 const file =
                     input.files?.[0];
 
+
                 if (!file) {
+
                     return;
+
                 }
 
 
@@ -1019,6 +1092,50 @@ function renderActivity(
         );
 
 
+        /* ------------------------------------------
+           写真の削除ボタン
+
+           登録されている写真にのみ表示
+        ------------------------------------------ */
+
+        if (url) {
+
+            const deleteImageButton =
+                document.createElement(
+                    "button"
+                );
+
+            deleteImageButton.type =
+                "button";
+
+            deleteImageButton.className =
+                "danger-button";
+
+            deleteImageButton.textContent =
+                `写真${i}を削除`;
+
+
+            deleteImageButton.addEventListener(
+                "click",
+                async () => {
+
+                    await deleteActivityImage(
+                        activity,
+                        i,
+                        url
+                    );
+
+                }
+            );
+
+
+            imageBox.appendChild(
+                deleteImageButton
+            );
+
+        }
+
+
         gallery.appendChild(
             imageBox
         );
@@ -1030,6 +1147,10 @@ function renderActivity(
         gallery
     );
 
+
+    /* ==================================================
+       操作ボタン
+    ================================================== */
 
     const actions =
         document.createElement(
@@ -1108,7 +1229,7 @@ function renderActivity(
         "danger-button";
 
     deleteButton.textContent =
-        "削除";
+        "この活動実績を削除";
 
 
     deleteButton.addEventListener(
@@ -1179,7 +1300,7 @@ function openActivityEditor(
                 <input
                     type="text"
                     id="activityEditorTitle"
-                    value="${escapeAttribute(
+                    value="${escapeContentHtml(
                         activity?.title || ""
                     )}"
                     maxlength="100"
@@ -1203,7 +1324,7 @@ function openActivityEditor(
                     id="activityEditorDescription"
                     rows="5"
                     maxlength="1000"
-                >${escapeHtml(
+                >${escapeContentHtml(
                     activity?.description || ""
                 )}</textarea>
             </label>
@@ -1237,9 +1358,9 @@ function openActivityEditor(
     );
 
 
-    document
-        .getElementById(
-            "activityEditorCancel"
+    modal
+        .querySelector(
+            "#activityEditorCancel"
         )
         ?.addEventListener(
             "click",
@@ -1251,9 +1372,9 @@ function openActivityEditor(
         );
 
 
-    document
-        .getElementById(
-            "activityEditorSave"
+    modal
+        .querySelector(
+            "#activityEditorSave"
         )
         ?.addEventListener(
             "click",
@@ -1280,26 +1401,26 @@ async function saveActivity(
 ) {
 
     const title =
-        document
-            .getElementById(
-                "activityEditorTitle"
+        modal
+            .querySelector(
+                "#activityEditorTitle"
             )
             ?.value
             .trim();
 
 
     const activityDate =
-        document
-            .getElementById(
-                "activityEditorDate"
+        modal
+            .querySelector(
+                "#activityEditorDate"
             )
             ?.value || null;
 
 
     const description =
-        document
-            .getElementById(
-                "activityEditorDescription"
+        modal
+            .querySelector(
+                "#activityEditorDescription"
             )
             ?.value
             .trim() || null;
@@ -1339,7 +1460,7 @@ async function saveActivity(
         if (activity) {
 
             const result =
-                await adminSupabaseClient
+                await getClient()
                     .from(
                         "activities"
                     )
@@ -1357,7 +1478,7 @@ async function saveActivity(
         } else {
 
             const result =
-                await adminSupabaseClient
+                await getClient()
                     .from(
                         "activities"
                     )
@@ -1374,7 +1495,9 @@ async function saveActivity(
 
 
         if (error) {
+
             throw error;
+
         }
 
 
@@ -1395,6 +1518,7 @@ async function saveActivity(
             "活動保存エラー:",
             error
         );
+
 
         alert(
             "活動実績の保存に失敗しました。\n" +
@@ -1417,28 +1541,8 @@ async function uploadActivityImage(
 ) {
 
     if (
-        !file.type.startsWith(
-            "image/"
-        )
+        !validateImageFile(file)
     ) {
-
-        alert(
-            "画像ファイルを選択してください。"
-        );
-
-        return;
-
-    }
-
-
-    if (
-        file.size >
-        10 * 1024 * 1024
-    ) {
-
-        alert(
-            "画像サイズは10MB以下にしてください。"
-        );
 
         return;
 
@@ -1460,7 +1564,7 @@ async function uploadActivityImage(
         const {
             error: uploadError
         } =
-            await adminSupabaseClient
+            await getClient()
                 .storage
                 .from(
                     CONTENT_BUCKET
@@ -1477,14 +1581,16 @@ async function uploadActivityImage(
 
 
         if (uploadError) {
+
             throw uploadError;
+
         }
 
 
         const {
             data
         } =
-            adminSupabaseClient
+            getClient()
                 .storage
                 .from(
                     CONTENT_BUCKET
@@ -1498,10 +1604,20 @@ async function uploadActivityImage(
             `image${imageNumber}_url`;
 
 
+        /*
+         * 差し替え前の写真URL
+         */
+
+        const previousUrl =
+            activity[
+                column
+            ];
+
+
         const {
             error
         } =
-            await adminSupabaseClient
+            await getClient()
                 .from(
                     "activities"
                 )
@@ -1518,7 +1634,22 @@ async function uploadActivityImage(
 
 
         if (error) {
+
             throw error;
+
+        }
+
+
+        /*
+         * 古い写真をストレージから削除
+         */
+
+        if (previousUrl) {
+
+            await removeStorageFile(
+                previousUrl
+            );
+
         }
 
 
@@ -1537,9 +1668,105 @@ async function uploadActivityImage(
             error
         );
 
+
         alert(
             "写真のアップロードに失敗しました。\n" +
             error.message
+        );
+
+    }
+
+}
+
+
+/* ==================================================
+   活動写真削除
+================================================== */
+
+async function deleteActivityImage(
+    activity,
+    imageNumber,
+    url
+) {
+
+    if (
+        !confirm(
+            `「${activity.title}」の写真${imageNumber}を削除しますか？\n\n` +
+            "この操作は元に戻せません。"
+        )
+    ) {
+
+        return;
+
+    }
+
+
+    try {
+
+        const column =
+            `image${imageNumber}_url`;
+
+
+        /*
+         * 先にDBの参照を消す
+         *
+         * ストレージ削除に失敗しても
+         * 画面と公開ページからは消える
+         */
+
+        const {
+            error
+        } =
+            await getClient()
+                .from(
+                    "activities"
+                )
+                .update({
+                    [column]:
+                        null,
+                    updated_at:
+                        new Date().toISOString()
+                })
+                .eq(
+                    "id",
+                    activity.id
+                );
+
+
+        if (error) {
+
+            throw error;
+
+        }
+
+
+        await removeStorageFile(
+            url
+        );
+
+
+        alert(
+            "写真を削除しました。"
+        );
+
+
+        await loadActivities();
+
+
+    } catch (error) {
+
+        console.error(
+            "活動写真削除エラー:",
+            error
+        );
+
+
+        alert(
+            "写真の削除に失敗しました。\n" +
+            (
+                error.message ||
+                "不明なエラー"
+            )
         );
 
     }
@@ -1560,7 +1787,7 @@ async function toggleActivityPublished(
         const {
             error
         } =
-            await adminSupabaseClient
+            await getClient()
                 .from(
                     "activities"
                 )
@@ -1577,7 +1804,9 @@ async function toggleActivityPublished(
 
 
         if (error) {
+
             throw error;
+
         }
 
 
@@ -1590,6 +1819,7 @@ async function toggleActivityPublished(
             "公開状態変更エラー:",
             error
         );
+
 
         alert(
             "公開状態の変更に失敗しました。"
@@ -1610,7 +1840,8 @@ async function deleteActivity(
 
     if (
         !confirm(
-            `「${activity.title}」を削除しますか？`
+            `「${activity.title}」を削除しますか？\n\n` +
+            "登録されている写真もすべて削除されます。"
         )
     ) {
 
@@ -1624,7 +1855,7 @@ async function deleteActivity(
         const {
             error
         } =
-            await adminSupabaseClient
+            await getClient()
                 .from(
                     "activities"
                 )
@@ -1636,8 +1867,35 @@ async function deleteActivity(
 
 
         if (error) {
+
             throw error;
+
         }
+
+
+        /*
+         * 登録されていた写真を
+         * ストレージから削除
+         */
+
+        for (
+            let i = 1;
+            i <= CONTENT_MAX_IMAGES;
+            i++
+        ) {
+
+            await removeStorageFile(
+                activity[
+                    `image${i}_url`
+                ]
+            );
+
+        }
+
+
+        alert(
+            "活動実績を削除しました。"
+        );
 
 
         await loadActivities();
@@ -1650,8 +1908,13 @@ async function deleteActivity(
             error
         );
 
+
         alert(
-            "活動実績の削除に失敗しました。"
+            "活動実績の削除に失敗しました。\n" +
+            (
+                error.message ||
+                "不明なエラー"
+            )
         );
 
     }
@@ -1660,7 +1923,172 @@ async function deleteActivity(
 
 
 /* ==================================================
-   共通
+   画像ファイル確認
+================================================== */
+
+function validateImageFile(
+    file
+) {
+
+    if (
+        !file.type.startsWith(
+            "image/"
+        )
+    ) {
+
+        alert(
+            "画像ファイルを選択してください。"
+        );
+
+        return false;
+
+    }
+
+
+    if (
+        file.size >
+        10 * 1024 * 1024
+    ) {
+
+        alert(
+            "画像サイズは10MB以下にしてください。"
+        );
+
+        return false;
+
+    }
+
+
+    return true;
+
+}
+
+
+/* ==================================================
+   公開URL → ストレージ上のパス
+
+   https://xxxx.supabase.co/storage/v1/object/public/
+   site-content/activities/<id>/image1_1234.jpg
+   ↓
+   activities/<id>/image1_1234.jpg
+================================================== */
+
+function getStoragePathFromUrl(
+    url
+) {
+
+    if (!url) {
+
+        return null;
+
+    }
+
+
+    const marker =
+        `/storage/v1/object/public/${CONTENT_BUCKET}/`;
+
+
+    const text =
+        String(url);
+
+
+    const index =
+        text.indexOf(marker);
+
+
+    if (index === -1) {
+
+        return null;
+
+    }
+
+
+    const path =
+        text
+            .slice(
+                index + marker.length
+            )
+            .split("?")[0];
+
+
+    try {
+
+        return decodeURIComponent(
+            path
+        );
+
+    } catch (error) {
+
+        return path;
+
+    }
+
+}
+
+
+/* ==================================================
+   ストレージからファイルを削除
+
+   DB側の参照はすでに消えているため
+   ここでの失敗は致命的ではない。
+   警告のみ出して処理を続ける。
+================================================== */
+
+async function removeStorageFile(
+    url
+) {
+
+    const path =
+        getStoragePathFromUrl(
+            url
+        );
+
+
+    if (!path) {
+
+        return;
+
+    }
+
+
+    try {
+
+        const {
+            error
+        } =
+            await getClient()
+                .storage
+                .from(
+                    CONTENT_BUCKET
+                )
+                .remove([
+                    path
+                ]);
+
+
+        if (error) {
+
+            console.warn(
+                "ストレージ削除エラー:",
+                error
+            );
+
+        }
+
+    } catch (error) {
+
+        console.warn(
+            "ストレージ削除エラー:",
+            error
+        );
+
+    }
+
+}
+
+
+/* ==================================================
+   拡張子
 ================================================== */
 
 function getFileExtension(
@@ -1686,12 +2114,21 @@ function getFileExtension(
 }
 
 
-function formatDate(
+/* ==================================================
+   活動実施日の表示
+
+   ※他ファイルにも formatDate があるため
+     名前を分けて衝突を避けている
+================================================== */
+
+function formatActivityDate(
     value
 ) {
 
     if (!value) {
+
         return "";
+
     }
 
 
@@ -1707,7 +2144,7 @@ function formatDate(
         )
     ) {
 
-        return value;
+        return String(value);
 
     }
 
@@ -1721,7 +2158,11 @@ function formatDate(
 }
 
 
-function escapeHtml(
+/* ==================================================
+   HTMLエスケープ
+================================================== */
+
+function escapeContentHtml(
     value
 ) {
 
@@ -1752,283 +2193,4 @@ function escapeHtml(
 }
 
 
-function escapeAttribute(
-    value
-) {
-
-    return escapeHtml(
-        value
-    );
-
-}
-
-
-/* ==================================================
-   追加CSS
-================================================== */
-
-const contentStyle =
-document.createElement(
-    "style"
-);
-
-contentStyle.textContent = `
-
-.content-management-card {
-    background: #fff;
-    border-radius: 14px;
-    padding: 24px;
-    margin-bottom: 24px;
-    box-shadow: 0 3px 12px rgba(0,0,0,.06);
-}
-
-.content-management-card h3 {
-    margin-top: 0;
-    margin-bottom: 6px;
-}
-
-.content-management-description {
-    margin-top: 0;
-    color: #777;
-    font-size: 14px;
-}
-
-.content-image-grid {
-    display: grid;
-    grid-template-columns:
-        repeat(3, minmax(0, 1fr));
-    gap: 18px;
-}
-
-.content-image-card {
-    border: 1px solid #ddd;
-    border-radius: 12px;
-    padding: 14px;
-    background: #fafafa;
-}
-
-.content-image-card h4 {
-    margin-top: 0;
-}
-
-.content-image-preview {
-    width: 100%;
-    height: 220px;
-    object-fit: contain;
-    background: #eee;
-    border-radius: 8px;
-    display: block;
-    margin-bottom: 12px;
-}
-
-.content-image-empty {
-    height: 220px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #eee;
-    border-radius: 8px;
-    color: #888;
-    margin-bottom: 12px;
-}
-
-.content-file-input {
-    display: none;
-}
-
-.content-image-card button,
-.activity-image-box button {
-    width: 100%;
-    margin-top: 8px;
-}
-
-.danger-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border: none;
-    background: #d32f2f;
-    color: #fff;
-    padding: 10px 15px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: bold;
-    min-height: 42px;
-}
-
-.danger-button:hover {
-    background: #b71c1c;
-}
-
-.content-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 15px;
-    margin-bottom: 20px;
-}
-
-.activities-management-list {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-.activity-management-card {
-    border: 1px solid #ddd;
-    border-radius: 12px;
-    padding: 20px;
-}
-
-.activity-management-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 10px;
-}
-
-.activity-management-header h4 {
-    margin: 0;
-    font-size: 19px;
-}
-
-.content-status {
-    padding: 5px 10px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: bold;
-}
-
-.content-status.published {
-    background: #e8f5e9;
-    color: #2e7d32;
-}
-
-.content-status.unpublished {
-    background: #eee;
-    color: #666;
-}
-
-.activity-date {
-    color: #777;
-    margin: 8px 0;
-}
-
-.activity-description {
-    white-space: pre-wrap;
-}
-
-.activity-management-gallery {
-    display: grid;
-    grid-template-columns:
-        repeat(3, minmax(0, 1fr));
-    gap: 15px;
-    margin-top: 15px;
-}
-
-.activity-image-box {
-    border: 1px solid #ddd;
-    border-radius: 10px;
-    padding: 10px;
-}
-
-.activity-image-box img {
-    width: 100%;
-    height: 180px;
-    object-fit: contain;
-    background: #eee;
-    border-radius: 7px;
-}
-
-.activity-management-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 18px;
-}
-
-.content-editor-modal {
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    background: rgba(0,0,0,.55);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-}
-
-.content-editor-modal-inner {
-    width: 100%;
-    max-width: 600px;
-    max-height: 90vh;
-    overflow-y: auto;
-    background: #fff;
-    border-radius: 15px;
-    padding: 25px;
-    box-sizing: border-box;
-}
-
-.content-editor-modal-inner h3 {
-    margin-top: 0;
-}
-
-.content-editor-modal-inner label {
-    display: block;
-    margin-top: 15px;
-    font-weight: bold;
-}
-
-.content-editor-modal-inner input,
-.content-editor-modal-inner textarea {
-    display: block;
-    width: 100%;
-    box-sizing: border-box;
-    margin-top: 6px;
-    padding: 12px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    font: inherit;
-}
-
-.content-editor-actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 20px;
-}
-
-.content-error {
-    color: #d32f2f;
-}
-
-.content-empty-message {
-    padding: 30px;
-    text-align: center;
-    color: #777;
-    background: #f7f7f7;
-    border-radius: 10px;
-}
-
-@media (max-width: 700px) {
-
-    .content-image-grid,
-    .activity-management-gallery {
-        grid-template-columns: 1fr;
-    }
-
-    .content-card-header {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .content-management-card {
-        padding: 18px;
-    }
-
-}
-
-`;
-
-document.head.appendChild(
-    contentStyle
-);
+})();
