@@ -10,11 +10,11 @@
 // ・一般利用者の新規登録は本体loginでのみ実施
 // ・本体からの正規アクセスのみスタンプカードを表示
 // ・直接stamp.htmlを開いた場合はブロック
-// ・参加履歴同期
-// ・訓練情報同期
+// ・訓練情報同期（参加した訓練は全件表示）
 // ・QRコード表示
-// ・最大10スタンプ
-// ・5スタンプで認定
+// ・スタンプ枠は10個
+// ・5回参加で いわぽん防災マイスター 認定
+// ・10回参加で いわぽんトップ防災マイスター 認定
 // ・完全退会処理
 //
 // --------------------------------------------------
@@ -31,6 +31,14 @@
 // stamp.html に次の読み込みが必要:
 //   <script src="../common/iwase-identity.js"></script>
 // --------------------------------------------------
+//
+// 氏名の表示について
+//
+// 端末に保存された氏名は、本体で氏名を変更した直後は
+// 古いままになっている。
+// そのまま描画すると変更前の氏名が一瞬表示されるため、
+// Supabaseからの氏名同期が終わるまで氏名欄は描画しない。
+// 同期に失敗した場合のみ、端末の氏名を表示する。
 // ==================================================
 
 "use strict";
@@ -42,9 +50,14 @@
 
 const STORAGE_KEY = "iwaseStamp";
 
+// スタンプ枠の数（表示上のマス目）
 const MAX_STAMP = 10;
 
+// いわぽん防災マイスター 認定に必要な参加回数
 const CERTIFICATE_COUNT = 5;
+
+// いわぽんトップ防災マイスター 認定に必要な参加回数
+const TOP_MEISTER_COUNT = 10;
 
 
 // ==================================================
@@ -58,6 +71,15 @@ const STAMP_SUPABASE_PUBLISHABLE_KEY =
     "sb_publishable_8YXsMHOxLr7MOTEYShUM3w_LsZvR3Qn";
 
 let stampSupabaseClient = null;
+
+
+// ==================================================
+// 氏名同期の完了フラグ
+//
+// false の間は氏名欄を描画しない。
+// ==================================================
+
+let participantNameSynced = false;
 
 
 // ==================================================
@@ -358,6 +380,10 @@ function loadCard(
 
     try {
 
+        // ------------------------------------------
+        // 参加した訓練は件数を制限せず全件保持する
+        // ------------------------------------------
+
         const data = {
 
             id:
@@ -368,7 +394,7 @@ function loadCard(
 
             stamps:
                 Array.isArray(userData.stamps)
-                    ? userData.stamps.slice(0, MAX_STAMP)
+                    ? userData.stamps.slice()
                     : []
 
         };
@@ -385,6 +411,9 @@ function loadCard(
 
         // ------------------------------------------
         // カード表示
+        //
+        // この時点では氏名同期が終わっていないため、
+        // 氏名欄は空のまま描画される。
         // ------------------------------------------
 
         displayCard(
@@ -433,6 +462,12 @@ async function syncWithSupabase() {
 
     if (!stampSupabaseClient) {
 
+        // ------------------------------------------
+        // 同期できないので端末の氏名を表示する
+        // ------------------------------------------
+
+        finishNameSync();
+
         return;
 
     }
@@ -446,6 +481,8 @@ async function syncWithSupabase() {
         !userData ||
         !userData.id
     ) {
+
+        finishNameSync();
 
         return;
 
@@ -618,7 +655,7 @@ async function syncWithSupabase() {
 
 
         // ------------------------------------------
-        // 日付順
+        // 日付順（新しい順）
         // ------------------------------------------
 
         uniqueStamps.sort(
@@ -647,18 +684,21 @@ async function syncWithSupabase() {
 
 
         // ------------------------------------------
-        // 最大10件
+        // 参加した訓練は全件保持する
+        //
+        // 10回を超えて参加した分も残す。
+        // スタンプ枠の表示だけが10個で止まる。
         // ------------------------------------------
 
         userData.stamps =
-            uniqueStamps.slice(
-                0,
-                MAX_STAMP
-            );
+            uniqueStamps;
 
 
         // ==================================================
         // 最新の参加者名をSupabaseから取得
+        //
+        // 本体で氏名を変更した場合、端末に保存された氏名は
+        // 古いままなので、ここで必ず上書きする。
         // ==================================================
 
         try {
@@ -723,6 +763,14 @@ async function syncWithSupabase() {
 
 
         // ------------------------------------------
+        // 氏名同期完了
+        // ------------------------------------------
+
+        participantNameSynced =
+            true;
+
+
+        // ------------------------------------------
         // 再表示
         // ------------------------------------------
 
@@ -757,8 +805,61 @@ async function syncWithSupabase() {
 
 
         // ------------------------------------------
-        // 同期失敗時は端末の利用者情報を維持
+        // 同期失敗時は端末の利用者情報を維持し、
+        // 端末に残っている氏名を表示する。
         // ------------------------------------------
+
+        finishNameSync();
+
+    }
+
+}
+
+
+// ==================================================
+// 氏名同期の打ち切り
+//
+// 通信できなかった場合など、Supabaseから最新の氏名を
+// 取得できないときに、端末の氏名で表示を確定させる。
+// ==================================================
+
+function finishNameSync() {
+
+    if (participantNameSynced) {
+
+        return;
+
+    }
+
+
+    participantNameSynced =
+        true;
+
+
+    let userData = null;
+
+
+    try {
+
+        userData =
+            IwaseIdentity.read();
+
+    }
+    catch (error) {
+
+        console.error(
+            "利用者情報の読み込みエラー:",
+            error
+        );
+
+    }
+
+
+    if (userData) {
+
+        displayCard(
+            userData
+        );
 
     }
 
@@ -767,6 +868,8 @@ async function syncWithSupabase() {
 
 // ==================================================
 // 参加した訓練一覧
+//
+// 参加した訓練はすべて表示する。
 // ==================================================
 
 function loadTrainingList() {
@@ -813,7 +916,7 @@ function loadTrainingList() {
 
 
     stamps.forEach(
-        stamp => {
+        (stamp, index) => {
 
             const item =
                 document.createElement(
@@ -863,6 +966,31 @@ function loadTrainingList() {
             );
 
         }
+    );
+
+
+    // ------------------------------------------
+    // 参加回数の合計
+    // ------------------------------------------
+
+    const total =
+        document.createElement(
+            "p"
+        );
+
+
+    total.className =
+        "training-total";
+
+
+    total.textContent =
+        "参加回数 : 全 " +
+        stamps.length +
+        " 回";
+
+
+    container.appendChild(
+        total
     );
 
 }
@@ -940,12 +1068,19 @@ function displayCard(
 
 
     // ------------------------------------------
-    // 最大10件
+    // 参加回数
+    //
+    // stampCount : 実際の参加回数（上限なし）
+    // filled     : スタンプ枠の点灯数（最大10）
     // ------------------------------------------
 
-    data.stamps =
-        data.stamps.slice(
-            0,
+    const stampTotalCount =
+        data.stamps.length;
+
+
+    const filledCount =
+        Math.min(
+            stampTotalCount,
             MAX_STAMP
         );
 
@@ -984,6 +1119,9 @@ function displayCard(
 
     // ------------------------------------------
     // 氏名
+    //
+    // Supabaseからの氏名同期が終わるまで表示しない。
+    // 変更前の氏名が一瞬表示されるのを防ぐため。
     // ------------------------------------------
 
     const userName =
@@ -994,9 +1132,23 @@ function displayCard(
 
     if (userName) {
 
-        userName.textContent =
-            data.name +
-            " さん";
+        if (
+            participantNameSynced &&
+            data.name
+        ) {
+
+            userName.textContent =
+                data.name +
+                " さん";
+
+        }
+        else {
+
+            // 表示位置がずれないよう高さだけ確保
+            userName.textContent =
+                "\u00A0";
+
+        }
 
     }
 
@@ -1116,7 +1268,7 @@ function displayCard(
 
             span.textContent =
                 i <
-                data.stamps.length
+                filledCount
                     ? "⭐"
                     : "☆";
 
@@ -1143,13 +1295,33 @@ function displayCard(
     if (stampCount) {
 
         stampCount.textContent =
-            data.stamps.length;
+            stampTotalCount;
+
+    }
+
+
+    const stampTotal =
+        document.getElementById(
+            "stamp-total"
+        );
+
+
+    if (stampTotal) {
+
+        stampTotal.textContent =
+            stampTotalCount >=
+            MAX_STAMP
+                ? "個（10個達成）"
+                : "/10個";
 
     }
 
 
     // ------------------------------------------
     // 認定判定
+    //
+    //  5回以上 : いわぽん防災マイスター
+    // 10回以上 : いわぽんトップ防災マイスター
     // ------------------------------------------
 
     const message =
@@ -1165,14 +1337,43 @@ function displayCard(
 
 
     if (
-        data.stamps.length >=
-        CERTIFICATE_COUNT
+        stampTotalCount >=
+        TOP_MEISTER_COUNT
     ) {
 
         if (message) {
 
             message.textContent =
-                "🎉 いわぽん防災マイスター認定条件達成！";
+                "🏆 いわぽんトップ防災マイスター認定！";
+
+        }
+
+
+        if (certificateArea) {
+
+            certificateArea.style.display =
+                "block";
+
+        }
+
+    }
+    else if (
+        stampTotalCount >=
+        CERTIFICATE_COUNT
+    ) {
+
+        const toTop =
+            TOP_MEISTER_COUNT -
+            stampTotalCount;
+
+
+        if (message) {
+
+            message.textContent =
+                "🎉 いわぽん防災マイスター認定！\n" +
+                "トップマイスターまであと " +
+                toTop +
+                " 個です";
 
         }
 
@@ -1189,7 +1390,7 @@ function displayCard(
 
         const remaining =
             CERTIFICATE_COUNT -
-            data.stamps.length;
+            stampTotalCount;
 
 
         if (message) {
@@ -1213,122 +1414,10 @@ function displayCard(
 
 
     // ------------------------------------------
-    // 履歴
-    // ------------------------------------------
-
-    displayHistory(
-        data
-    );
-
-
-    // ------------------------------------------
     // 訓練一覧
     // ------------------------------------------
 
     loadTrainingList();
-
-}
-
-
-// ==================================================
-// 参加履歴
-// ==================================================
-
-function displayHistory(
-    data
-) {
-
-    const historyList =
-        document.getElementById(
-            "history-list"
-        );
-
-
-    if (!historyList) {
-
-        return;
-
-    }
-
-
-    historyList.innerHTML =
-        "";
-
-
-    if (
-        !data.stamps ||
-        data.stamps.length ===
-        0
-    ) {
-
-        const li =
-            document.createElement(
-                "li"
-            );
-
-
-        li.textContent =
-            "参加履歴はありません。";
-
-
-        historyList.appendChild(
-            li
-        );
-
-
-        return;
-
-    }
-
-
-    data.stamps.forEach(
-        stamp => {
-
-            const li =
-                document.createElement(
-                    "li"
-                );
-
-
-            const dateText =
-                document.createElement(
-                    "div"
-                );
-
-
-            dateText.textContent =
-                formatTrainingDate(
-                    stamp.date
-                );
-
-
-            const eventText =
-                document.createElement(
-                    "div"
-                );
-
-
-            eventText.textContent =
-                stamp.event ||
-                "防災訓練";
-
-
-            li.appendChild(
-                dateText
-            );
-
-
-            li.appendChild(
-                eventText
-            );
-
-
-            historyList.appendChild(
-                li
-            );
-
-        }
-    );
 
 }
 
@@ -1401,6 +1490,20 @@ async function clearData() {
 
         localStorage.removeItem(
             "role"
+        );
+
+
+        // ------------------------------------------
+        // 認定証情報
+        // ------------------------------------------
+
+        localStorage.removeItem(
+            "iwaseCertificateNumber"
+        );
+
+
+        localStorage.removeItem(
+            "iwaseCertificateDate"
         );
 
 
@@ -1554,6 +1657,20 @@ async function clearData() {
 
         localStorage.removeItem(
             "role"
+        );
+
+
+        // ------------------------------------------
+        // 認定証情報
+        // ------------------------------------------
+
+        localStorage.removeItem(
+            "iwaseCertificateNumber"
+        );
+
+
+        localStorage.removeItem(
+            "iwaseCertificateDate"
         );
 
 
