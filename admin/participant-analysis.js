@@ -1,8 +1,15 @@
 /* ==================================================
    岩瀬自治会 防災アプリ
    参加者分析ダッシュボード
-   training_date 対応版
-   ================================================== */
+
+   ・training_date 対応
+   ・複数日開催の表示に対応
+   ・いわぽんトップ防災マイスターに対応
+   ・他ファイルとの関数名衝突を避けるため
+     全体をIIFEで囲んだ
+================================================== */
+
+(function () {
 
 "use strict";
 
@@ -28,7 +35,19 @@ let analysisTrainings = [];
 
 const ANALYSIS_FISCAL_YEAR = 2026;
 
+
+/*
+ * いわぽん防災マイスター
+ */
+
 const MASTER_TARGET = 5;
+
+
+/*
+ * いわぽんトップ防災マイスター
+ */
+
+const TOP_MASTER_TARGET = 10;
 
 
 /* ==================================================
@@ -335,6 +354,8 @@ function renderParticipantAnalysis() {
 
     let masterCount = 0;
 
+    let topMasterCount = 0;
+
 
     analysisParticipants.forEach(
         participant => {
@@ -364,6 +385,13 @@ function renderParticipantAnalysis() {
             if (count >= MASTER_TARGET) {
 
                 masterCount++;
+
+            }
+
+
+            if (count >= TOP_MASTER_TARGET) {
+
+                topMasterCount++;
 
             }
 
@@ -431,7 +459,11 @@ function renderParticipantAnalysis() {
                     trainingDate:
                         getTrainingDate(
                             training
-                        )
+                        ),
+
+                    trainingEndDate:
+                        training?.training_end_date ||
+                        null
 
                 };
 
@@ -517,6 +549,12 @@ function renderParticipantAnalysis() {
     setText(
         "analysisMasterParticipants",
         masterCount
+    );
+
+
+    setText(
+        "analysisTopMasterParticipants",
+        topMasterCount
     );
 
 
@@ -641,9 +679,6 @@ function getTrainingDate(
     }
 
 
-    /*
-     * 正式カラム
-     */
     if (
         training.training_date
     ) {
@@ -653,9 +688,6 @@ function getTrainingDate(
     }
 
 
-    /*
-     * 予備
-     */
     if (
         training.date
     ) {
@@ -1081,6 +1113,37 @@ function renderMonthlyAnalysis(
 
 
 /* ==================================================
+   認定バッジ
+================================================== */
+
+function createMasterBadge(
+    count
+) {
+
+    if (
+        count >= TOP_MASTER_TARGET
+    ) {
+
+        return `<span class="analysis-status top-master">★トップ</span>`;
+
+    }
+
+
+    if (
+        count >= MASTER_TARGET
+    ) {
+
+        return `<span class="analysis-status master">マイスター</span>`;
+
+    }
+
+
+    return "";
+
+}
+
+
+/* ==================================================
    参加者ランキング
 ================================================== */
 
@@ -1178,6 +1241,10 @@ function renderRanking(
                         ${escapeHtml(
                             item.participant.name ||
                             "名前未登録"
+                        )}
+
+                        ${createMasterBadge(
+                            item.count
                         )}
                     </div>
 
@@ -1471,6 +1538,20 @@ function renderParticipantTable(
 
             } else if (
                 item.count >=
+                TOP_MASTER_TARGET
+            ) {
+
+                status =
+                    `
+                    <span
+                        class="analysis-status top-master"
+                    >
+                        トップマイスター
+                    </span>
+                    `;
+
+            } else if (
+                item.count >=
                 MASTER_TARGET
             ) {
 
@@ -1479,7 +1560,7 @@ function renderParticipantTable(
                     <span
                         class="analysis-status master"
                     >
-                        5回以上
+                        マイスター
                     </span>
                     `;
 
@@ -1695,6 +1776,11 @@ function renderTrainingAnalysis(
                 );
 
 
+            const endDate =
+                training?.training_end_date ||
+                null;
+
+
             const location =
                 training?.location ||
                 "";
@@ -1723,8 +1809,9 @@ function renderTrainingAnalysis(
                     <span>
                         実施日：
                         ${escapeHtml(
-                            formatDate(
-                                date
+                            formatDatePeriod(
+                                date,
+                                endDate
                             )
                         )}
                     </span>
@@ -1807,6 +1894,8 @@ function showAnalysisLoading() {
         "analysisRepeatParticipants",
 
         "analysisMasterParticipants",
+
+        "analysisTopMasterParticipants",
 
         "analysisMasterRate",
 
@@ -2167,6 +2256,52 @@ function formatDate(
 
 
 /* ==================================================
+   開催期間表示
+   複数日開催に対応
+================================================== */
+
+function formatDatePeriod(
+    startValue,
+    endValue
+) {
+
+    const start =
+        formatDate(
+            startValue
+        );
+
+
+    if (
+        !endValue ||
+        String(endValue) === String(startValue)
+    ) {
+
+        return start;
+
+    }
+
+
+    const end =
+        formatDate(
+            endValue
+        );
+
+
+    if (
+        end === "-"
+    ) {
+
+        return start;
+
+    }
+
+
+    return `${start}〜${end}`;
+
+}
+
+
+/* ==================================================
    ID正規化
 ================================================== */
 
@@ -2263,3 +2398,6 @@ function escapeHtml(
 
 window.loadParticipantAnalysis =
     loadParticipantAnalysis;
+
+
+})();
