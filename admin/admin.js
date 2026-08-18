@@ -5071,24 +5071,51 @@ function isSameTrainingMonth(
 
 
 /* ==================================================
-   通常日時
+   タイムスタンプ解析
+
+   Supabaseの列型が
+   timestamptz  → そのままUTCとして解釈される
+   timestamp    → タイムゾーン情報がないため
+                  UTCとみなして補正する
 ================================================== */
 
-function formatDate(
+function parseTimestamp(
     value
 ) {
 
     if (!value) {
 
-        return "-";
+        return null;
+
+    }
+
+
+    let text =
+        String(value).trim();
+
+
+    /*
+     * 末尾に Z または +09:00 のような
+     * タイムゾーン情報がない場合は
+     * UTCとして扱う
+     */
+
+    const hasTimezone =
+        /(Z|z|[+-]\d{2}:?\d{2})$/.test(
+            text
+        );
+
+
+    if (!hasTimezone) {
+
+        text =
+            text.replace(" ", "T") + "Z";
 
     }
 
 
     const date =
-        new Date(
-            value
-        );
+        new Date(text);
 
 
     if (
@@ -5097,31 +5124,56 @@ function formatDate(
         )
     ) {
 
+        return null;
+
+    }
+
+
+    return date;
+
+}
+
+
+/* ==================================================
+   通常日時
+   日本時間（Asia/Tokyo）で表示
+================================================== */
+
+function formatDate(
+    value
+) {
+
+    const date =
+        parseTimestamp(value);
+
+
+    if (!date) {
+
         return "-";
 
     }
 
 
-    return (
-        date.getFullYear() +
-        "/" +
-        String(
-            date.getMonth() + 1
-        ).padStart(
-            2,
-            "0"
-        ) +
-        "/" +
-        String(
-            date.getDate()
-        ).padStart(
-            2,
-            "0"
-        )
-    );
+    return new Intl.DateTimeFormat(
+        "ja-JP",
+        {
+
+            timeZone: "Asia/Tokyo",
+
+            year: "numeric",
+
+            month: "2-digit",
+
+            day: "2-digit",
+
+            hour: "2-digit",
+
+            minute: "2-digit"
+
+        }
+    ).format(date);
 
 }
-
 
 /* ==================================================
    訓練実施日
