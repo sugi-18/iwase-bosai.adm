@@ -94,13 +94,15 @@ const PRECACHE_PATHS = [
     "./stamp/supabase.js",
     "./stamp/stamp.html",
     "./stamp/stamp.css",
-    "./stamp/stamp.js",
     "./stamp/certificate.html",
     "./stamp/certificate.css",
-    "./stamp/certificate.js",
     "./stamp/training.html",
-    "./stamp/training.js",
-
+　  "./stamp/stamp.js?v=20260818",
+    "./stamp/certificate.js?v=20260818",
+    "./stamp/training.js?v=20260814",
+    "./stamp/qr.html",
+    "./stamp/qr.js",
+   
     "./login/login.html",
     "./login/login.css",
     "./login/login.js"
