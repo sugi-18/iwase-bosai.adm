@@ -41,7 +41,7 @@ const RUNTIME_NAME = "iwase-runtime-" + SW_VERSION;
 ================================================== */
 
 const VAPID_PUBLIC_KEY =
-    "ここにVAPID公開鍵を貼る";
+    "BJWwpmMhpdzWFrU3Ivwz3m-KHkHzxZE0JerJUUdFUCu2zz8b1cZq1GM-47VS3fAj3fXWhf4HgDsuwF5fbgfm_ls";
 
 const SUPABASE_URL =
     "https://zumbqukrojdpgfpfekjr.supabase.co";
