@@ -14,6 +14,50 @@
     岩瀬自治会 防災アプリ
 </title>
 
+<meta
+    name="description"
+    content="岩瀬自治会の防災活動を支援するアプリ。マイタイムライン・防災力診断・訓練情報・気象警報を確認できます。"
+>
+
+
+<!-- ==================================================
+     PWA
+
+     ここは common/pwa.js でも補えるが、
+     「ホーム画面に追加」の判定はページ読み込み直後に
+     行われるため、トップページには直接書いておく。
+================================================== -->
+
+<link
+    rel="manifest"
+    href="./manifest.json"
+>
+
+<meta
+    name="theme-color"
+    content="#1f4e79"
+>
+
+<link
+    rel="apple-touch-icon"
+    href="./images/apple-touch-icon.png"
+>
+
+<meta
+    name="apple-mobile-web-app-capable"
+    content="yes"
+>
+
+<meta
+    name="apple-mobile-web-app-status-bar-style"
+    content="default"
+>
+
+<meta
+    name="apple-mobile-web-app-title"
+    content="いわぽん防災"
+>
+
 
 <!-- ==================================================
      Supabase
@@ -250,6 +294,16 @@
 
 
 <body>
+
+
+<!-- ==================================================
+     気象警報・注意報
+
+     alerts テーブルの内容を common/alerts.js が
+     ここへ描画する。発表が無いときは空になる。
+================================================== -->
+
+<div id="alertBanner"></div>
 
 
 <!-- ==================================================
@@ -576,6 +630,17 @@
 
 
     <!-- ==================================================
+         通知設定
+
+         common/push.js がここへ描画する。
+         通知に対応していない環境では
+         その旨の案内が出る。
+    ================================================== -->
+
+    <div id="pushSettings"></div>
+
+
+    <!-- ==================================================
          ロゴ
     ================================================== -->
 
@@ -610,6 +675,24 @@
 
 
 </footer>
+
+
+<!-- ==================================================
+     PWA・通知・警報
+
+     読み込み順に意味がある。
+
+       1. pwa.js    … Service Worker を登録し、
+                       IwasePWA を用意する
+       2. push.js   … IwasePWA を使って環境を判定する
+       3. alerts.js … supabaseClient を使って警報を読む
+================================================== -->
+
+<script src="./common/pwa.js"></script>
+
+<script src="./common/push.js"></script>
+
+<script src="./common/alerts.js"></script>
 
 
 </body>
