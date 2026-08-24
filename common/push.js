@@ -43,7 +43,7 @@
     ================================================== */
 
     var VAPID_PUBLIC_KEY =
-        "BJWwpmMhpdzWFrU3Ivwz3m-KHkHzxZE0JerJUUdFUCu2zz8b1cZq1GM-47VS3fAj3fXWhf4HgDsuwF5fbgfm_ls";
+        "BMtWi-5cowrjbiuO2IXNKX673Ubz0hCpRa3G9T-yWQOVKK9xTh5-hJ2QXVpl8i8yXD1leAiRZl9O5YXG1aXKP-c";
 
 
     var TOPICS = [
