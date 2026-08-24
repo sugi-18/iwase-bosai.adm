@@ -43,7 +43,7 @@
     ================================================== */
 
     var VAPID_PUBLIC_KEY =
-        "ここにVAPID公開鍵を貼る";
+        "BJWwpmMhpdzWFrU3Ivwz3m-KHkHzxZE0JerJUUdFUCu2zz8b1cZq1GM-47VS3fAj3fXWhf4HgDsuwF5fbgfm_ls";
 
 
     var TOPICS = [
