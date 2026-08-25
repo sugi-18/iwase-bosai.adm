@@ -705,7 +705,13 @@ Deno.serve(async (req) => {
             .replace(/^Bearer\s+/i, "")
             .trim();
 
-    if (token !== SERVICE_ROLE_KEY) {
+        const adminSecret = (Deno.env.get("PUSH_ADMIN_SECRET") ?? "").trim();
+
+    const allowed =
+        token === SERVICE_ROLE_KEY ||
+        (adminSecret.length >= 16 && token === adminSecret);
+
+    if (!allowed) {
         return new Response(
             JSON.stringify({ error: "認証情報が不正です。" }),
             { status: 401, headers: { "Content-Type": "application/json" } },
