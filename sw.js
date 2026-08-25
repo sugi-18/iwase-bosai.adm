@@ -25,7 +25,7 @@
    古いキャッシュは activate で削除される。
 ================================================== */
 
-const SW_VERSION = "2026-08-25-01";
+const SW_VERSION = "2026-08-25-02";
 
 const PRECACHE_NAME = "iwase-precache-" + SW_VERSION;
 
