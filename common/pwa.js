@@ -153,7 +153,7 @@
 
             appleTitle.name = "apple-mobile-web-app-title";
 
-            appleTitle.content = "いわぽん防災";
+            appleTitle.content = "岩瀬防災アプリ";
 
             head.appendChild(appleTitle);
 
