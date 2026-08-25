@@ -17,5 +17,8 @@ SUPABASE_URL,
 SUPABASE_PUBLISHABLE_KEY
 );
 
+// 他ファイルから参照できるようにする
+window.supabaseClient = supabaseClient;   // ← 追加
+
 // 接続確認用
 console.log("Supabase client initialized.");
