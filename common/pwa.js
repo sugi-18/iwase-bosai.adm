@@ -134,6 +134,18 @@
 
         }
 
+               if (!head.querySelector('meta[name="mobile-web-app-capable"]')) {
+
+            var mobileCapable = document.createElement("meta");
+
+            mobileCapable.name = "mobile-web-app-capable";
+
+            mobileCapable.content = "yes";
+
+            head.appendChild(mobileCapable);
+
+        }
+
 
         if (!head.querySelector('meta[name="apple-mobile-web-app-title"]')) {
 
