@@ -1,6 +1,6 @@
 {
-  "name": "岩瀬自治会 防災アプリ",
-  "short_name": "いわぽん防災",
+  "name": "岩瀬防災アプリ",
+  "short_name": "岩瀬防災アプリ",
   "description": "岩瀬自治会の防災活動を支援するアプリ。マイタイムライン・防災力診断・訓練情報・気象警報を確認できます。",
   "lang": "ja",
   "dir": "ltr",
@@ -10,7 +10,7 @@
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui", "browser"],
   "orientation": "portrait",
-  "background_color": "#f5f5f5",
+  "background_color": "#fbf1c0",
   "theme_color": "#1f4e79",
   "categories": ["utilities", "lifestyle"],
   "icons": [
